@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_jailbreak_detection/flutter_jailbreak_detection.dart';
 
 class TamperResult {
   final bool isCompromised;
@@ -16,9 +15,9 @@ class TamperCheck {
   /// Run all tamper detection checks sequentially.
   /// Returns on first detected compromise.
   static Future<TamperResult> runAllChecks() async {
-    // 1. Root / Jailbreak detection
+    // 1. Root / Jailbreak detection (Natively handled via MethodChannel if present)
     try {
-      final isJailbroken = await FlutterJailbreakDetection.jailbroken;
+      final isJailbroken = await _channel.invokeMethod<bool>('isRooted') ?? false;
       if (isJailbroken) {
         await _reportIncident('root_detected');
         return const TamperResult(
@@ -26,13 +25,11 @@ class TamperCheck {
           reason: 'Rooted device detected. RemoteShield X cannot run on rooted devices for security compliance.',
         );
       }
-    } catch (_) {
-      // Ignore if detection fails (non-Android platforms in testing)
-    }
+    } catch (_) {}
 
     // 2. Developer options / Debug mode detection
     try {
-      final isDebug = await FlutterJailbreakDetection.developerMode;
+      final isDebug = await _channel.invokeMethod<bool>('isDeveloperMode') ?? false;
       if (isDebug) {
         await _reportIncident('developer_mode');
         return const TamperResult(
