@@ -48,7 +48,7 @@ const Browser: React.FC<Props> = ({ authToken }) => {
     
     // If it doesn't look like a URL (missing dot or space present), treat it as a Google Search
     if (!url.includes('.') || url.includes(' ')) {
-      url = `https://www.google.com/search?q=${encodeURIComponent(url)}`;
+      url = `https://www.bing.com/search?q=${encodeURIComponent(url)}`;
     } else if (!/^https?:\/\//i.test(url)) {
       url = 'https://' + url;
     }
