@@ -4,7 +4,7 @@ version = "1.0.0"
 description = "RemoteShield X — Secure Remote Work Browser"
 authors = ["RemoteShield X Team"]
 license = "MIT"
-repository = "https://github.com/YOUR_USERNAME/RdPBrowser"
+repository = "https://github.com/manikantbindass/RdPBrowser"
 edition = "2021"
 rust-version = "1.77"
 
