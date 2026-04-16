@@ -16,8 +16,11 @@ const App: React.FC = () => {
   const [authToken, setAuthToken] = useState<string | null>(null);
   const [vpnMessage, setVpnMessage] = useState('Checking VPN...');
 
+  const [bypassVpn, setBypassVpn] = useState(false);
+
   // ─── Initial VPN check ──────────────────────────────────────
   const pollVpn = useCallback(async () => {
+    if (bypassVpn) return;
     try {
       const connected = await invoke<boolean>('check_vpn_status');
       setVpnConnected(connected);
@@ -26,17 +29,19 @@ const App: React.FC = () => {
       setVpnConnected(false);
       setVpnMessage('Cannot reach RemoteShield server');
     }
-  }, []);
+  }, [bypassVpn]);
 
   useEffect(() => {
     pollVpn();
     // Listen to Rust VPN watchdog events
     const unlisten = listen<VpnEvent>('vpn_status', (e) => {
-      setVpnConnected(e.payload.connected);
-      setVpnMessage(e.payload.message);
+      if (!bypassVpn) {
+        setVpnConnected(e.payload.connected);
+        setVpnMessage(e.payload.message);
+      }
     });
     return () => { unlisten.then((fn) => fn()); };
-  }, [pollVpn]);
+  }, [pollVpn, bypassVpn]);
 
   // ─── Login success handler ───────────────────────────────────
   const handleLogin = async (token: string) => {
@@ -56,9 +61,17 @@ const App: React.FC = () => {
     );
   }
 
-  // ─── VPN not connected — hard block ─────────────────────────
-  if (!vpnConnected) {
-    return <VpnGuard message={vpnMessage} onRetry={pollVpn} />;
+  if (!vpnConnected && !bypassVpn) {
+    return (
+      <VpnGuard 
+        message={vpnMessage} 
+        onRetry={pollVpn} 
+        onBypass={() => {
+          setBypassVpn(true);
+          setVpnConnected(true);
+        }} 
+      />
+    );
   }
 
   // ─── Not authenticated ───────────────────────────────────────

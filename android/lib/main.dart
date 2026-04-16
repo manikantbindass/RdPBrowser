@@ -73,14 +73,18 @@ class AppRouter extends StatefulWidget {
 class _AppRouterState extends State<AppRouter> {
   bool _authenticated = false;
   String? _authToken;
+  bool _vpnBypassed = false;
 
   @override
   Widget build(BuildContext context) {
     final vpn = context.watch<VpnService>();
 
-    // VPN must be connected before anything else
-    if (!vpn.isConnected) {
-      return VpnGuardScreen(onRetry: () => vpn.connect());
+    // VPN must be connected before anything else, unless bypassed
+    if (!vpn.isConnected && !_vpnBypassed) {
+      return VpnGuardScreen(
+        onRetry: () => vpn.connect(),
+        onBypass: () => setState(() => _vpnBypassed = true),
+      );
     }
 
     // Authentication gate

@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 
 class VpnGuardScreen extends StatefulWidget {
   final Future<bool> Function() onRetry;
-  const VpnGuardScreen({super.key, required this.onRetry});
+  final VoidCallback? onBypass;
+  const VpnGuardScreen({super.key, required this.onRetry, this.onBypass});
 
   @override
   State<VpnGuardScreen> createState() => _VpnGuardScreenState();
@@ -77,6 +78,13 @@ class _VpnGuardScreenState extends State<VpnGuardScreen> {
                     ),
                   ),
                 ),
+                const SizedBox(height: 16),
+                if (widget.onBypass != null)
+                  TextButton(
+                    onPressed: widget.onBypass,
+                    child: const Text('Continue without VPN (Dev Mode)',
+                      style: TextStyle(color: Color(0xFF94A3B8))),
+                  ),
                 const SizedBox(height: 16),
                 const Text(
                   'All access is blocked without VPN.\nThis protects your organization\'s data.',
