@@ -214,7 +214,7 @@ const Browser: React.FC<Props> = ({ authToken }) => {
             className="webview-frame"
             src={activeTab.url}
             title={activeTab.title}
-            sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+            sandbox="allow-downloads allow-scripts allow-same-origin allow-forms allow-popups"
             onLoad={() => {
               try {
                 const doc = iframeRef.current?.contentDocument;
