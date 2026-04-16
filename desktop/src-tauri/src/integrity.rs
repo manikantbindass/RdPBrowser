@@ -1,4 +1,6 @@
+#[allow(unused_imports)]
 use sha2::{Sha256, Digest};
+#[allow(unused_imports)]
 use std::fs;
 
 

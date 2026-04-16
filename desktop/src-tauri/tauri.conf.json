@@ -65,8 +65,7 @@
   },
   "plugins": {
     "shell": {
-      "open": false,
-      "sidecar": false
+      "open": false
     }
   }
 }
