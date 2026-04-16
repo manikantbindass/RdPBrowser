@@ -97,13 +97,16 @@
 - Screenshot prevention (Android `FLAG_SECURE`)
 - AI-based anomaly detection
 
-### 🌍 Cross-Platform
-| Platform | Status | Method |
-|----------|--------|--------|
-| Windows | ✅ Full | Tauri (WebView2) |
-| Linux | ✅ Full | Tauri (WebKitGTK) |
-| macOS | ✅ Full | Tauri (WKWebView) |
-| Android | ✅ Full | Flutter + WebView |
+### 🌍 Pre-Compiled Releases & OS Benefits
+
+RemoteShield X is distributed as pre-compiled, production-ready binaries for every major operating system. All artifacts can be downloaded directly from the **GitHub Releases** page of this repository.
+
+| Operating System | Installer Format | Setup Instructions | Benefits & Capabilities |
+|------------------|------------------|---------------------|------------------------|
+| **Windows** | `.msi`, `.exe` | Download the `.msi` and run the installer. It automatically provisions the WebView2 runtime. | Deep integration with Windows Defender, native OS window rendering, and rapid Edge/WebView engine hardware acceleration. |
+| **macOS** | Universal `.dmg` | Mount the `.dmg` and drag `RemoteShield X.app` into your Applications folder. | Universally compiled for both Apple Silicon (M1/M2/M3) and Intel Macs. Sandboxed natively by Gatekeeper with fluid WebKit integration. |
+| **Linux** | `.deb`, `.AppImage` | **Ubuntu/Debian**: `sudo dpkg -i app.deb`.<br>**Arch/Fedora**: Run the `.AppImage`. | Unmatched privacy via direct WebKit2GTK compilation. AppImages provide a portable, zero-install secure browsing environment. |
+| **Android** | `.apk` (ARM64 / ARMv7) | Download to your Android device and allow "Install from Unknown Sources" in settings. | Advanced Mobile Security: Natively enforces `FLAG_SECURE` entirely blocking screenshot/screen-recording capabilities globally. |
 
 ### 📊 Admin Dashboard
 - Real-time session monitoring
