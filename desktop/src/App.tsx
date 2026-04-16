@@ -44,7 +44,7 @@ const App: React.FC = () => {
   }, [pollVpn, bypassVpn]);
 
   const handleLogin = async (token: string) => {
-    await invoke('set_auth_token', { token });
+        try { await invoke('set_auth_token', { token }); } catch (e) { console.warn('Tauri invoke failed:', e); }
     setAuthToken(token);
     setView('browser');
   };
