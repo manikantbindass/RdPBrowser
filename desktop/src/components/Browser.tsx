@@ -45,7 +45,13 @@ const Browser: React.FC<Props> = ({ authToken }) => {
   const navigate = async (rawUrl: string) => {
     if (!rawUrl.trim()) return;
     let url = rawUrl.trim();
-    if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+    
+    // If it doesn't look like a URL (missing dot or space present), treat it as a Google Search
+    if (!url.includes('.') || url.includes(' ')) {
+      url = `https://www.google.com/search?q=${encodeURIComponent(url)}`;
+    } else if (!/^https?:\/\//i.test(url)) {
+      url = 'https://' + url;
+    }
 
     setLoading(true);
     setBlockedMsg('');
@@ -59,7 +65,8 @@ const Browser: React.FC<Props> = ({ authToken }) => {
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      setBlockedMsg(msg || 'URL blocked by RemoteShield policy');
+      // Clean up messy raw backend error arrays into readable strings
+      setBlockedMsg(msg.replace(/[\[\]"]/g, '').trim() || 'URL blocked by RemoteShield policy');
     } finally {
       setLoading(false);
     }
