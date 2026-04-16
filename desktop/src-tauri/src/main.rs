@@ -34,6 +34,14 @@ async fn request_navigate(
     let token = state.auth_token.lock().await;
     let token_ref = token.as_deref().ok_or("Not authenticated")?;
 
+    // Allow guest mode direct navigation
+    if token_ref == "guest" {
+        return Ok(serde_json::json!({
+            "allowed": true,
+            "url": url
+        }));
+    }
+
     let client = reqwest::Client::new();
     let res = client
         .post(format!("{}/api/proxy/navigate", state.server_url))

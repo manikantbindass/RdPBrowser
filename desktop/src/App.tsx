@@ -43,12 +43,23 @@ const App: React.FC = () => {
     return () => { unlisten.then((fn) => fn()); };
   }, [pollVpn, bypassVpn]);
 
-  // ─── Login success handler ───────────────────────────────────
   const handleLogin = async (token: string) => {
     await invoke('set_auth_token', { token });
     setAuthToken(token);
     setView('browser');
   };
+
+  // ─── Guest Mode 1-Hour Timer ─────────────────────────────────
+  useEffect(() => {
+    if (authToken === 'guest') {
+      const timer = setTimeout(() => {
+        setAuthToken(null);
+        setView('login');
+        setVpnMessage('Your 1-hour guest session has expired. Please log in.');
+      }, 60 * 60 * 1000); // 1 hour
+      return () => clearTimeout(timer);
+    }
+  }, [authToken]);
 
   // ─── Loading state ───────────────────────────────────────────
   if (vpnConnected === null) {

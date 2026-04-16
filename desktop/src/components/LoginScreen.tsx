@@ -92,6 +92,16 @@ const LoginScreen: React.FC<Props> = ({ onLogin }) => {
               : '🔐 Sign In Securely'
             }
           </button>
+          
+          <button 
+            type="button" 
+            className="btn btn-ghost" 
+            disabled={loading} 
+            onClick={() => onLogin('guest')}
+            style={{ width: '100%', justifyContent: 'center', padding: '12px', marginTop: '12px', fontSize: 13 }}
+          >
+            Browse without Login (Guest Mode)
+          </button>
         </form>
 
         <div style={{ textAlign: 'center' }}>
