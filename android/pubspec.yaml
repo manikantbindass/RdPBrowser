@@ -18,8 +18,7 @@ dependencies:
   # Networking / HTTP
   http: ^1.1.0
 
-  # Security & Detection
-  flutter_jailbreak_detection: ^1.9.0
+  # Security (no external root-detection pkg needed — implemented natively via MethodChannel)
   crypto: ^3.0.3
   flutter_secure_storage: ^9.0.0
   local_auth: ^2.1.7
