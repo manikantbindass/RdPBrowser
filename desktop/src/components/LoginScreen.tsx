@@ -92,21 +92,21 @@ const LoginScreen: React.FC<Props> = ({ onLogin }) => {
               : '🔐 Sign In Securely'
             }
           </button>
-          
-          <button 
-            type="button" 
-            className="btn btn-ghost" 
-            disabled={loading} 
-            onClick={() => onLogin('guest')}
-            style={{ width: '100%', justifyContent: 'center', padding: '12px', marginTop: '12px', fontSize: 13 }}
-          >
-            Browse without Login (Guest Mode)
-          </button>
         </form>
 
-        <div style={{ textAlign: 'center' }}>
-          <span className="badge badge-success">🟢 VPN Connected</span>
-          <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 10 }}>
+        {/* Guest Mode button is OUTSIDE the form so form validation never blocks it */}
+        <button
+          id="rs-guest-btn"
+          type="button"
+          className="btn btn-ghost"
+          onClick={() => onLogin('guest')}
+          style={{ width: '100%', justifyContent: 'center', padding: '12px', marginTop: '12px', fontSize: 13 }}
+        >
+          🌐 Browse without Login (Guest Mode)
+        </button>
+
+        <div style={{ textAlign: 'center', marginTop: '16px' }}>
+          <p style={{ fontSize: 11, color: 'var(--text-muted)' }}>
             All sessions are encrypted and logged.<br />
             Unauthorized access attempts are reported.
           </p>
