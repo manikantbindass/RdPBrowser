@@ -190,18 +190,10 @@ const Browser: React.FC<Props> = ({ authToken }) => {
         </div>
       </div>
 
-      {/* WebView Area */}
       <div className="webview-container">
         <div className="animated-bg" />
         
-        {!vpnOn ? (
-           // Hidden intentionally, UI bypass button logic handled upstream.
-           // Leaving fallback UI if app crashes into this state.
-          <div className="webview-blocked animate-fade" style={{ background: 'transparent' }}>
-            <div className="webview-blocked-icon">🔒</div>
-            <h2 className="webview-blocked-title">Waiting for Network</h2>
-          </div>
-        ) : blockedMsg ? (
+        {blockedMsg ? (
           <div className="webview-blocked animate-fade glass" style={{ background: 'var(--bg-glass)', margin: 'auto', maxWidth: 500, marginTop: '10%' }}>
             <div className="webview-blocked-icon">🚫</div>
             <h2 className="webview-blocked-title">Access Blocked</h2>
