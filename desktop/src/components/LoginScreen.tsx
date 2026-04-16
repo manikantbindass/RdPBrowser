@@ -4,7 +4,7 @@ interface Props {
   onLogin: (token: string) => void;
 }
 
-const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'https://YOUR_SERVER_STATIC_IP';
+const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:3001';
 
 const LoginScreen: React.FC<Props> = ({ onLogin }) => {
   const [username, setUsername] = useState('');
