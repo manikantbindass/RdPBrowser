@@ -1,43 +1,73 @@
 {
-  "name": "remoteshield-x-backend",
+  "name": "@manikantbindass/remoteshield-x-backend",
   "version": "1.0.0",
-  "description": "RemoteShield X — Secure Gateway Backend Server",
+  "description": "RemoteShield X — Secure Gateway Backend Server with WireGuard VPN enforcement, JWT auth, and real-time admin dashboard",
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
-    "lint": "eslint src/ --ext .js",
-    "test": "jest --coverage",
+    "lint": "eslint src/ --ext .js --max-warnings 0",
+    "test": "jest --coverage --testEnvironment node",
     "migrate": "node src/db/migrate.js"
   },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/manikantbindass/RdPBrowser.git",
+    "directory": "backend"
+  },
+  "keywords": [
+    "vpn",
+    "wireguard",
+    "secure-browser",
+    "enterprise",
+    "remote-work",
+    "node",
+    "express",
+    "jwt",
+    "postgresql",
+    "security"
+  ],
+  "author": "manikantbindass",
+  "license": "MIT",
   "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
     "express": "^4.18.2",
     "express-rate-limit": "^7.1.5",
+    "geoip-lite": "^1.4.10",
     "helmet": "^7.1.0",
-    "cors": "^2.8.5",
-    "pg": "^8.11.3",
-    "bcryptjs": "^2.4.3",
-    "jsonwebtoken": "^9.0.2",
-    "socket.io": "^4.6.2",
     "http-proxy-middleware": "^2.0.6",
-    "uuid": "^9.0.0",
-    "dotenv": "^16.3.1",
-    "winston": "^3.11.0",
-    "morgan": "^1.10.0",
+    "ip-range-check": "^0.2.0",
     "joi": "^17.11.0",
+    "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.0",
     "node-cron": "^3.0.3",
-    "geoip-lite": "^1.4.10"
+    "pg": "^8.11.3",
+    "socket.io": "^4.6.2",
+    "uuid": "^9.0.0",
+    "winston": "^3.11.0"
   },
   "devDependencies": {
-    "nodemon": "^3.0.2",
-    "jest": "^29.7.0",
-    "supertest": "^6.3.3",
     "eslint": "^8.55.0",
-    "@eslint/js": "^8.55.0"
+    "jest": "^29.7.0",
+    "nodemon": "^3.0.2",
+    "supertest": "^6.3.3"
   },
   "jest": {
     "testEnvironment": "node",
     "coverageDirectory": "coverage",
-    "collectCoverageFrom": ["src/**/*.js"]
+    "collectCoverageFrom": [
+      "src/**/*.js",
+      "!src/__tests__/**"
+    ],
+    "testMatch": [
+      "**/__tests__/**/*.test.js"
+    ],
+    "testTimeout": 30000
   }
 }

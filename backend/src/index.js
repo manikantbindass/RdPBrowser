@@ -16,7 +16,14 @@ const proxyRoutes = require('./routes/proxy');
 const { vpnCheck } = require('./middleware/vpnCheck');
 const { authenticateToken } = require('./middleware/auth');
 const { initDB } = require('./db/db');
-const { startAnomalyDetector } = require('../../../security/anomaly-detector/detector');
+
+// Optional anomaly detector — loaded at runtime if enabled
+let startAnomalyDetector = null;
+try {
+  startAnomalyDetector = require('../../../security/anomaly-detector/detector').startAnomalyDetector;
+} catch (_) {
+  // Not available in test environments or standalone backend deployments
+}
 
 // ─── Logger ──────────────────────────────────────────────────────────────────
 const logger = winston.createLogger({
@@ -152,7 +159,7 @@ async function start() {
     await initDB();
     logger.info('✅ Database connected and schema initialized');
 
-    if (process.env.ANOMALY_DETECTION_ENABLED === 'true') {
+    if (process.env.ANOMALY_DETECTION_ENABLED === 'true' && startAnomalyDetector) {
       startAnomalyDetector(io, logger);
       logger.info('✅ Anomaly detector started');
     }
