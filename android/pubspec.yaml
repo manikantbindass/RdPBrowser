@@ -1,10 +1,11 @@
 name: remoteshield_x
-description: RemoteShield X — Secure Remote Work Browser (Android)
+description: RemoteShield X — Enterprise Secure Remote Work Browser (Android)
 version: 1.0.0+1
 publish_to: none
 
 environment:
-  sdk: '>=3.0.0 <4.0.0'
+  sdk: '>=3.2.0 <4.0.0'
+  flutter: '>=3.16.0'
 
 dependencies:
   flutter:
@@ -14,15 +15,14 @@ dependencies:
   webview_flutter: ^4.4.2
   webview_flutter_android: ^3.12.1
 
-  # VPN - use flutter_vpn 0.x which exists on pub.dev
-  flutter_vpn: ^0.3.3
+  # Networking / HTTP
   http: ^1.1.0
 
-  # Security
+  # Security & Detection
   flutter_jailbreak_detection: ^1.9.0
-  local_auth: ^2.1.7
   crypto: ^3.0.3
   flutter_secure_storage: ^9.0.0
+  local_auth: ^2.1.7
 
   # State / Utils
   provider: ^6.1.1
@@ -32,17 +32,12 @@ dependencies:
 
   # UI
   google_fonts: ^6.1.0
-  lottie: ^3.0.0
+  cupertino_icons: ^1.0.6
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.0
-  mockito: ^5.4.3
-  build_runner: ^2.4.7
 
 flutter:
   uses-material-design: true
-  assets:
-    - assets/images/
-    - assets/animations/

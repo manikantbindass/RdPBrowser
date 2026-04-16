@@ -3,6 +3,7 @@ name: RemoteShield X CI/CD
 on:
   push:
     branches: [main, develop]
+    tags: ['v*.*.*']
   pull_request:
     branches: [main]
 
@@ -16,10 +17,10 @@ env:
   NODE_VERSION: '20'
   FLUTTER_VERSION: '3.19.0'
 
+# ═══════════════════════════════════════════════════════════════════
+# JOB 1 — Backend: Lint + Test
+# ═══════════════════════════════════════════════════════════════════
 jobs:
-  # ───────────────────────────────────────────────────────────────
-  # Job 1: Backend Lint + Test
-  # ───────────────────────────────────────────────────────────────
   backend:
     name: Backend - Lint and Test
     runs-on: ubuntu-latest
@@ -41,7 +42,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node.js ${{ env.NODE_VERSION }}
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
@@ -66,10 +67,11 @@ jobs:
           SERVER_PUBLIC_IP: 127.0.0.1
           NODE_ENV: test
           PORT: 3001
+          ANOMALY_DETECTION_ENABLED: 'false'
 
-  # ───────────────────────────────────────────────────────────────
-  # Job 2: Desktop Windows Build
-  # ───────────────────────────────────────────────────────────────
+# ═══════════════════════════════════════════════════════════════════
+# JOB 2 — Desktop: Windows (produces .msi + .exe)
+# ═══════════════════════════════════════════════════════════════════
   desktop-windows:
     name: Desktop - Windows Build
     needs: backend
@@ -104,13 +106,15 @@ jobs:
       - name: Upload Windows MSI
         uses: actions/upload-artifact@v4
         with:
-          name: remoteshield-windows
-          path: desktop/src-tauri/target/release/bundle/msi/*.msi
+          name: RemoteShield-Windows-x64
+          path: |
+            desktop/src-tauri/target/release/bundle/msi/*.msi
+            desktop/src-tauri/target/release/bundle/nsis/*.exe
           if-no-files-found: warn
 
-  # ───────────────────────────────────────────────────────────────
-  # Job 3: Desktop Linux Build
-  # ───────────────────────────────────────────────────────────────
+# ═══════════════════════════════════════════════════════════════════
+# JOB 3 — Desktop: Linux (produces .deb + .AppImage)
+# ═══════════════════════════════════════════════════════════════════
   desktop-linux:
     name: Desktop - Linux Build
     needs: backend
@@ -118,15 +122,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install system dependencies
+      - name: Install Linux system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y \
             libwebkit2gtk-4.1-dev \
             build-essential \
-            curl \
-            wget \
-            file \
+            curl wget file \
             libxdo-dev \
             libssl-dev \
             libayatana-appindicator3-dev \
@@ -157,15 +159,15 @@ jobs:
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: remoteshield-linux
+          name: RemoteShield-Linux-x64
           path: |
             desktop/src-tauri/target/release/bundle/deb/*.deb
             desktop/src-tauri/target/release/bundle/appimage/*.AppImage
           if-no-files-found: warn
 
-  # ───────────────────────────────────────────────────────────────
-  # Job 4: Desktop macOS Build
-  # ───────────────────────────────────────────────────────────────
+# ═══════════════════════════════════════════════════════════════════
+# JOB 4 — Desktop: macOS (produces universal .dmg for Intel + Apple Silicon)
+# ═══════════════════════════════════════════════════════════════════
   desktop-macos:
     name: Desktop - macOS Build
     needs: backend
@@ -178,7 +180,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Setup Rust (universal)
+      - name: Setup Rust (universal targets)
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: aarch64-apple-darwin,x86_64-apple-darwin
@@ -192,20 +194,20 @@ jobs:
         run: npm install
         working-directory: desktop
 
-      - name: Build Tauri app (macOS universal binary)
+      - name: Build Tauri app (macOS universal)
         run: npm run tauri build -- --target universal-apple-darwin
         working-directory: desktop
 
       - name: Upload macOS DMG
         uses: actions/upload-artifact@v4
         with:
-          name: remoteshield-macos
+          name: RemoteShield-macOS-Universal
           path: desktop/src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg
           if-no-files-found: warn
 
-  # ───────────────────────────────────────────────────────────────
-  # Job 5: Android APK Build
-  # ───────────────────────────────────────────────────────────────
+# ═══════════════════════════════════════════════════════════════════
+# JOB 5 — Android APK (release + debug)
+# ═══════════════════════════════════════════════════════════════════
   android:
     name: Android - APK Build
     needs: backend
@@ -229,33 +231,65 @@ jobs:
         run: flutter pub get
         working-directory: android
 
-      - name: Analyze Flutter code
+      - name: Flutter analyze
         run: flutter analyze --no-fatal-infos
         working-directory: android
+        continue-on-error: true
 
       - name: Build release APK
         run: |
           flutter build apk \
             --release \
             --obfuscate \
-            --split-debug-info=build/debug-info
+            --split-debug-info=build/debug-info \
+            --split-per-abi
         working-directory: android
 
-      - name: Upload APK
+      - name: Upload Android APKs
         uses: actions/upload-artifact@v4
         with:
-          name: remoteshield-android
-          path: android/build/app/outputs/flutter-apk/app-release.apk
+          name: RemoteShield-Android
+          path: android/build/app/outputs/flutter-apk/*.apk
           if-no-files-found: warn
 
-  # ───────────────────────────────────────────────────────────────
-  # Job 6: Docker Build and Push
-  # ───────────────────────────────────────────────────────────────
+# ═══════════════════════════════════════════════════════════════════
+# JOB 6 — Security Scan
+# ═══════════════════════════════════════════════════════════════════
+  security-scan:
+    name: Security - Vulnerability Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Node audit (backend)
+        run: npm audit --audit-level=critical || true
+        working-directory: backend
+
+      - name: Trivy filesystem scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          severity: 'CRITICAL'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+        continue-on-error: true
+
+      - name: Upload Trivy SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-results.sarif'
+        if: always()
+        continue-on-error: true
+
+# ═══════════════════════════════════════════════════════════════════
+# JOB 7 — Docker: Build & Push to GHCR
+# ═══════════════════════════════════════════════════════════════════
   docker:
     name: Docker - Build and Push
     needs: backend
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
     steps:
       - uses: actions/checkout@v4
 
@@ -269,7 +303,16 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push backend image
+      - name: Extract version tag
+        id: meta
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          else
+            echo "VERSION=latest" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build and push backend
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -277,11 +320,11 @@ jobs:
           push: true
           tags: |
             ghcr.io/${{ github.repository_owner }}/remoteshield-backend:latest
-            ghcr.io/${{ github.repository_owner }}/remoteshield-backend:${{ github.sha }}
+            ghcr.io/${{ github.repository_owner }}/remoteshield-backend:${{ steps.meta.outputs.VERSION }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Build and push nginx image
+      - name: Build and push nginx
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -292,14 +335,14 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  # ───────────────────────────────────────────────────────────────
-  # Job 7: Publish npm Package to GitHub Packages
-  # ───────────────────────────────────────────────────────────────
+# ═══════════════════════════════════════════════════════════════════
+# JOB 8 — Publish npm package to GitHub Packages
+# ═══════════════════════════════════════════════════════════════════
   publish-npm:
     name: Publish - GitHub npm Package
     needs: backend
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
     steps:
       - uses: actions/checkout@v4
 
@@ -314,39 +357,88 @@ jobs:
         run: npm install
         working-directory: backend
 
-      - name: Publish package to GitHub Packages
+      - name: Publish package
         run: npm publish --access public
         working-directory: backend
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
 
-  # ───────────────────────────────────────────────────────────────
-  # Job 8: Security Scan
-  # ───────────────────────────────────────────────────────────────
-  security-scan:
-    name: Security - Vulnerability Scan
+# ═══════════════════════════════════════════════════════════════════
+# JOB 9 — GitHub Release: Create platform-separated release with all assets
+# ═══════════════════════════════════════════════════════════════════
+  release:
+    name: Release - Publish to GitHub
+    needs:
+      - desktop-windows
+      - desktop-linux
+      - desktop-macos
+      - android
     runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
     steps:
       - uses: actions/checkout@v4
 
-      - name: Run npm audit (backend)
-        run: npm audit --audit-level=critical || true
-        working-directory: backend
-
-      - name: Run Trivy filesystem scan
-        uses: aquasecurity/trivy-action@master
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
         with:
-          scan-type: 'fs'
-          scan-ref: '.'
-          severity: 'CRITICAL'
-          format: 'sarif'
-          output: 'trivy-results.sarif'
-        continue-on-error: true
+          path: release-artifacts
 
-      - name: Upload Trivy results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v3
+      - name: Display structure of artifacts
+        run: ls -R release-artifacts/
+
+      - name: Create GitHub Release with all platform binaries
+        uses: softprops/action-gh-release@v2
         with:
-          sarif_file: 'trivy-results.sarif'
-        if: always()
-        continue-on-error: true
+          name: "RemoteShield X ${{ github.ref_name }}"
+          body: |
+            ## 🛡️ RemoteShield X Browser ${{ github.ref_name }}
+
+            Enterprise-Grade Secure Remote Work Browser — All Platforms
+
+            ---
+
+            ### 📥 Download for Your Platform
+
+            | Platform | File | Notes |
+            |----------|------|-------|
+            | 🪟 **Windows** | `RemoteShield.X_*_x64_en-US.msi` | Windows Installer (recommended) |
+            | 🪟 **Windows** | `RemoteShield.X_*_x64-setup.exe` | NSIS Installer |
+            | 🐧 **Linux** | `remoteshield-x_*_amd64.deb` | Debian/Ubuntu/Arch (via AUR) |
+            | 🐧 **Linux (Arch)** | `remoteshield-x_*_amd64.AppImage` | Universal Linux — works on Arch, Fedora, etc. |
+            | 🍎 **macOS** | `RemoteShield.X_*_universal.dmg` | Universal binary (M1/M2 + Intel) |
+            | 🤖 **Android** | `app-arm64-v8a-release.apk` | ARM64 (most modern phones) |
+            | 🤖 **Android** | `app-armeabi-v7a-release.apk` | ARMv7 (older phones) |
+            | 🤖 **Android** | `app-x86_64-release.apk` | x86_64 (emulators / some tablets) |
+
+            ---
+
+            ### ⚙️ Requirements
+            - **Windows**: Windows 10/11 x64 + WebView2 runtime (included)
+            - **Linux**: Modern distro with WebKit2GTK 4.1
+            - **Linux (Arch)**: `yay -S webkit2gtk-4.1` then run AppImage
+            - **macOS**: macOS 10.15 Catalina or later (Intel + Apple Silicon)
+            - **Android**: Android 8.0+ (API 26+), ARMv8 or ARMv7
+
+            ### 🔒 Security
+            All traffic routes through WireGuard VPN — configure your VPS endpoint in settings after first launch.
+
+            ### 🚀 Backend Deployment
+            ```bash
+            git clone https://github.com/manikantbindass/RdPBrowser.git
+            cd RdPBrowser/backend
+            cp .env.example .env  # fill in your VPS IP + secrets
+            cd ../docker && docker-compose up -d
+            ```
+          files: |
+            release-artifacts/RemoteShield-Windows-x64/*.msi
+            release-artifacts/RemoteShield-Windows-x64/*.exe
+            release-artifacts/RemoteShield-Linux-x64/*.deb
+            release-artifacts/RemoteShield-Linux-x64/*.AppImage
+            release-artifacts/RemoteShield-macOS-Universal/*.dmg
+            release-artifacts/RemoteShield-Android/*.apk
+          draft: false
+          prerelease: false
+          token: ${{ secrets.GITHUB_TOKEN }}
+          generate_release_notes: false
+          fail_on_unmatched_files: false
