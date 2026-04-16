@@ -14,8 +14,8 @@ dependencies:
   webview_flutter: ^4.4.2
   webview_flutter_android: ^3.12.1
 
-  # VPN and Networking
-  flutter_vpn: ^4.0.1
+  # VPN - use flutter_vpn 0.x which exists on pub.dev
+  flutter_vpn: ^0.3.3
   http: ^1.1.0
 
   # Security
