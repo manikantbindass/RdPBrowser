@@ -26,8 +26,9 @@ const App: React.FC = () => {
       setVpnConnected(connected);
       if (!connected) setVpnMessage('VPN disconnected — browser blocked for security');
     } catch {
+      // In browser dev mode (not Tauri), invoke fails — treat as bypass
       setVpnConnected(false);
-      setVpnMessage('Cannot reach RemoteShield server');
+      setVpnMessage('Cannot reach RemoteShield server — click Continue to browse');
     }
   }, [bypassVpn]);
 
@@ -44,7 +45,12 @@ const App: React.FC = () => {
   }, [pollVpn, bypassVpn]);
 
   const handleLogin = async (token: string) => {
-        try { await invoke('set_auth_token', { token }); } catch (e) { console.warn('Tauri invoke failed:', e); }
+    try {
+      // invoke only works inside native Tauri window, not in browser dev tabs
+      await invoke('set_auth_token', { token });
+    } catch {
+      // Gracefully degrade — token still stored in React state below
+    }
     setAuthToken(token);
     setView('browser');
   };

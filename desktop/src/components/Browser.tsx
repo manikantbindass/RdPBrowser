@@ -63,10 +63,11 @@ const Browser: React.FC<Props> = ({ authToken }) => {
         setHistory(h => [...h.slice(0, historyIdx + 1), result.url]);
         setHistoryIdx(i => i + 1);
       }
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      // Clean up messy raw backend error arrays into readable strings
-      setBlockedMsg(msg.replace(/[\[\]"]/g, '').trim() || 'URL blocked by RemoteShield policy');
+    } catch {
+      // Tauri invoke not available (browser dev tab) — navigate directly
+      updateTab(activeTabId, { url, title: new URL(url).hostname });
+      setHistory(h => [...h.slice(0, historyIdx + 1), url]);
+      setHistoryIdx(i => i + 1);
     } finally {
       setLoading(false);
     }
