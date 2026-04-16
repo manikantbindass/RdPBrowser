@@ -2,6 +2,8 @@
 
 # 🛡️ RemoteShield X Browser
 
+<img src="./assets/logo.png" width="200" alt="RemoteShield X Logo" style="border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); margin-bottom: 20px;" />
+
 **Enterprise-Grade Secure Remote Work Browser Platform**
 
 [![CI/CD](https://github.com/manikantbindass/RdPBrowser/actions/workflows/ci.yml/badge.svg)](https://github.com/manikantbindass/RdPBrowser/actions/workflows/ci.yml)
