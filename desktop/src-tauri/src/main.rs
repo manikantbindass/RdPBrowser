@@ -6,7 +6,7 @@ mod integrity;
 mod platform;
 
 use std::sync::Arc;
-use tauri::{Manager, WindowEvent, Emitter};
+use tauri::{WindowEvent, Emitter};
 use tokio::sync::Mutex;
 use log::{info, warn, error};
 
@@ -107,7 +107,7 @@ fn main() {
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_store::Builder::default().build())
         .manage(state)
-        .setup(|app| {
+        .setup(move |app| {
             let app_handle = app.handle().clone();
             let server = server_url.clone();
 

@@ -6,7 +6,7 @@ pub fn get_info() -> Value {
         "os": std::env::consts::OS,
         "arch": std::env::consts::ARCH,
         "family": std::env::consts::FAMILY,
-        "hostname": whoami::hostname(),
+        "hostname": whoami::fallible::hostname().unwrap_or_else(|_| "unknown".to_string()),
         "username": whoami::username(),
     })
 }

@@ -1,6 +1,6 @@
 use sha2::{Sha256, Digest};
 use std::fs;
-use std::path::Path;
+
 
 /// In production, we hash the main binary and compare to a known-good hash.
 /// In debug/dev mode, this is skipped.
