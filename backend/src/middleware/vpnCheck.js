@@ -12,7 +12,7 @@ const ipRangeCheck = require('ip-range-check');
  * In development mode (NODE_ENV=development) this check is bypassed.
  */
 function vpnCheck(req, res, next) {
-  if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
+  if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test' || process.env.VPN_REQUIRED === 'false') {
     req.vpnClientIp = req.ip;
     return next();
   }
