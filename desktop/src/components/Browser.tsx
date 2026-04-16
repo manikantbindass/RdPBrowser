@@ -56,19 +56,28 @@ const Browser: React.FC<Props> = ({ authToken }) => {
     setLoading(true);
     setBlockedMsg('');
 
-    try {
-      const result = await invoke<{ allowed: boolean; url: string }>('request_navigate', { url });
-      if (result.allowed) {
-        updateTab(activeTabId, { url: result.url, title: new URL(result.url).hostname });
-        setHistory(h => [...h.slice(0, historyIdx + 1), result.url]);
-        setHistoryIdx(i => i + 1);
+    // Check if running inside Tauri native window or plain browser tab
+    const isTauri = typeof (window as Window & { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__ !== 'undefined';
+
+    if (isTauri) {
+      try {
+        const result = await invoke<{ allowed: boolean; url: string }>('request_navigate', { url });
+        if (result.allowed) {
+          updateTab(activeTabId, { url: result.url, title: new URL(result.url).hostname });
+          setHistory(h => [...h.slice(0, historyIdx + 1), result.url]);
+          setHistoryIdx(i => i + 1);
+        }
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        setBlockedMsg(msg.replace(/[\[\]"]/g, '').trim() || 'URL blocked by RemoteShield policy');
+      } finally {
+        setLoading(false);
       }
-    } catch {
-      // Tauri invoke not available (browser dev tab) — navigate directly
+    } else {
+      // Browser dev tab — navigate directly without Tauri IPC
       updateTab(activeTabId, { url, title: new URL(url).hostname });
       setHistory(h => [...h.slice(0, historyIdx + 1), url]);
       setHistoryIdx(i => i + 1);
-    } finally {
       setLoading(false);
     }
   };
