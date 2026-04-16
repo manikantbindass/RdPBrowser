@@ -1,0 +1,313 @@
+name: RemoteShield X — CI/CD
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+env:
+  NODE_VERSION: '20'
+  FLUTTER_VERSION: '3.19.0'
+  RUST_VERSION: 'stable'
+
+jobs:
+  # ─────────────────────────────────────────────
+  # Job 1: Backend Lint + Test
+  # ─────────────────────────────────────────────
+  backend:
+    name: Backend — Lint & Test
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: remoteshield
+          POSTGRES_PASSWORD: testpassword
+          POSTGRES_DB: remoteshield_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install backend dependencies
+        run: npm ci
+        working-directory: backend
+
+      - name: Run ESLint
+        run: npm run lint
+        working-directory: backend
+
+      - name: Run unit tests
+        run: npm test
+        working-directory: backend
+        env:
+          DATABASE_URL: postgresql://remoteshield:testpassword@localhost:5432/remoteshield_test
+          JWT_SECRET: test_jwt_secret_ci
+          SERVER_VPN_IP: 10.0.0.1
+          NODE_ENV: test
+
+  # ─────────────────────────────────────────────
+  # Job 2: Desktop Build (Windows)
+  # ─────────────────────────────────────────────
+  desktop-windows:
+    name: Desktop — Windows Build
+    needs: backend
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './desktop/src-tauri -> target'
+
+      - name: Install frontend deps
+        run: npm install
+        working-directory: desktop
+
+      - name: Build Tauri app (Windows)
+        run: npm run tauri build
+        working-directory: desktop
+        env:
+          TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+          TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: remoteshield-windows
+          path: desktop/src-tauri/target/release/bundle/msi/*.msi
+
+  # ─────────────────────────────────────────────
+  # Job 3: Desktop Build (Linux)
+  # ─────────────────────────────────────────────
+  desktop-linux:
+    name: Desktop — Linux Build
+    needs: backend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            build-essential \
+            curl \
+            wget \
+            file \
+            libxdo-dev \
+            libssl-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './desktop/src-tauri -> target'
+
+      - name: Install frontend deps
+        run: npm install
+        working-directory: desktop
+
+      - name: Build Tauri app (Linux)
+        run: npm run tauri build
+        working-directory: desktop
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: remoteshield-linux
+          path: |
+            desktop/src-tauri/target/release/bundle/deb/*.deb
+            desktop/src-tauri/target/release/bundle/appimage/*.AppImage
+
+  # ─────────────────────────────────────────────
+  # Job 4: Desktop Build (macOS)
+  # ─────────────────────────────────────────────
+  desktop-macos:
+    name: Desktop — macOS Build
+    needs: backend
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './desktop/src-tauri -> target'
+
+      - name: Install frontend deps
+        run: npm install
+        working-directory: desktop
+
+      - name: Build Tauri app (macOS universal)
+        run: npm run tauri build -- --target universal-apple-darwin
+        working-directory: desktop
+
+      - name: Upload macOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: remoteshield-macos
+          path: desktop/src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg
+
+  # ─────────────────────────────────────────────
+  # Job 5: Android Build
+  # ─────────────────────────────────────────────
+  android:
+    name: Android — APK Build
+    needs: backend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Get Flutter dependencies
+        run: flutter pub get
+        working-directory: android
+
+      - name: Analyze Dart code
+        run: flutter analyze
+        working-directory: android
+
+      - name: Run Dart tests
+        run: flutter test
+        working-directory: android
+
+      - name: Build release APK
+        run: |
+          flutter build apk \
+            --release \
+            --obfuscate \
+            --split-debug-info=build/debug-info
+        working-directory: android
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: remoteshield-android
+          path: android/build/app/outputs/flutter-apk/app-release.apk
+
+  # ─────────────────────────────────────────────
+  # Job 6: Docker Build & Push
+  # ─────────────────────────────────────────────
+  docker:
+    name: Docker — Build & Push
+    needs: [backend]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+
+      - name: Build & push backend image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: docker/Dockerfile.backend
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/remoteshield-backend:latest
+            ${{ secrets.DOCKER_USERNAME }}/remoteshield-backend:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build & push nginx image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: docker/Dockerfile.nginx
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/remoteshield-nginx:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ─────────────────────────────────────────────
+  # Job 7: Security Scan
+  # ─────────────────────────────────────────────
+  security-scan:
+    name: Security — Vulnerability Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run npm audit (backend)
+        run: npm audit --audit-level=high
+        working-directory: backend
+        continue-on-error: true
+
+      - name: Run Trivy filesystem scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          severity: 'CRITICAL,HIGH'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy results
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-results.sarif'
+        if: always()

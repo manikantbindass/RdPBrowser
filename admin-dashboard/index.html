@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="RemoteShield X Admin Dashboard" />
+  <title>RemoteShield X — Admin Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- ─── Sidebar ────────────────────────────────────────────────── -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <span class="brand-icon">🛡️</span>
+      <div>
+        <div class="brand-name">RemoteShield X</div>
+        <div class="brand-sub">Admin Console</div>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a class="nav-item active" data-tab="overview"    id="nav-overview">  <span>📊</span> Overview</a>
+      <a class="nav-item"        data-tab="sessions"    id="nav-sessions">  <span>👥</span> Live Sessions</a>
+      <a class="nav-item"        data-tab="iplogs"      id="nav-iplogs">    <span>📋</span> IP Logs</a>
+      <a class="nav-item"        data-tab="urls"        id="nav-urls">      <span>🔗</span> URL Control</a>
+      <a class="nav-item"        data-tab="anomalies"   id="nav-anomalies"> <span>⚠️</span> Anomalies</a>
+      <a class="nav-item"        data-tab="users"       id="nav-users">     <span>🔐</span> Users</a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="vpn-status-card" id="vpn-status-card">
+        <span class="status-dot" id="conn-dot"></span>
+        <span id="conn-label">Connecting...</span>
+      </div>
+      <button class="btn-logout" id="btn-logout">Sign Out</button>
+    </div>
+  </aside>
+
+  <!-- ─── Main Content ───────────────────────────────────────────── -->
+  <main class="main">
+    <!-- Header -->
+    <header class="top-bar">
+      <div>
+        <h1 class="page-title" id="page-title">Overview</h1>
+        <p class="page-sub" id="page-sub">Real-time platform monitoring</p>
+      </div>
+      <div class="header-actions">
+        <span class="live-badge" id="live-badge">● LIVE</span>
+        <span id="clock" class="clock"></span>
+      </div>
+    </header>
+
+    <!-- ─── Login Gate ──────────────────────────────────────────── -->
+    <div id="login-gate" class="gate-screen">
+      <div class="login-card glass">
+        <div class="login-top">
+          <span style="font-size:48px">🛡️</span>
+          <h2>Admin Login</h2>
+          <p>RemoteShield X Control Panel</p>
+        </div>
+        <div id="login-err" class="err-box hidden"></div>
+        <div class="field-group">
+          <label>Username</label>
+          <input id="admin-user" type="text" class="field-input" placeholder="Admin username" />
+        </div>
+        <div class="field-group">
+          <label>Password</label>
+          <input id="admin-pass" type="password" class="field-input" placeholder="Admin password" />
+        </div>
+        <button id="btn-login" class="btn-primary full-width">🔐 Sign In</button>
+      </div>
+    </div>
+
+    <!-- ─── Dashboard Tabs ──────────────────────────────────────── -->
+    <div id="dashboard" class="hidden">
+
+      <!-- Overview Tab -->
+      <section id="tab-overview" class="tab-content active">
+        <div class="stats-grid">
+          <div class="stat-card glass" id="stat-sessions">
+            <div class="stat-icon">👥</div>
+            <div class="stat-body">
+              <div class="stat-val" id="val-sessions">—</div>
+              <div class="stat-label">Active Sessions</div>
+            </div>
+          </div>
+          <div class="stat-card glass" id="stat-users">
+            <div class="stat-icon">🔐</div>
+            <div class="stat-body">
+              <div class="stat-val" id="val-users">—</div>
+              <div class="stat-label">Total Users</div>
+            </div>
+          </div>
+          <div class="stat-card glass" id="stat-flagged">
+            <div class="stat-icon">🚩</div>
+            <div class="stat-body">
+              <div class="stat-val" id="val-flagged">—</div>
+              <div class="stat-label">Flagged Logs (24h)</div>
+            </div>
+          </div>
+          <div class="stat-card glass" id="stat-anomalies">
+            <div class="stat-icon">⚠️</div>
+            <div class="stat-body">
+              <div class="stat-val" id="val-anomalies">—</div>
+              <div class="stat-label">Unresolved Alerts</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-card glass">
+          <div class="section-hdr"><h3>Recent Activity</h3></div>
+          <div id="recent-activity" class="activity-list">
+            <div class="empty-state">Loading activity...</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Sessions Tab -->
+      <section id="tab-sessions" class="tab-content">
+        <div class="section-card glass">
+          <div class="section-hdr">
+            <h3>Live Sessions</h3>
+            <button id="btn-refresh-sessions" class="btn-ghost">↻ Refresh</button>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table" id="sessions-table">
+              <thead>
+                <tr>
+                  <th>User</th><th>Device OS</th><th>VPN IP</th>
+                  <th>Started</th><th>Last Activity</th><th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="sessions-tbody">
+                <tr><td colspan="6" class="empty-state">Loading sessions...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- IP Logs Tab -->
+      <section id="tab-iplogs" class="tab-content">
+        <div class="section-card glass">
+          <div class="section-hdr">
+            <h3>IP Activity Logs</h3>
+            <label class="toggle-label">
+              <input type="checkbox" id="filter-flagged" />
+              Show flagged only
+            </label>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table" id="iplogs-table">
+              <thead>
+                <tr>
+                  <th>User</th><th>IP</th><th>VPN ✓</th>
+                  <th>URL</th><th>Country</th><th>Flagged</th><th>Time</th>
+                </tr>
+              </thead>
+              <tbody id="iplogs-tbody">
+                <tr><td colspan="7" class="empty-state">Loading logs...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- URL Control Tab -->
+      <section id="tab-urls" class="tab-content">
+        <div class="section-card glass">
+          <div class="section-hdr"><h3>Block a URL / Domain</h3></div>
+          <div class="url-block-form">
+            <input id="url-pattern" class="field-input" placeholder="e.g. *.facebook.com or https://example.com" />
+            <input id="url-reason"  class="field-input" placeholder="Reason (optional)" />
+            <button id="btn-block-url" class="btn-danger">🚫 Block URL</button>
+          </div>
+          <div id="block-msg" class="msg hidden"></div>
+        </div>
+        <div class="section-card glass" style="margin-top:16px">
+          <div class="section-hdr"><h3>Blocked URLs</h3></div>
+          <div class="table-wrap">
+            <table class="data-table" id="urls-table">
+              <thead><tr><th>Pattern</th><th>Reason</th><th>Blocked At</th><th>Action</th></tr></thead>
+              <tbody id="urls-tbody"><tr><td colspan="4" class="empty-state">Loading...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Anomalies Tab -->
+      <section id="tab-anomalies" class="tab-content">
+        <div class="section-card glass">
+          <div class="section-hdr"><h3>Security Anomaly Alerts</h3></div>
+          <div id="anomalies-list" class="anomaly-list">
+            <div class="empty-state">Loading alerts...</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Users Tab -->
+      <section id="tab-users" class="tab-content">
+        <div class="section-card glass">
+          <div class="section-hdr"><h3>User Management</h3></div>
+          <div class="table-wrap">
+            <table class="data-table" id="users-table">
+              <thead><tr><th>Username</th><th>Email</th><th>Role</th><th>Last Login</th><th>Status</th><th>Action</th></tr></thead>
+              <tbody id="users-tbody"><tr><td colspan="6" class="empty-state">Loading...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+    </div><!-- /dashboard -->
+  </main>
+
+  <script src="https://cdn.socket.io/4.6.2/socket.io.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,52 @@
+# ─── Node / Backend ───────────────────────────────────────────
+node_modules/
+dist/
+build/
+.env
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# ─── Rust / Tauri ─────────────────────────────────────────────
+target/
+desktop/src-tauri/target/
+Cargo.lock
+
+# ─── Flutter / Dart ───────────────────────────────────────────
+android/.dart_tool/
+android/.flutter-plugins
+android/.flutter-plugins-dependencies
+android/.pub-cache/
+android/.packages
+android/build/
+android/android/app/build/
+android/**/*.class
+android/**/*.jar
+
+# ─── Docker ───────────────────────────────────────────────────
+docker/volumes/
+docker/data/
+
+# ─── VPN / Secrets ────────────────────────────────────────────
+vpn-server/wireguard/wg0-actual.conf
+vpn-server/client-configs/*-actual.conf
+*.key
+*.pem
+*.crt
+*.p12
+ssl/
+
+# ─── OS / Editor ──────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*~
+
+# ─── Test artifacts ───────────────────────────────────────────
+coverage/
+.nyc_output/

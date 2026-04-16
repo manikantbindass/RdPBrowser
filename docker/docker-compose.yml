@@ -1,0 +1,102 @@
+version: '3.9'
+
+# ─── Networks ─────────────────────────────────────────────────────────────────
+networks:
+  remoteshield:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24
+
+# ─── Volumes ──────────────────────────────────────────────────────────────────
+volumes:
+  postgres_data:
+  nginx_logs:
+
+# ─── Services ─────────────────────────────────────────────────────────────────
+services:
+
+  # ── PostgreSQL Database ──────────────────────────────────────────────────────
+  postgres:
+    image: postgres:15-alpine
+    container_name: remoteshield-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       remoteshield_db
+      POSTGRES_USER:     remoteshield
+      POSTGRES_PASSWORD: ${DB_PASS:-CHANGE_ME_IN_ENV}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/src/db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    networks:
+      - remoteshield
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U remoteshield -d remoteshield_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      # Do NOT expose to public — only internal
+      - "127.0.0.1:5432:5432"
+
+  # ── Backend API ──────────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.backend
+    container_name: remoteshield-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV:                production
+      PORT:                    3000
+      HOST:                    0.0.0.0
+      DATABASE_URL:            postgresql://remoteshield:${DB_PASS:-CHANGE_ME_IN_ENV}@postgres:5432/remoteshield_db
+      JWT_SECRET:              ${JWT_SECRET:-CHANGE_ME_64_CHAR_RANDOM_STRING}
+      JWT_EXPIRES_IN:          8h
+      JWT_REFRESH_SECRET:      ${JWT_REFRESH_SECRET:-CHANGE_ME_REFRESH_SECRET}
+      JWT_REFRESH_EXPIRES_IN:  7d
+      VPN_SUBNET:              10.8.0.0/24
+      SERVER_PUBLIC_IP:        ${SERVER_PUBLIC_IP:-YOUR_SERVER_STATIC_IP}
+      SERVER_VPN_IP:           10.8.0.1
+      DEVICE_BINDING_ENABLED:  "true"
+      MAX_SESSIONS_PER_USER:   1
+      ANOMALY_DETECTION_ENABLED: "true"
+      GEO_RESTRICTION_ENABLED: "false"
+      LOG_LEVEL:               info
+      DASHBOARD_ORIGIN:        https://${DOMAIN:-localhost}/admin
+    networks:
+      - remoteshield
+    expose:
+      - "3000"
+    volumes:
+      - ../backend/logs:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  # ── Nginx Reverse Proxy ──────────────────────────────────────────────────────
+  nginx:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.nginx
+    container_name: remoteshield-nginx
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - nginx_logs:/var/log/nginx
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - ../admin-dashboard:/var/www/remoteshield/admin-dashboard:ro
+    networks:
+      - remoteshield
+    environment:
+      DOMAIN: ${DOMAIN:-localhost}
