@@ -227,6 +227,16 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
 
+      - name: Scaffold Missing Android Native Files
+        run: |
+          # The android platform wrapper lost its gradle configuration in source control.
+          # We securely backup our custom AndroidManifest.xml, let flutter scaffold the V2 structure, and restore the manifest.
+          mkdir -p /tmp/rm_backup
+          cp android/app/src/main/AndroidManifest.xml /tmp/rm_backup/AndroidManifest.xml || true
+          flutter create --platforms=android .
+          cp /tmp/rm_backup/AndroidManifest.xml android/app/src/main/AndroidManifest.xml || true
+        working-directory: android
+
       - name: Get Flutter packages
         run: flutter pub get
         working-directory: android
