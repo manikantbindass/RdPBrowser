@@ -6,11 +6,14 @@
 
 **Enterprise-Grade Secure Remote Work Browser Platform**
 
-[![CI/CD](https://github.com/manikantbindass/RdPBrowser/actions/workflows/ci.yml/badge.svg)](https://github.com/manikantbindass/RdPBrowser/actions/workflows/ci.yml)
+[![CI/CD Pipeline](https://github.com/manikantbindass/RdPBrowser/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/manikantbindass/RdPBrowser/actions/workflows/ci.yml)
+[![Windows Build](https://github.com/manikantbindass/RdPBrowser/actions/workflows/ci.yml/badge.svg?branch=main&job=Desktop+-+Windows+Build)](https://github.com/manikantbindass/RdPBrowser/actions/workflows/ci.yml)
+[![Linux Build](https://github.com/manikantbindass/RdPBrowser/actions/workflows/ci.yml/badge.svg?branch=main&job=Desktop+-+Linux+Build)](https://github.com/manikantbindass/RdPBrowser/actions/workflows/ci.yml)
+[![Android Build](https://github.com/manikantbindass/RdPBrowser/actions/workflows/ci.yml/badge.svg?branch=main&job=Android+-+APK+Build)](https://github.com/manikantbindass/RdPBrowser/actions/workflows/ci.yml)
+[![Latest Release](https://img.shields.io/github/v/release/manikantbindass/RdPBrowser?label=Latest%20Release&color=brightgreen)](https://github.com/manikantbindass/RdPBrowser/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS%20%7C%20Android-brightgreen)](https://github.com/manikantbindass/RdPBrowser)
+[![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS%20%7C%20Android-brightgreen)](https://github.com/manikantbindass/RdPBrowser/releases)
 [![Security](https://img.shields.io/badge/Security-Enterprise%20Grade-red)](https://github.com/manikantbindass/RdPBrowser)
-[![npm package](https://img.shields.io/badge/npm-GitHub%20Packages-orange)](https://github.com/manikantbindass/RdPBrowser/pkgs/npm/remoteshield-x-backend)
 [![Docker](https://img.shields.io/badge/Docker-ghcr.io-blue)](https://github.com/manikantbindass/RdPBrowser/pkgs/container/remoteshield-backend)
 
 *All traffic routes through a central VPS with a static IP — tamper-resistant, cross-platform, deployable immediately.*
