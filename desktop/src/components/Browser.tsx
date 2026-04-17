@@ -3,6 +3,10 @@ import { invoke } from '@tauri-apps/api/core';
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { PhysicalPosition, LogicalSize } from '@tauri-apps/api/dpi';
 import TabBar from './TabBar';
+import ParticleBackground from './ParticleBackground';
+import RemoteDashboard from './RemoteDashboard';
+import Terminal from './Terminal';
+import CommandPalette from './CommandPalette';
 
 interface Tab { id: string; url: string; title: string; favicon: string; }
 interface Props { authToken: string; }
@@ -97,6 +101,7 @@ const Browser: React.FC<Props> = ({ authToken }) => {
   const [historyIdx, setHistoryIdx] = useState<Record<string, number>>({});
   const [isDark, setIsDark] = useState(true);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [cmdOpen, setCmdOpen] = useState(false);
   const [allHistory, setAllHistory] = useState<string[]>([]);
 
   const placeholderRef = useRef<HTMLDivElement>(null);
@@ -130,6 +135,18 @@ const Browser: React.FC<Props> = ({ authToken }) => {
     setError('');
   }, [activeTabId, activeTab?.url]);
 
+  // ─── Keyboard Shortcuts ───────────────────────────────────────
+  useEffect(() => {
+    const handleGlobalKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        setCmdOpen(true);
+      }
+    };
+    window.addEventListener('keydown', handleGlobalKey);
+    return () => window.removeEventListener('keydown', handleGlobalKey);
+  }, []);
+
   // ─── Get placeholder bounds ───────────────────────────────────
   const getRect = useCallback((): DOMRect | null => {
     return placeholderRef.current?.getBoundingClientRect() ?? null;
@@ -140,7 +157,9 @@ const Browser: React.FC<Props> = ({ authToken }) => {
     if (!rawUrl.trim()) return;
     let url = rawUrl.trim();
 
-    if (!url.includes('.') || url.includes(' ')) {
+    if (url.startsWith('ssh://')) {
+      // Keep as is
+    } else if (!url.includes('.') || url.includes(' ')) {
       url = `https://www.google.com/search?q=${encodeURIComponent(url)}`;
     } else if (!/^https?:\/\//i.test(url)) {
       url = 'https://' + url;
@@ -171,8 +190,8 @@ const Browser: React.FC<Props> = ({ authToken }) => {
       });
       setHistoryIdx(hi => ({ ...hi, [activeTabId]: (hi[activeTabId] ?? -1) + 1 }));
 
-      // Launch native WebviewWindow for this tab
-      if (isTauri()) {
+      // Launch native WebviewWindow for this tab (skip if SSH)
+      if (isTauri() && !url.startsWith('ssh://')) {
         // Small tick so React can re-render the placeholder div first
         await new Promise(r => setTimeout(r, 30));
         const rect = getRect();
@@ -253,10 +272,11 @@ const Browser: React.FC<Props> = ({ authToken }) => {
   };
 
   return (
-    <div className="browser-layout">
+    <div className="browser-layout" style={{ background: 'transparent' }}>
+      <ParticleBackground />
 
       {/* ── Tab Bar ── */}
-      <div className="browser-header-row" style={{ paddingBottom: 0, borderBottom: 'none' }}>
+      <div className="browser-header-row floating-nav" style={{ paddingBottom: 0, borderBottom: 'none' }}>
         <TabBar tabs={tabs} activeTabId={activeTabId} onSelect={setActiveTabId} onClose={closeTab} onNew={addTab} />
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingRight: 8 }}>
           <button className="nav-btn" onClick={() => setIsDark(d => !d)} title="Toggle Theme">
@@ -329,6 +349,9 @@ const Browser: React.FC<Props> = ({ authToken }) => {
             <button className="btn btn-ghost" style={{ marginTop: 16 }} onClick={() => setError('')}>← Go Back</button>
           </div>
 
+        ) : activeTab.url.startsWith('ssh://') ? (
+          <Terminal url={activeTab.url} />
+
         ) : activeTab.url ? (
           isTauri() ? (
             // Transparent placeholder — WebviewWindow overlays here via screen coords
@@ -347,23 +370,8 @@ const Browser: React.FC<Props> = ({ authToken }) => {
           )
 
         ) : (
-          // Home screen
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 24, position: 'relative', zIndex: 1 }}>
-            <span style={{ fontSize: 72, filter: 'drop-shadow(0 0 20px rgba(99,102,241,0.5))', animation: 'glow 3s infinite alternate' }}>🛡️</span>
-            <h1 style={{ fontFamily: 'Outfit, sans-serif', fontSize: 36, fontWeight: 800, margin: 0 }}>RemoteShield X</h1>
-            <p style={{ color: 'var(--text-muted)', margin: 0 }}>Secure • Encrypted • Enterprise Grade</p>
-            <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: 0, maxWidth: 420, textAlign: 'center' }}>
-              Type any URL above — <strong>YouTube, Google, Netflix</strong> — all open in a private native browser window
-            </p>
-            <div style={{ display: 'flex', gap: 12, marginTop: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
-              {['google.com','youtube.com','github.com','twitter.com','reddit.com'].map(site => (
-                <button key={site} className="btn btn-ghost" style={{ fontSize: 13, padding: '6px 14px' }}
-                  onClick={() => navigate(site)}>
-                  {site}
-                </button>
-              ))}
-            </div>
-          </div>
+          // Dashboard Screen
+          <RemoteDashboard onNavigate={navigate} vpnOn={vpnOn} />
         )}
       </div>
 
@@ -374,6 +382,8 @@ const Browser: React.FC<Props> = ({ authToken }) => {
         </span>
         <div className="badge badge-success">🟢 RemoteShield Active</div>
       </div>
+
+      <CommandPalette isOpen={cmdOpen} onClose={() => setCmdOpen(false)} onNavigate={navigate} />
 
     </div>
   );
