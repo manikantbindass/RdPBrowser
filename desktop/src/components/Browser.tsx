@@ -9,6 +9,13 @@ import Terminal from './Terminal';
 import CommandPalette from './CommandPalette';
 import Sidebar from './Sidebar';
 
+const ENGINES: Record<string, { name: string, url: string }> = {
+  laila: { name: 'Laila', url: 'https://laila.search/?q={query}' },
+  google: { name: 'Google', url: 'https://www.google.com/search?q={query}' },
+  duckduckgo: { name: 'DuckDuckGo', url: 'https://duckduckgo.com/?q={query}' },
+  bing: { name: 'Bing', url: 'https://www.bing.com/search?q={query}' }
+};
+
 interface Tab { id: string; url: string; title: string; favicon: string; }
 interface Props { authToken: string; }
 
@@ -104,6 +111,7 @@ const Browser: React.FC<Props> = ({ authToken }) => {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [cmdOpen, setCmdOpen] = useState(false);
   const [allHistory, setAllHistory] = useState<string[]>([]);
+  const [searchEngine, setSearchEngine] = useState(() => localStorage.getItem('searchEngine') || 'laila');
 
   const placeholderRef = useRef<HTMLDivElement>(null);
   const prevTabRef = useRef('1');
@@ -125,10 +133,14 @@ const Browser: React.FC<Props> = ({ authToken }) => {
     return () => clearInterval(t);
   }, []);
 
-  // ─── Theme ────────────────────────────────────────────────────
+  // ─── Theme & Settings ─────────────────────────────────────────
   useEffect(() => {
     document.body.classList.toggle('theme-dark', isDark);
   }, [isDark]);
+
+  useEffect(() => {
+    localStorage.setItem('searchEngine', searchEngine);
+  }, [searchEngine]);
 
   // ─── URL bar sync ─────────────────────────────────────────────
   useEffect(() => {
@@ -161,7 +173,8 @@ const Browser: React.FC<Props> = ({ authToken }) => {
     if (url.startsWith('ssh://')) {
       // Keep as is
     } else if (!url.includes('.') || url.includes(' ')) {
-      url = `https://www.google.com/search?q=${encodeURIComponent(url)}`;
+      const engine = ENGINES[searchEngine] || ENGINES.laila;
+      url = engine.url.replace('{query}', encodeURIComponent(url));
     } else if (!/^https?:\/\//i.test(url)) {
       url = 'https://' + url;
     }
@@ -272,10 +285,45 @@ const Browser: React.FC<Props> = ({ authToken }) => {
     if (activeTabId === id) setActiveTabId(rest[Math.max(0, idx - 1)].id);
   };
 
+  const sidebarToUrl: Record<string, string> = {
+    'home': '',
+    'history': 'rs://history',
+    'my-media': 'https://youtube.com',
+    'preset-library': 'https://github.com',
+    'text-to-image': 'https://midjourney.com',
+    'text-to-clip': 'https://runwayml.com',
+    'voices': 'https://elevenlabs.io',
+    'guide': 'https://docs.remoteshield.com',
+  };
+
+  const handleSidebarNav = (route: string) => {
+    if (route === 'logout') {
+      window.location.reload(); 
+      return;
+    }
+    if (route === 'history') {
+      setHistoryOpen(true);
+      return;
+    }
+    const target = sidebarToUrl[route] || '';
+    if (target) navigate(target);
+    else goHome();
+  };
+
+  let activeRoute = 'home';
+  const aUrl = activeTab?.url || '';
+  if (historyOpen) activeRoute = 'history';
+  else if (!aUrl) activeRoute = 'home';
+  else if (aUrl.includes('youtube.com')) activeRoute = 'my-media';
+  else if (aUrl.includes('github.com')) activeRoute = 'preset-library';
+  else if (aUrl.includes('midjourney.com')) activeRoute = 'text-to-image';
+  else if (aUrl.includes('runwayml.com')) activeRoute = 'text-to-clip';
+  else if (aUrl.includes('elevenlabs.io')) activeRoute = 'voices';
+
   return (
     <div className="app-container">
       <ParticleBackground />
-      <Sidebar activeRoute="home" onNavigate={() => {}} />
+      <Sidebar activeRoute={activeRoute} onNavigate={handleSidebarNav} />
 
       <div className="browser-layout" style={{ background: 'transparent' }}>
         {/* ── Floating Unified Navbar ── */}
@@ -287,10 +335,22 @@ const Browser: React.FC<Props> = ({ authToken }) => {
             <button className="nav-btn" onClick={() => setIsDark(d => !d)} title="Toggle Theme">
               {isDark ? '☀️' : '🌙'}
             </button>
-            <div className="extensions-bar">
-              <div className="ext-btn" title="Ad Shield">🛡️</div>
-              <div className="ext-btn" title="Passwords">🔑</div>
-              <div className="ext-btn puzzle" title="Extensions">🧩</div>
+            <div className="extensions-bar" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <select 
+                className="search-engine-select" 
+                value={searchEngine} 
+                onChange={(e) => setSearchEngine(e.target.value)}
+                style={{
+                  background: 'rgba(255,255,255,0.1)', color: 'var(--text-primary)',
+                  border: '1px solid rgba(255,255,255,0.2)', padding: '4px 8px',
+                  borderRadius: '16px', outline: 'none', fontSize: '12px', cursor: 'pointer'
+                }}
+              >
+                {Object.entries(ENGINES).map(([key, eng]) => (
+                  <option key={key} value={key} style={{ background: '#0a0a1a' }}>🔍 {eng.name}</option>
+                ))}
+              </select>
+              <div className="ext-btn" title="Settings">⚙️</div>
             </div>
           </div>
         </div>
@@ -328,7 +388,8 @@ const Browser: React.FC<Props> = ({ authToken }) => {
       </div>
 
       {/* ── History Drawer ── */}
-      <div className={`history-drawer ${historyOpen ? 'open' : ''}`}>
+      {historyOpen && <div className="history-backdrop" style={{position: 'fixed', inset: 0, zIndex: 998}} onClick={() => setHistoryOpen(false)} />}
+      <div className={`history-drawer ${historyOpen ? 'open' : ''}`} style={{zIndex: 999}}>
         <div className="history-header">
           <h2 className="history-title">Browsing History</h2>
           <button className="nav-btn" onClick={() => setHistoryOpen(false)}>✖</button>
