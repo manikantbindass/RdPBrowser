@@ -5,31 +5,22 @@ mod vpn;
 mod integrity;
 mod platform;
 
-use std::collections::HashMap;
 use std::sync::Arc;
-use tauri::{WindowEvent, Emitter, Manager, WebviewUrl, WebviewWindowBuilder};
-use tauri::{LogicalPosition, LogicalSize};
+use tauri::{WindowEvent, Emitter};
 use tokio::sync::Mutex;
 use log::{info, warn, error};
 
-/// Shared state accessible across all Tauri commands
 pub struct AppState {
     pub vpn_connected: Arc<Mutex<bool>>,
     pub server_url: String,
     pub auth_token: Arc<Mutex<Option<String>>>,
-    /// Registry of open tab webviews: tab_id -> true
-    pub tab_webviews: Arc<Mutex<HashMap<String, bool>>>,
 }
 
-// ─── Tauri Commands ───────────────────────────────────────────────────────────
-
-/// Check VPN connectivity status
 #[tauri::command]
 async fn check_vpn_status(state: tauri::State<'_, AppState>) -> Result<bool, String> {
     vpn::check_vpn_connected(&state.server_url).await
 }
 
-/// Perform navigation — validates URL with backend before allowing
 #[tauri::command]
 async fn request_navigate(
     url: String,
@@ -38,7 +29,6 @@ async fn request_navigate(
     let token = state.auth_token.lock().await;
     let token_ref = token.as_deref().ok_or("Not authenticated")?;
 
-    // Allow guest mode direct navigation
     if token_ref == "guest" {
         return Ok(serde_json::json!({ "allowed": true, "url": url }));
     }
@@ -60,96 +50,6 @@ async fn request_navigate(
     }
 }
 
-/// Create or navigate a native OS-level WebviewWindow for the given tab.
-/// This completely replaces the iframe — no X-Frame-Options restrictions apply.
-#[tauri::command]
-async fn webview_navigate(
-    tab_id: String,
-    url: String,
-    x: f64,
-    y: f64,
-    width: f64,
-    height: f64,
-    app: tauri::AppHandle,
-    state: tauri::State<'_, AppState>,
-) -> Result<(), String> {
-    let label = format!("tab_{}", tab_id);
-    let parsed: url::Url = url.parse().map_err(|e: url::ParseError| e.to_string())?;
-
-    // If webview already open for this tab, just navigate + reposition it
-    if let Some(existing) = app.get_webview_window(&label) {
-        let _ = existing.navigate(parsed);
-        existing.set_position(LogicalPosition::new(x, y)).ok();
-        existing.set_size(LogicalSize::new(width, height)).ok();
-        existing.show().ok();
-        return Ok(());
-    }
-
-    // Build a brand-new native child window with zero chrome (no title bar etc.)
-    WebviewWindowBuilder::new(&app, &label, WebviewUrl::External(parsed))
-        .inner_size(width, height)
-        .position(x, y)
-        .decorations(false)
-        .resizable(false)
-        .always_on_top(false)
-        .skip_taskbar(true)
-        .visible(true)
-        .build()
-        .map_err(|e| e.to_string())?;
-
-    let mut registry = state.tab_webviews.lock().await;
-    registry.insert(tab_id.clone(), true);
-
-    info!("✅ Native webview created: {label}");
-    Ok(())
-}
-
-/// Hide the native webview for a tab (e.g. when switching to a different tab)
-#[tauri::command]
-async fn webview_hide(tab_id: String, app: tauri::AppHandle) -> Result<(), String> {
-    let label = format!("tab_{}", tab_id);
-    if let Some(wv) = app.get_webview_window(&label) {
-        wv.hide().map_err(|e| e.to_string())?;
-    }
-    Ok(())
-}
-
-/// Show and reposition the native webview for a tab (e.g. when switching back to it)
-#[tauri::command]
-async fn webview_show(
-    tab_id: String,
-    x: f64,
-    y: f64,
-    width: f64,
-    height: f64,
-    app: tauri::AppHandle,
-) -> Result<(), String> {
-    let label = format!("tab_{}", tab_id);
-    if let Some(wv) = app.get_webview_window(&label) {
-        wv.set_position(LogicalPosition::new(x, y)).ok();
-        wv.set_size(LogicalSize::new(width, height)).ok();
-        wv.show().map_err(|e| e.to_string())?;
-    }
-    Ok(())
-}
-
-/// Destroy the native webview for a closed tab
-#[tauri::command]
-async fn webview_close(
-    tab_id: String,
-    app: tauri::AppHandle,
-    state: tauri::State<'_, AppState>,
-) -> Result<(), String> {
-    let label = format!("tab_{}", tab_id);
-    if let Some(wv) = app.get_webview_window(&label) {
-        wv.close().map_err(|e| e.to_string())?;
-    }
-    let mut registry = state.tab_webviews.lock().await;
-    registry.remove(&tab_id);
-    Ok(())
-}
-
-/// Store auth token securely
 #[tauri::command]
 async fn set_auth_token(
     token: String,
@@ -160,19 +60,15 @@ async fn set_auth_token(
     Ok(())
 }
 
-/// Get platform information
 #[tauri::command]
 fn get_platform_info() -> serde_json::Value {
     platform::get_info()
 }
 
-/// Perform app integrity check
 #[tauri::command]
 fn verify_integrity() -> Result<bool, String> {
     integrity::verify_app_integrity()
 }
-
-// ─── Main ─────────────────────────────────────────────────────────────────────
 
 fn main() {
     env_logger::init();
@@ -181,12 +77,10 @@ fn main() {
     match integrity::verify_app_integrity() {
         Ok(true)  => info!("✅ Integrity check passed"),
         Ok(false) => {
-            error!("❌ App integrity check FAILED — possible tampering detected");
+            error!("❌ App integrity check FAILED");
             std::process::exit(1);
         }
-        Err(e) => {
-            warn!("⚠️  Integrity check skipped in dev mode: {e}");
-        }
+        Err(e) => warn!("⚠️  Integrity check skipped in dev mode: {e}"),
     }
 
     let server_url = std::env::var("REMOTESHIELD_SERVER")
@@ -196,7 +90,6 @@ fn main() {
         vpn_connected: Arc::new(Mutex::new(false)),
         server_url: server_url.clone(),
         auth_token: Arc::new(Mutex::new(None)),
-        tab_webviews: Arc::new(Mutex::new(HashMap::new())),
     };
 
     tauri::Builder::default()
@@ -209,7 +102,6 @@ fn main() {
             let app_handle = app.handle().clone();
             let server = server_url.clone();
 
-            // Background VPN watchdog
             tauri::async_runtime::spawn(async move {
                 let mut was_connected = true;
                 loop {
@@ -217,7 +109,7 @@ fn main() {
                     let is_connected = vpn::check_vpn_connected(&server).await.unwrap_or(false);
 
                     if !is_connected && was_connected {
-                        warn!("VPN disconnected — blocking browser access");
+                        warn!("VPN disconnected");
                         let _ = app_handle.emit("vpn_status", serde_json::json!({
                             "connected": false,
                             "message": "VPN disconnected — browser blocked for security"
@@ -236,17 +128,11 @@ fn main() {
             Ok(())
         })
         .on_window_event(|_window, event| {
-            if let WindowEvent::DragDrop(_) = event {
-                // Silently reject drag-drop file execution
-            }
+            if let WindowEvent::DragDrop(_) = event {}
         })
         .invoke_handler(tauri::generate_handler![
             check_vpn_status,
             request_navigate,
-            webview_navigate,
-            webview_hide,
-            webview_show,
-            webview_close,
             set_auth_token,
             get_platform_info,
             verify_integrity,

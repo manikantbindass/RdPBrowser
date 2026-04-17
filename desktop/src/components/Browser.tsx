@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { invoke } from '@tauri-apps/api/core';
+import { Webview } from '@tauri-apps/api/webview';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import TabBar from './TabBar';
 
 interface Tab { id: string; url: string; title: string; favicon: string; }
@@ -7,9 +9,11 @@ interface Props { authToken: string; }
 
 const HOME_URL = 'about:blank';
 
-// Detect Tauri native window vs plain browser dev tab
 const isTauri = () =>
   typeof (window as Window & { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__ !== 'undefined';
+
+// Registry of native Webview instances keyed by tab ID
+const webviewRegistry = new Map<string, Webview>();
 
 const Browser: React.FC<Props> = ({ authToken }) => {
   const [tabs, setTabs] = useState<Tab[]>([
@@ -25,13 +29,13 @@ const Browser: React.FC<Props> = ({ authToken }) => {
   const [isDark, setIsDark] = useState(true);
   const [historyOpen, setHistoryOpen] = useState(false);
 
-  // The div that acts as the viewport placeholder for the native webview
+  // Placeholder div — the native Webview overlays on top of this exact area
   const webviewAreaRef = useRef<HTMLDivElement>(null);
   const prevTabIdRef = useRef<string>('1');
 
   const activeTab = tabs.find(t => t.id === activeTabId)!;
 
-  // ─── VPN poll ────────────────────────────────────────────────
+  // ─── VPN poll ─────────────────────────────────────────────────
   useEffect(() => {
     const poll = async () => {
       try { const ok = await invoke<boolean>('check_vpn_status'); setVpnOn(ok); }
@@ -42,32 +46,25 @@ const Browser: React.FC<Props> = ({ authToken }) => {
     return () => clearInterval(id);
   }, []);
 
-  // ─── Sync URL bar with active tab ────────────────────────────
+  // ─── Sync URL bar ─────────────────────────────────────────────
   useEffect(() => {
     setUrlInput(activeTab?.url === HOME_URL ? '' : activeTab?.url || '');
     setBlockedMsg('');
   }, [activeTabId, activeTab?.url]);
 
-  // ─── Theme sync ───────────────────────────────────────────────
+  // ─── Theme ────────────────────────────────────────────────────
   useEffect(() => {
     document.body.classList.toggle('theme-dark', isDark);
   }, [isDark]);
 
-  // ─── Get native webview area bounds ──────────────────────────
-  const getWebviewBounds = useCallback(() => {
+  // ─── Compute pixel bounds of the webview placeholder ──────────
+  const getBounds = useCallback(() => {
     if (!webviewAreaRef.current) return { x: 0, y: 0, width: 0, height: 0 };
-    const rect = webviewAreaRef.current.getBoundingClientRect();
-    const dpr = window.devicePixelRatio || 1;
-    // Convert CSS px to logical px (Tauri uses logical pixels)
-    return {
-      x: rect.left,
-      y: rect.top,
-      width: rect.width,
-      height: rect.height,
-    };
+    const r = webviewAreaRef.current.getBoundingClientRect();
+    return { x: Math.round(r.left), y: Math.round(r.top), width: Math.round(r.width), height: Math.round(r.height) };
   }, []);
 
-  // ─── Navigate ────────────────────────────────────────────────
+  // ─── Navigate ─────────────────────────────────────────────────
   const navigate = useCallback(async (rawUrl: string) => {
     if (!rawUrl.trim()) return;
     let url = rawUrl.trim();
@@ -82,8 +79,8 @@ const Browser: React.FC<Props> = ({ authToken }) => {
     setBlockedMsg('');
 
     try {
-      // In Tauri: validate via backend first, then open native webview
-      if (isTauri()) {
+      // Validate with backend only when authenticated (not guest)
+      if (isTauri() && authToken !== 'guest') {
         const result = await invoke<{ allowed: boolean; url: string }>('request_navigate', { url });
         if (!result.allowed) {
           setBlockedMsg('URL blocked by RemoteShield policy');
@@ -93,22 +90,32 @@ const Browser: React.FC<Props> = ({ authToken }) => {
         url = result.url;
       }
 
-      // Update tab state
+      // Update React tab state
       updateTab(activeTabId, { url, title: new URL(url).hostname });
       setHistory(h => [...h.slice(0, historyIdx + 1), url]);
       setHistoryIdx(i => i + 1);
 
-      // Launch / navigate the native WebviewWindow
       if (isTauri()) {
-        const bounds = getWebviewBounds();
-        await invoke('webview_navigate', {
-          tabId: activeTabId,
-          url,
-          x: bounds.x,
-          y: bounds.y,
-          width: bounds.width,
-          height: bounds.height,
-        });
+        const bounds = getBounds();
+        const existing = webviewRegistry.get(activeTabId);
+
+        if (existing) {
+          // Navigate existing native webview to the new URL
+          await existing.navigate(url);
+          await existing.setPosition({ type: 'Logical', x: bounds.x, y: bounds.y } as never);
+          await existing.setSize({ type: 'Logical', width: bounds.width, height: bounds.height } as never);
+        } else {
+          // Create a brand-new native OS webview embedded in the main window
+          const appWindow = getCurrentWindow();
+          const wv = new Webview(appWindow, `tab_${activeTabId}`, {
+            url,
+            x: bounds.x,
+            y: bounds.y,
+            width: bounds.width,
+            height: bounds.height,
+          });
+          webviewRegistry.set(activeTabId, wv);
+        }
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -116,34 +123,38 @@ const Browser: React.FC<Props> = ({ authToken }) => {
     } finally {
       setLoading(false);
     }
-  }, [activeTabId, historyIdx, getWebviewBounds]);
+  }, [activeTabId, historyIdx, getBounds, authToken]);
 
-  // ─── Tab switching: hide old, show new ───────────────────────
+  // ─── Tab switching — hide old, show new native webview ────────
   useEffect(() => {
     const prev = prevTabIdRef.current;
-    if (!isTauri() || prev === activeTabId) return;
+    if (!isTauri() || prev === activeTabId) {
+      prevTabIdRef.current = activeTabId;
+      return;
+    }
 
     const switchTabs = async () => {
-      // Hide the previously active tab's native webview
-      try { await invoke('webview_hide', { tabId: prev }); } catch { /* no webview exists yet */ }
+      // Collapse the previous tab's native webview to 0 size (hide it)
+      const prevWv = webviewRegistry.get(prev);
+      if (prevWv) {
+        try { await prevWv.setSize({ type: 'Logical', width: 0, height: 0 } as never); } catch { /* ok */ }
+      }
 
-      // Show the newly active tab's native webview if it has a URL
+      // Restore (show) the active tab's native webview
+      const activeWv = webviewRegistry.get(activeTabId);
       const tab = tabs.find(t => t.id === activeTabId);
-      if (tab && tab.url !== HOME_URL) {
-        const bounds = getWebviewBounds();
+      if (activeWv && tab && tab.url !== HOME_URL) {
+        const bounds = getBounds();
         try {
-          await invoke('webview_show', {
-            tabId: activeTabId,
-            x: bounds.x, y: bounds.y,
-            width: bounds.width, height: bounds.height,
-          });
-        } catch { /* webview not created yet, navigate will create it */ }
+          await activeWv.setSize({ type: 'Logical', width: bounds.width, height: bounds.height } as never);
+          await activeWv.setPosition({ type: 'Logical', x: bounds.x, y: bounds.y } as never);
+        } catch { /* ok */ }
       }
     };
 
     switchTabs();
     prevTabIdRef.current = activeTabId;
-  }, [activeTabId, tabs, getWebviewBounds]);
+  }, [activeTabId, tabs, getBounds]);
 
   const updateTab = (id: string, patch: Partial<Tab>) =>
     setTabs(ts => ts.map(t => t.id === id ? { ...t, ...patch } : t));
@@ -156,8 +167,10 @@ const Browser: React.FC<Props> = ({ authToken }) => {
 
   const closeTab = async (id: string) => {
     if (tabs.length === 1) return;
-    if (isTauri()) {
-      try { await invoke('webview_close', { tabId: id }); } catch { /* not yet created */ }
+    const wv = webviewRegistry.get(id);
+    if (wv) {
+      try { await wv.close(); } catch { /* ok */ }
+      webviewRegistry.delete(id);
     }
     const idx = tabs.findIndex(t => t.id === id);
     const remaining = tabs.filter(t => t.id !== id);
@@ -168,20 +181,24 @@ const Browser: React.FC<Props> = ({ authToken }) => {
   const canGoBack    = historyIdx > 0;
   const canGoForward = historyIdx < history.length - 1;
 
-  const goBack = () => {
+  const goBack = async () => {
     if (!canGoBack) return;
     const idx = historyIdx - 1;
     setHistoryIdx(idx);
-    updateTab(activeTabId, { url: history[idx] });
-    if (isTauri()) invoke('webview_navigate', { tabId: activeTabId, url: history[idx], ...getWebviewBounds() }).catch(() => {});
+    const url = history[idx];
+    updateTab(activeTabId, { url });
+    const wv = webviewRegistry.get(activeTabId);
+    if (wv) { try { await wv.navigate(url); } catch { /* ok */ } }
   };
 
-  const goForward = () => {
+  const goForward = async () => {
     if (!canGoForward) return;
     const idx = historyIdx + 1;
     setHistoryIdx(idx);
-    updateTab(activeTabId, { url: history[idx] });
-    if (isTauri()) invoke('webview_navigate', { tabId: activeTabId, url: history[idx], ...getWebviewBounds() }).catch(() => {});
+    const url = history[idx];
+    updateTab(activeTabId, { url });
+    const wv = webviewRegistry.get(activeTabId);
+    if (wv) { try { await wv.navigate(url); } catch { /* ok */ } }
   };
 
   const refresh = () => navigate(activeTab.url);
@@ -207,19 +224,20 @@ const Browser: React.FC<Props> = ({ authToken }) => {
       {/* Toolbar */}
       <div className="browser-header-row">
         <div className="browser-toolbar">
-          <button id="rs-btn-back"    className="nav-btn" title="Back"    onClick={goBack}    disabled={!canGoBack}>◄</button>
-          <button id="rs-btn-forward" className="nav-btn" title="Forward" onClick={goForward} disabled={!canGoForward}>►</button>
-          <button id="rs-btn-refresh" className="nav-btn" title="Refresh" onClick={refresh}   disabled={loading}>
-            {loading ? <div className="spinner" style={{width:16, height:16, borderWidth:2}}/> : '↻'}
+          <button id="rs-btn-back"    className="nav-btn" onClick={goBack}    disabled={!canGoBack}>◄</button>
+          <button id="rs-btn-forward" className="nav-btn" onClick={goForward} disabled={!canGoForward}>►</button>
+          <button id="rs-btn-refresh" className="nav-btn" onClick={refresh}   disabled={loading}>
+            {loading ? <div className="spinner" style={{width:16,height:16,borderWidth:2}}/> : '↻'}
           </button>
-          <button id="rs-btn-home" className="nav-btn" title="Home"
-            onClick={() => {
-              if (isTauri()) invoke('webview_close', { tabId: activeTabId }).catch(() => {});
+          <button id="rs-btn-home" className="nav-btn"
+            onClick={async () => {
+              const wv = webviewRegistry.get(activeTabId);
+              if (wv) { try { await wv.close(); } catch { /* ok */ } webviewRegistry.delete(activeTabId); }
               updateTab(activeTabId, { url: HOME_URL, title: 'New Tab' });
             }}>⌂</button>
 
           <div className="url-bar-container">
-            <div className={`vpn-dot ${vpnOn ? 'vpn-dot-on' : 'vpn-dot-off'}`} style={{ marginRight: 8 }} title={vpnOn ? 'VPN Active' : 'VPN Inactive'} />
+            <div className={`vpn-dot ${vpnOn ? 'vpn-dot-on' : 'vpn-dot-off'}`} style={{ marginRight: 8 }} />
             <input
               id="rs-url-bar"
               className="url-bar"
@@ -232,9 +250,7 @@ const Browser: React.FC<Props> = ({ authToken }) => {
             />
           </div>
 
-          <button className="nav-btn" style={{ fontSize: 18 }} title="History" onClick={() => setHistoryOpen(!historyOpen)}>
-            🕰️
-          </button>
+          <button className="nav-btn" style={{ fontSize: 18 }} onClick={() => setHistoryOpen(!historyOpen)}>🕰️</button>
         </div>
       </div>
 
@@ -254,7 +270,7 @@ const Browser: React.FC<Props> = ({ authToken }) => {
         </div>
       </div>
 
-      {/* Webview Area — in Tauri this is the placeholder the native WebviewWindow overlays */}
+      {/* Webview area */}
       <div className="webview-container">
         <div className="animated-bg" />
 
@@ -266,8 +282,8 @@ const Browser: React.FC<Props> = ({ authToken }) => {
             <button className="btn btn-ghost" onClick={() => setBlockedMsg('')}>← Go Back</button>
           </div>
         ) : activeTab.url !== HOME_URL ? (
-          // Native Tauri: transparent placeholder — the OS-level WebviewWindow renders over this exact area
-          // Browser dev tab: fallback to iframe so we can still test layout
+          // Transparent placeholder — the native Webview overlay renders here
+          // In browser dev tab: fallback iframe for layout testing
           isTauri() ? (
             <div
               ref={webviewAreaRef}
@@ -288,7 +304,7 @@ const Browser: React.FC<Props> = ({ authToken }) => {
             <span style={{ fontSize: 64, animation: 'glow 3s infinite alternate' }}>🛡️</span>
             <h1 style={{ fontFamily: 'Outfit', fontSize: 32, fontWeight: 700 }}>RemoteShield X</h1>
             <p style={{ color: 'var(--text-muted)' }}>Secure • Encrypted • Enterprise Grade</p>
-            <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Type any website — including YouTube, Google, Netflix — in the address bar above</p>
+            <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Type any site — YouTube, Google, Netflix — in the address bar above</p>
           </div>
         )}
       </div>

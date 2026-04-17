@@ -156,6 +156,13 @@ jobs:
         run: npm run tauri build
         working-directory: desktop
 
+      - name: Package tar.gz for Arch Linux
+        run: |
+          mkdir -p dist-arch
+          cp desktop/src-tauri/target/release/bundle/appimage/*.AppImage dist-arch/ || true
+          cp desktop/src-tauri/target/release/remoteshield-x dist-arch/ || true
+          tar -czf dist-arch/RemoteShield-Linux-Arch-x86_64.tar.gz -C dist-arch .
+
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -163,6 +170,7 @@ jobs:
           path: |
             desktop/src-tauri/target/release/bundle/deb/*.deb
             desktop/src-tauri/target/release/bundle/appimage/*.AppImage
+            dist-arch/RemoteShield-Linux-Arch-x86_64.tar.gz
           if-no-files-found: warn
 
 # ═══════════════════════════════════════════════════════════════════
@@ -414,8 +422,9 @@ jobs:
             |----------|------|-------|
             | 🪟 **Windows** | `RemoteShield.X_*_x64_en-US.msi` | Windows Installer (recommended) |
             | 🪟 **Windows** | `RemoteShield.X_*_x64-setup.exe` | NSIS Installer |
-            | 🐧 **Linux** | `remoteshield-x_*_amd64.deb` | Debian/Ubuntu/Arch (via AUR) |
-            | 🐧 **Linux (Arch)** | `remoteshield-x_*_amd64.AppImage` | Universal Linux — works on Arch, Fedora, etc. |
+            | 🐧 **Ubuntu/Debian** | `remoteshield-x_*_amd64.deb` | `sudo dpkg -i *.deb` |
+            | 🐧 **Linux Arch** | `RemoteShield-Linux-Arch-x86_64.tar.gz` | Extract + run binary, or use AppImage below |
+            | 🐧 **Linux Universal** | `remoteshield-x_*_amd64.AppImage` | Works on Arch, Fedora, openSUSE, etc. |
             | 🍎 **macOS** | `RemoteShield.X_*_universal.dmg` | Universal binary (M1/M2 + Intel) |
             | 🤖 **Android** | `app-arm64-v8a-release.apk` | ARM64 (most modern phones) |
             | 🤖 **Android** | `app-armeabi-v7a-release.apk` | ARMv7 (older phones) |
@@ -425,10 +434,11 @@ jobs:
 
             ### ⚙️ Requirements
             - **Windows**: Windows 10/11 x64 + WebView2 runtime (included)
-            - **Linux**: Modern distro with WebKit2GTK 4.1
-            - **Linux (Arch)**: `yay -S webkit2gtk-4.1` then run AppImage
+            - **Ubuntu/Debian**: Run `.deb` with `sudo dpkg -i *.deb`
+            - **Linux Arch**: `yay -S webkit2gtk-4.1` then extract the `.tar.gz` or run the `.AppImage`
+            - **Linux (AppImage)**: `chmod +x *.AppImage && ./RemoteShield*.AppImage`
             - **macOS**: macOS 10.15 Catalina or later (Intel + Apple Silicon)
-            - **Android**: Android 8.0+ (API 26+), ARMv8 or ARMv7
+            - **Android**: Android 8.0+ (API 26+), supports Android 14/15/16/17
 
             ### 🔒 Security
             All traffic routes through WireGuard VPN — configure your VPS endpoint in settings after first launch.
@@ -445,6 +455,7 @@ jobs:
             release-artifacts/RemoteShield-Windows-x64/*.exe
             release-artifacts/RemoteShield-Linux-x64/*.deb
             release-artifacts/RemoteShield-Linux-x64/*.AppImage
+            release-artifacts/RemoteShield-Linux-x64/*.tar.gz
             release-artifacts/RemoteShield-macOS-Universal/*.dmg
             release-artifacts/RemoteShield-Android/*.apk
           draft: false
