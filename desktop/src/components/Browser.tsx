@@ -7,6 +7,7 @@ import ParticleBackground from './ParticleBackground';
 import RemoteDashboard from './RemoteDashboard';
 import Terminal from './Terminal';
 import CommandPalette from './CommandPalette';
+import Sidebar from './Sidebar';
 
 interface Tab { id: string; url: string; title: string; favicon: string; }
 interface Props { authToken: string; }
@@ -272,10 +273,12 @@ const Browser: React.FC<Props> = ({ authToken }) => {
   };
 
   return (
-    <div className="browser-layout" style={{ background: 'transparent' }}>
+    <div className="app-container">
       <ParticleBackground />
+      <Sidebar activeRoute="home" onNavigate={() => {}} />
 
-      {/* ── Floating Unified Navbar ── */}
+      <div className="browser-layout" style={{ background: 'transparent' }}>
+        {/* ── Floating Unified Navbar ── */}
       <div className="floating-nav-container">
         {/* ── Tab Bar ── */}
         <div className="browser-header-row" style={{ paddingBottom: 0, borderBottom: 'none', background: 'transparent' }}>
@@ -389,7 +392,8 @@ const Browser: React.FC<Props> = ({ authToken }) => {
       <CommandPalette isOpen={cmdOpen} onClose={() => setCmdOpen(false)} onNavigate={navigate} />
 
     </div>
-  );
+  </div>
+);
 };
 
 export default Browser;
