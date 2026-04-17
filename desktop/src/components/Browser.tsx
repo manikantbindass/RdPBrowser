@@ -275,49 +275,52 @@ const Browser: React.FC<Props> = ({ authToken }) => {
     <div className="browser-layout" style={{ background: 'transparent' }}>
       <ParticleBackground />
 
-      {/* ── Tab Bar ── */}
-      <div className="browser-header-row floating-nav" style={{ paddingBottom: 0, borderBottom: 'none' }}>
-        <TabBar tabs={tabs} activeTabId={activeTabId} onSelect={setActiveTabId} onClose={closeTab} onNew={addTab} />
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingRight: 8 }}>
-          <button className="nav-btn" onClick={() => setIsDark(d => !d)} title="Toggle Theme">
-            {isDark ? '☀️' : '🌙'}
-          </button>
-          <div className="extensions-bar">
-            <div className="ext-btn" title="Ad Shield">🛡️</div>
-            <div className="ext-btn" title="Passwords">🔑</div>
-            <div className="ext-btn puzzle" title="Extensions">🧩</div>
+      {/* ── Floating Unified Navbar ── */}
+      <div className="floating-nav-container">
+        {/* ── Tab Bar ── */}
+        <div className="browser-header-row" style={{ paddingBottom: 0, borderBottom: 'none', background: 'transparent' }}>
+          <TabBar tabs={tabs} activeTabId={activeTabId} onSelect={setActiveTabId} onClose={closeTab} onNew={addTab} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingRight: 8 }}>
+            <button className="nav-btn" onClick={() => setIsDark(d => !d)} title="Toggle Theme">
+              {isDark ? '☀️' : '🌙'}
+            </button>
+            <div className="extensions-bar">
+              <div className="ext-btn" title="Ad Shield">🛡️</div>
+              <div className="ext-btn" title="Passwords">🔑</div>
+              <div className="ext-btn puzzle" title="Extensions">🧩</div>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* ── Toolbar ── */}
-      <div className="browser-header-row">
-        <div className="browser-toolbar">
-          <button id="rs-btn-back"    className="nav-btn" onClick={goBack}    disabled={!canBack}>◄</button>
-          <button id="rs-btn-forward" className="nav-btn" onClick={goForward} disabled={!canForward}>►</button>
-          <button id="rs-btn-refresh" className="nav-btn" onClick={refresh}   disabled={loading || !activeTab.url}>
-            {loading ? <div className="spinner" style={{ width: 14, height: 14, borderWidth: 2 }} /> : '↻'}
-          </button>
-          <button id="rs-btn-home"    className="nav-btn" onClick={goHome}    title="Home">⌂</button>
+        {/* ── Toolbar ── */}
+        <div className="browser-header-row" style={{ background: 'transparent', borderBottom: 'none', paddingTop: 0 }}>
+          <div className="browser-toolbar">
+            <button id="rs-btn-back"    className="nav-btn" onClick={goBack}    disabled={!canBack}>◄</button>
+            <button id="rs-btn-forward" className="nav-btn" onClick={goForward} disabled={!canForward}>►</button>
+            <button id="rs-btn-refresh" className="nav-btn" onClick={refresh}   disabled={loading || !activeTab.url}>
+              {loading ? <div className="spinner" style={{ width: 14, height: 14, borderWidth: 2 }} /> : '↻'}
+            </button>
+            <button id="rs-btn-home"    className="nav-btn" onClick={goHome}    title="Home">⌂</button>
 
-          <div className="url-bar-container">
-            <div className={`vpn-dot ${vpnOn ? 'vpn-dot-on' : 'vpn-dot-off'}`} style={{ marginRight: 8 }} title={vpnOn ? 'VPN Connected' : 'VPN Off'} />
-            <span style={{ fontSize: 12, marginRight: 6, opacity: 0.7 }}>🔒</span>
-            <input
-              id="rs-url-bar"
-              className="url-bar"
-              type="text"
-              value={urlInput}
-              onChange={e => setUrlInput(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter') navigate(urlInput); }}
-              onFocus={e => e.target.select()}
-              placeholder="Search or type a URL — google.com, youtube.com, any site..."
-              spellCheck={false}
-            />
-            <button className="nav-btn" style={{ marginLeft: 4 }} onClick={() => navigate(urlInput)} title="Go">→</button>
+            <div className="url-bar-container">
+              <div className={`vpn-dot ${vpnOn ? 'vpn-dot-on' : 'vpn-dot-off'}`} style={{ marginRight: 8 }} title={vpnOn ? 'VPN Connected' : 'VPN Off'} />
+              <span style={{ fontSize: 12, marginRight: 6, opacity: 0.7 }}>🔒</span>
+              <input
+                id="rs-url-bar"
+                className="url-bar"
+                type="text"
+                value={urlInput}
+                onChange={e => setUrlInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') navigate(urlInput); }}
+                onFocus={e => e.target.select()}
+                placeholder="Search or type a URL — google.com, youtube.com, any site..."
+                spellCheck={false}
+              />
+              <button className="nav-btn" style={{ marginLeft: 4 }} onClick={() => navigate(urlInput)} title="Go">→</button>
+            </div>
+
+            <button className="nav-btn" style={{ fontSize: 16 }} onClick={() => setHistoryOpen(h => !h)} title="History">🕰️</button>
           </div>
-
-          <button className="nav-btn" style={{ fontSize: 16 }} onClick={() => setHistoryOpen(h => !h)} title="History">🕰️</button>
         </div>
       </div>
 
