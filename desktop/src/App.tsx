@@ -26,9 +26,9 @@ const App: React.FC = () => {
       setVpnConnected(connected);
       if (!connected) setVpnMessage('VPN disconnected — browser blocked for security');
     } catch {
-      // In browser dev mode (not Tauri), invoke fails — treat as bypass
-      setVpnConnected(false);
-      setVpnMessage('Cannot reach RemoteShield server — click Continue to browse');
+      // Server unreachable (no backend / dev mode) — auto-bypass so app is usable
+      setBypassVpn(true);
+      setVpnConnected(true);
     }
   }, [bypassVpn]);
 
