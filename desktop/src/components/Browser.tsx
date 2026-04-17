@@ -30,18 +30,12 @@ function toScreenCoords(rect: DOMRect) {
   };
 }
 
-async function spawnTabWindow(tabId: string, url: string, rect: DOMRect) {
+async function spawnTabWindow(tabId: string, baseLabel: string, url: string, rect: DOMRect) {
   const { x, y, width, height } = toScreenCoords(rect);
-  const label = `tab-${tabId}`;
+  const label = `${baseLabel}-${Date.now()}`;
 
-  // Reuse existing window if it exists — just navigate + reposition
-  const existing = await WebviewWindow.getByLabel(label);
-  if (existing) {
-    await existing.setPosition(new PhysicalPosition(x, y));
-    await existing.setSize(new LogicalSize(width, height));
-    await existing.show();
-    return existing;
-  }
+  // Close any existing window for this tab so we can recreate it with a new URL
+  await closeTabWindow(tabId);
 
   const wv = new WebviewWindow(label, {
     url,
@@ -147,7 +141,7 @@ const Browser: React.FC<Props> = ({ authToken }) => {
     let url = rawUrl.trim();
 
     if (!url.includes('.') || url.includes(' ')) {
-      url = `https://www.bing.com/search?q=${encodeURIComponent(url)}`;
+      url = `https://www.google.com/search?q=${encodeURIComponent(url)}`;
     } else if (!/^https?:\/\//i.test(url)) {
       url = 'https://' + url;
     }
@@ -183,7 +177,7 @@ const Browser: React.FC<Props> = ({ authToken }) => {
         await new Promise(r => setTimeout(r, 30));
         const rect = getRect();
         if (!rect) { setError('Layout not ready — try again'); setLoading(false); return; }
-        await spawnTabWindow(activeTabId, url, rect);
+        await spawnTabWindow(activeTabId, `tab-${activeTabId}`, url, rect);
       }
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : String(e));
@@ -219,7 +213,7 @@ const Browser: React.FC<Props> = ({ authToken }) => {
     setTabs(ts => ts.map(t => t.id === activeTabId ? { ...t, url } : t));
     if (isTauri()) {
       const rect = getRect();
-      if (rect) await spawnTabWindow(activeTabId, url, rect);
+      if (rect) await spawnTabWindow(activeTabId, `tab-${activeTabId}`, url, rect);
     }
   };
 
@@ -231,7 +225,7 @@ const Browser: React.FC<Props> = ({ authToken }) => {
     setTabs(ts => ts.map(t => t.id === activeTabId ? { ...t, url } : t));
     if (isTauri()) {
       const rect = getRect();
-      if (rect) await spawnTabWindow(activeTabId, url, rect);
+      if (rect) await spawnTabWindow(activeTabId, `tab-${activeTabId}`, url, rect);
     }
   };
 
