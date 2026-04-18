@@ -9,6 +9,7 @@ import Terminal from './Terminal';
 import CommandPalette from './CommandPalette';
 import Sidebar from './Sidebar';
 import LailaSearch from './LailaSearch';
+import { HistoryDashboard, PlaceholderDashboard } from './NativeDashboards';
 import { MoreVertical, Settings, Trash2, Search as SearchIcon, Shield, Globe } from 'lucide-react';
 
 const ENGINES: Record<string, { name: string, url: string }> = {
@@ -253,6 +254,21 @@ const Browser: React.FC<Props> = ({ authToken }) => {
     prevTabRef.current = activeTabId;
   }, [activeTabId]); // eslint-disable-line
 
+  // ─── Sidebar Navigation: hide Webview when outside HOME ───────
+  useEffect(() => {
+    if (!isTauri()) return;
+    (async () => {
+      const tab = tabs.find(t => t.id === activeTabId);
+      if (sidebarRoute !== 'home') {
+        await hideTabWindow(activeTabId);
+      } else if (tab && tab.url && !tab.url.startsWith('ssh://') && !tab.url.startsWith('https://laila.search')) {
+        await new Promise(r => setTimeout(r, 40));
+        const rect = getRect();
+        if (rect) await showTabWindow(activeTabId, rect);
+      }
+    })();
+  }, [sidebarRoute, activeTabId, tabs, getRect]);
+
   // ─── History back / forward ───────────────────────────────────
   const goBack = async () => {
     if (!canBack) return;
@@ -409,7 +425,11 @@ const Browser: React.FC<Props> = ({ authToken }) => {
       <div className="webview-container" ref={placeholderRef}>
         <div className="animated-bg" />
 
-        {error ? (
+        {sidebarRoute === 'history' ? (
+          <HistoryDashboard history={allHistory} onNavigate={(url) => { navigate(url); setSidebarRoute('home'); }} />
+        ) : sidebarRoute !== 'home' ? (
+          <PlaceholderDashboard title={sidebarRoute.replace(/-/g, ' ').toUpperCase()} icon={<div />} />
+        ) : error ? (
           <div className="webview-blocked animate-fade" style={{ margin: 'auto', maxWidth: 480, marginTop: '8%', textAlign: 'center', padding: 32, background: 'var(--bg-glass)', borderRadius: 16 }}>
             <div style={{ fontSize: 48 }}>🚫</div>
             <h2 style={{ marginTop: 12 }}>Access Blocked</h2>
