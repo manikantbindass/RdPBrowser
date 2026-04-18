@@ -730,3 +730,149 @@ html, body, #root {
   background: rgba(255, 255, 255, 0.05);
   color: white;
 }
+/* -- Laila Search UI -- */
+.laila-search-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: transparent;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  align-items: center;
+}
+
+.laila-nav {
+  width: 100%;
+  max-width: 900px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 40px 20px 20px 20px;
+}
+
+.laila-brand {
+  font-family: 'Outfit', sans-serif;
+  font-size: 32px;
+  font-weight: 800;
+  color: #a855f7;
+  letter-spacing: -1px;
+}
+
+.laila-search-bar {
+  flex: 1;
+  display: flex;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.1);
+  border-radius: 99px;
+  overflow: hidden;
+  height: 48px;
+  transition: all 0.2s;
+}
+
+.laila-search-bar:focus-within {
+  border-color: #a855f7;
+  box-shadow: 0 0 30px rgba(168, 85, 247, 0.25);
+  background: rgba(15, 23, 42, 0.9);
+}
+
+.laila-search-bar input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: white;
+  padding: 0 24px;
+  font-size: 16px;
+  outline: none;
+  font-family: 'Inter', sans-serif;
+}
+
+.laila-search-bar button {
+  background: transparent;
+  border: none;
+  color: #a855f7;
+  padding: 0 20px;
+  cursor: pointer;
+}
+
+.laila-search-bar button:hover {
+  color: #d8b4fe;
+}
+
+.laila-content {
+  flex: 1;
+  width: 100%;
+  max-width: 900px;
+  padding: 0 20px 40px 80px;
+  overflow-y: auto;
+}
+
+.laila-loading {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  color: rgba(255, 255, 255, 0.6);
+  margin-top: 40px;
+}
+
+.laila-results {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  margin-top: 20px;
+}
+
+.laila-meta {
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.laila-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.laila-card-url {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 13px;
+  text-decoration: none;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.laila-card-url:hover {
+  text-decoration: underline;
+}
+
+.laila-card-title {
+  color: #a855f7;
+  font-size: 20px;
+  font-weight: 500;
+  text-decoration: none;
+  font-family: 'Outfit', sans-serif;
+  margin-bottom: 4px;
+}
+
+.laila-card-title:hover {
+  text-decoration: underline;
+  color: #d8b4fe;
+}
+
+.laila-card-snippet {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 14px;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.glow-text {
+  text-shadow: 0 0 10px rgba(168, 85, 247, 0.5);
+}

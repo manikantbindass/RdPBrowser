@@ -14,6 +14,7 @@ const winston = require('winston');
 const authRoutes = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
 const proxyRoutes = require('./routes/proxy');
+const lailaRoutes = require('./routes/laila');
 const { vpnCheck } = require('./middleware/vpnCheck');
 const { authenticateToken } = require('./middleware/auth');
 const { initDB } = require('./db/db');
@@ -106,6 +107,7 @@ app.use('/api', vpnCheck);
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', authenticateToken, adminRoutes);
 app.use('/api/proxy', authenticateToken, proxyRoutes);
+app.use('/api/laila', lailaRoutes);
 
 // ─── 404 Handler ─────────────────────────────────────────────────────────────
 app.use((req, res) => {

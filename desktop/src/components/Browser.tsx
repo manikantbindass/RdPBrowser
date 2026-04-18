@@ -8,6 +8,7 @@ import RemoteDashboard from './RemoteDashboard';
 import Terminal from './Terminal';
 import CommandPalette from './CommandPalette';
 import Sidebar from './Sidebar';
+import LailaSearch from './LailaSearch';
 import { MoreVertical, Settings, Trash2, Search as SearchIcon, Shield, Globe } from 'lucide-react';
 
 const ENGINES: Record<string, { name: string, url: string }> = {
@@ -112,7 +113,7 @@ const Browser: React.FC<Props> = ({ authToken }) => {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [cmdOpen, setCmdOpen] = useState(false);
   const [allHistory, setAllHistory] = useState<string[]>([]);
-  const [searchEngine, setSearchEngine] = useState<string>(() => localStorage.getItem('searchEngine') || 'laila');
+  const [searchEngine, setSearchEngine] = useState<string>(() => localStorage.getItem('searchEngine') || 'google');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [sidebarRoute, setSidebarRoute] = useState('home');
 
@@ -184,7 +185,7 @@ const Browser: React.FC<Props> = ({ authToken }) => {
     if (url.startsWith('ssh://')) {
       // Keep as is
     } else if (!url.includes('.') || url.includes(' ')) {
-      const engine = ENGINES[searchEngine] || ENGINES.laila;
+      const engine = ENGINES[searchEngine] || ENGINES.google;
       url = engine.url.replace('{query}', encodeURIComponent(url));
     } else if (!/^https?:\/\//i.test(url)) {
       url = 'https://' + url;
@@ -406,6 +407,12 @@ const Browser: React.FC<Props> = ({ authToken }) => {
 
         ) : activeTab.url.startsWith('ssh://') ? (
           <Terminal url={activeTab.url} />
+
+        ) : activeTab.url.startsWith('https://laila.search') ? (
+          <LailaSearch 
+            query={new URLSearchParams(activeTab.url.split('?')[1] || '').get('q') || ''} 
+            onNavigate={navigate} 
+          />
 
         ) : activeTab.url ? (
           isTauri() ? (
