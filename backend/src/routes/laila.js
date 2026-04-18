@@ -69,7 +69,7 @@ router.get('/search', async (req, res) => {
     // Send the structured data safely to the Laila Frontend UI
     res.json({
       meta: {
-        provider: 'Laila Engine 2.0 (DDG+Wiki Neural Net)',
+        provider: 'Laila Neural Net',
         query,
         count: uniqueResults.length
       },

@@ -54,7 +54,17 @@ const LailaSearch: React.FC<Props> = ({ query, onNavigate }) => {
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchQuery.trim()) performSearch(searchQuery);
+    const q = searchQuery.trim();
+    if (!q) return;
+
+    // Independent Browser Smart Routing
+    const isDomain = /^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(?:\/.*)?$/.test(q);
+    if (isDomain || q.startsWith('http://') || q.startsWith('https://')) {
+      onNavigate(q.startsWith('http') ? q : `https://${q}`);
+      return;
+    }
+
+    performSearch(q);
   };
 
   return (

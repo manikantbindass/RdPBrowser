@@ -458,13 +458,13 @@ jobs:
             cd ../docker && docker-compose up -d
             ```
           files: |
-            release-artifacts/RemoteShield-Windows-x64/*.msi
-            release-artifacts/RemoteShield-Windows-x64/*.exe
-            release-artifacts/RemoteShield-Linux-x64/*.deb
-            release-artifacts/RemoteShield-Linux-x64/*.AppImage
-            release-artifacts/RemoteShield-Linux-x64/*.tar.gz
-            release-artifacts/RemoteShield-macOS-Universal/*.dmg
-            release-artifacts/RemoteShield-Android/*.apk
+            release-artifacts/RemoteShield-Windows-x64/**/*.msi
+            release-artifacts/RemoteShield-Windows-x64/**/*.exe
+            release-artifacts/RemoteShield-Linux-x64/**/*.deb
+            release-artifacts/RemoteShield-Linux-x64/**/*.AppImage
+            release-artifacts/RemoteShield-Linux-x64/**/*.tar.gz
+            release-artifacts/RemoteShield-macOS-Universal/**/*.dmg
+            release-artifacts/RemoteShield-Android/**/*.apk
           draft: false
           prerelease: false
           token: ${{ secrets.GITHUB_TOKEN }}
