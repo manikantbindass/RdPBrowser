@@ -25,8 +25,6 @@ router.get('/search', async (req, res) => {
     // The link is usually on the first TR (class result-url or just an anchor)
     // The snippet is on the next TR.
     $('table tr').each((i, el) => {
-      const titleEl = $(el).find('.result-snippet').parent().prev().find('.result-title');
-      const linkEl = $(el).find('.result-snippet').parent().prev().find('.result-url');
       const snippetEl = $(el).find('.result-snippet');
 
       if (snippetEl.length) {

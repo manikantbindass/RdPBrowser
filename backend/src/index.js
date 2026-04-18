@@ -69,14 +69,17 @@ app.use(helmet({
 
 app.use(cors({
   origin: (origin, cb) => {
-    // Only allow requests from VPN subnet or admin dashboard or Tauri Desktop client
-    const allowed = [
-      process.env.DASHBOARD_ORIGIN || 'http://localhost:4000',
-      'http://localhost:1420',
-      'http://localhost:3001',
-      'tauri://localhost'
-    ];
-    if (!origin || allowed.includes(origin) || origin.startsWith('http://127.0.0.1')) return cb(null, true);
+    // During local dev or Tauri, allow local/Tauri origins dynamically.
+    if (!origin) return cb(null, true);
+    if (
+      origin.startsWith('http://localhost') || 
+      origin.startsWith('http://127.0.0.1') || 
+      origin.includes('tauri.localhost') || 
+      origin === 'tauri://localhost' ||
+      origin === (process.env.DASHBOARD_ORIGIN || 'http://localhost:4000')
+    ) {
+      return cb(null, true);
+    }
     cb(new Error('CORS: Origin not allowed'));
   },
   credentials: true,
