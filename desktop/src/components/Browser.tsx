@@ -216,13 +216,17 @@ const Browser: React.FC<Props> = ({ authToken }) => {
       });
       setHistoryIdx(hi => ({ ...hi, [activeTabId]: (hi[activeTabId] ?? -1) + 1 }));
 
-      // Launch native WebviewWindow for this tab (skip if SSH)
-      if (isTauri() && !url.startsWith('ssh://')) {
+      // Launch native WebviewWindow for this tab (skip if SSH or Laila)
+      if (isTauri() && !url.startsWith('ssh://') && !url.startsWith('https://laila.search')) {
         // Small tick so React can re-render the placeholder div first
         await new Promise(r => setTimeout(r, 30));
         const rect = getRect();
         if (!rect) { setError('Layout not ready — try again'); setLoading(false); return; }
         await spawnTabWindow(activeTabId, `tab-${activeTabId}`, url, rect);
+      } else if (isTauri()) {
+        // We are navigating to a native React component (SSH Terminal or Laila Search). 
+        // We must destroy the native Tauri webview overlay so it doesn't block the UI!
+        await closeTabWindow(activeTabId);
       }
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : String(e));
@@ -239,7 +243,7 @@ const Browser: React.FC<Props> = ({ authToken }) => {
     (async () => {
       await hideTabWindow(prev);
       const tab = tabs.find(t => t.id === activeTabId);
-      if (tab && tab.url) {
+      if (tab && tab.url && !tab.url.startsWith('ssh://') && !tab.url.startsWith('https://laila.search')) {
         await new Promise(r => setTimeout(r, 40)); // let layout settle
         const rect = getRect();
         if (rect) await showTabWindow(activeTabId, rect);
@@ -257,8 +261,12 @@ const Browser: React.FC<Props> = ({ authToken }) => {
     setHistoryIdx(hi => ({ ...hi, [activeTabId]: idx }));
     setTabs(ts => ts.map(t => t.id === activeTabId ? { ...t, url } : t));
     if (isTauri()) {
-      const rect = getRect();
-      if (rect) await spawnTabWindow(activeTabId, `tab-${activeTabId}`, url, rect);
+      if (url.startsWith('ssh://') || url.startsWith('https://laila.search')) {
+        await closeTabWindow(activeTabId);
+      } else {
+        const rect = getRect();
+        if (rect) await spawnTabWindow(activeTabId, `tab-${activeTabId}`, url, rect);
+      }
     }
   };
 
@@ -269,8 +277,12 @@ const Browser: React.FC<Props> = ({ authToken }) => {
     setHistoryIdx(hi => ({ ...hi, [activeTabId]: idx }));
     setTabs(ts => ts.map(t => t.id === activeTabId ? { ...t, url } : t));
     if (isTauri()) {
-      const rect = getRect();
-      if (rect) await spawnTabWindow(activeTabId, `tab-${activeTabId}`, url, rect);
+      if (url.startsWith('ssh://') || url.startsWith('https://laila.search')) {
+        await closeTabWindow(activeTabId);
+      } else {
+        const rect = getRect();
+        if (rect) await spawnTabWindow(activeTabId, `tab-${activeTabId}`, url, rect);
+      }
     }
   };
 

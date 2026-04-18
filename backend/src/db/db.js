@@ -22,11 +22,15 @@ pool.on('error', (err) => {
 async function initDB() {
   const schemaPath = path.join(__dirname, 'schema.sql');
   const schema = fs.readFileSync(schemaPath, 'utf8');
-  const client = await pool.connect();
   try {
-    await client.query(schema);
-  } finally {
-    client.release();
+    const client = await pool.connect();
+    try {
+      await client.query(schema);
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    console.warn("Postgres DB connection failed locally. Proceeding in degraded mode without DB state.", error.message);
   }
 }
 

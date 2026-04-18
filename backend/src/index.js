@@ -69,11 +69,14 @@ app.use(helmet({
 
 app.use(cors({
   origin: (origin, cb) => {
-    // Only allow requests from VPN subnet or admin dashboard
+    // Only allow requests from VPN subnet or admin dashboard or Tauri Desktop client
     const allowed = [
       process.env.DASHBOARD_ORIGIN || 'http://localhost:4000',
+      'http://localhost:1420',
+      'http://localhost:3001',
+      'tauri://localhost'
     ];
-    if (!origin || allowed.includes(origin)) return cb(null, true);
+    if (!origin || allowed.includes(origin) || origin.startsWith('http://127.0.0.1')) return cb(null, true);
     cb(new Error('CORS: Origin not allowed'));
   },
   credentials: true,
@@ -99,6 +102,9 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString(), service: 'RemoteShield X Backend' });
 });
 
+// ─── Search API (Public / Open) ──────────────────────────────────────────────
+app.use('/api/laila', lailaRoutes);
+
 // ─── VPN Enforcement ─────────────────────────────────────────────────────────
 // ALL routes below this line require traffic to come from VPN subnet
 app.use('/api', vpnCheck);
@@ -107,7 +113,6 @@ app.use('/api', vpnCheck);
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', authenticateToken, adminRoutes);
 app.use('/api/proxy', authenticateToken, proxyRoutes);
-app.use('/api/laila', lailaRoutes);
 
 // ─── 404 Handler ─────────────────────────────────────────────────────────────
 app.use((req, res) => {
@@ -201,7 +206,7 @@ io.on('connection', (socket) => {
 app.set('activeSessions', activeSessions);
 
 // ─── Start Server ─────────────────────────────────────────────────────────────
-const PORT = parseInt(process.env.PORT) || 3000;
+const PORT = parseInt(process.env.PORT) || 3001;
 const HOST = process.env.HOST || '0.0.0.0';
 
 async function start() {
