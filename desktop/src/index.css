@@ -659,3 +659,74 @@ html, body, #root {
 }
 
 .webview-container { flex: 1; position: relative; background: transparent; overflow: hidden; display: flex; flex-direction: column; }
+/* Settings Dropdown */
+.settings-dropdown {
+  position: absolute;
+  top: 40px;
+  right: 8px;
+  width: 220px;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  padding: 8px 0;
+}
+
+.settings-group {
+  padding: 8px 16px;
+}
+
+.settings-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 6px;
+  letter-spacing: 0.5px;
+}
+
+.cyber-select {
+  width: 100%;
+  padding: 6px 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+  border-radius: 4px;
+  outline: none;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.cyber-select option {
+  background: #0f172a;
+  color: white;
+}
+
+.settings-divider {
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  margin: 4px 0;
+}
+
+.settings-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s;
+  text-align: left;
+}
+
+.settings-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: white;
+}

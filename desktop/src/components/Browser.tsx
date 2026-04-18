@@ -8,6 +8,7 @@ import RemoteDashboard from './RemoteDashboard';
 import Terminal from './Terminal';
 import CommandPalette from './CommandPalette';
 import Sidebar from './Sidebar';
+import { MoreVertical, Settings, Trash2, Search as SearchIcon, Shield, Globe } from 'lucide-react';
 
 const ENGINES: Record<string, { name: string, url: string }> = {
   laila: { name: 'Laila', url: 'https://laila.search/?q={query}' },
@@ -111,7 +112,9 @@ const Browser: React.FC<Props> = ({ authToken }) => {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [cmdOpen, setCmdOpen] = useState(false);
   const [allHistory, setAllHistory] = useState<string[]>([]);
-  const [searchEngine, setSearchEngine] = useState(() => localStorage.getItem('searchEngine') || 'laila');
+  const [searchEngine, setSearchEngine] = useState<string>(() => localStorage.getItem('searchEngine') || 'laila');
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [sidebarRoute, setSidebarRoute] = useState('home');
 
   const placeholderRef = useRef<HTMLDivElement>(null);
   const prevTabRef = useRef('1');
@@ -133,14 +136,10 @@ const Browser: React.FC<Props> = ({ authToken }) => {
     return () => clearInterval(t);
   }, []);
 
-  // ─── Theme & Settings ─────────────────────────────────────────
+  // ─── Theme ────────────────────────────────────────────────────
   useEffect(() => {
     document.body.classList.toggle('theme-dark', isDark);
   }, [isDark]);
-
-  useEffect(() => {
-    localStorage.setItem('searchEngine', searchEngine);
-  }, [searchEngine]);
 
   // ─── URL bar sync ─────────────────────────────────────────────
   useEffect(() => {
@@ -159,6 +158,18 @@ const Browser: React.FC<Props> = ({ authToken }) => {
     window.addEventListener('keydown', handleGlobalKey);
     return () => window.removeEventListener('keydown', handleGlobalKey);
   }, []);
+
+  // ─── Auto-hide History on Outside Click ────────────────────────
+  useEffect(() => {
+    if (!historyOpen) return;
+    const handleOutside = (e: MouseEvent) => {
+      if (!(e.target as HTMLElement).closest('.history-drawer') && !(e.target as HTMLElement).closest('.rs-btn-history')) {
+        setHistoryOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutside);
+    return () => document.removeEventListener('mousedown', handleOutside);
+  }, [historyOpen]);
 
   // ─── Get placeholder bounds ───────────────────────────────────
   const getRect = useCallback((): DOMRect | null => {
@@ -217,7 +228,7 @@ const Browser: React.FC<Props> = ({ authToken }) => {
     } finally {
       setLoading(false);
     }
-  }, [activeTabId, authToken, historyIdx, getRect]);
+  }, [activeTabId, authToken, historyIdx, getRect, searchEngine]);
 
   // ─── Tab switching: hide old, show new ────────────────────────
   useEffect(() => {
@@ -285,45 +296,10 @@ const Browser: React.FC<Props> = ({ authToken }) => {
     if (activeTabId === id) setActiveTabId(rest[Math.max(0, idx - 1)].id);
   };
 
-  const sidebarToUrl: Record<string, string> = {
-    'home': '',
-    'history': 'rs://history',
-    'my-media': 'https://youtube.com',
-    'preset-library': 'https://github.com',
-    'text-to-image': 'https://midjourney.com',
-    'text-to-clip': 'https://runwayml.com',
-    'voices': 'https://elevenlabs.io',
-    'guide': 'https://docs.remoteshield.com',
-  };
-
-  const handleSidebarNav = (route: string) => {
-    if (route === 'logout') {
-      window.location.reload(); 
-      return;
-    }
-    if (route === 'history') {
-      setHistoryOpen(true);
-      return;
-    }
-    const target = sidebarToUrl[route] || '';
-    if (target) navigate(target);
-    else goHome();
-  };
-
-  let activeRoute = 'home';
-  const aUrl = activeTab?.url || '';
-  if (historyOpen) activeRoute = 'history';
-  else if (!aUrl) activeRoute = 'home';
-  else if (aUrl.includes('youtube.com')) activeRoute = 'my-media';
-  else if (aUrl.includes('github.com')) activeRoute = 'preset-library';
-  else if (aUrl.includes('midjourney.com')) activeRoute = 'text-to-image';
-  else if (aUrl.includes('runwayml.com')) activeRoute = 'text-to-clip';
-  else if (aUrl.includes('elevenlabs.io')) activeRoute = 'voices';
-
   return (
     <div className="app-container">
       <ParticleBackground />
-      <Sidebar activeRoute={activeRoute} onNavigate={handleSidebarNav} />
+      <Sidebar activeRoute={sidebarRoute} onNavigate={setSidebarRoute} />
 
       <div className="browser-layout" style={{ background: 'transparent' }}>
         {/* ── Floating Unified Navbar ── */}
@@ -331,27 +307,40 @@ const Browser: React.FC<Props> = ({ authToken }) => {
         {/* ── Tab Bar ── */}
         <div className="browser-header-row" style={{ paddingBottom: 0, borderBottom: 'none', background: 'transparent' }}>
           <TabBar tabs={tabs} activeTabId={activeTabId} onSelect={setActiveTabId} onClose={closeTab} onNew={addTab} />
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingRight: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingRight: 8, position: 'relative' }}>
             <button className="nav-btn" onClick={() => setIsDark(d => !d)} title="Toggle Theme">
               {isDark ? '☀️' : '🌙'}
             </button>
-            <div className="extensions-bar" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <select 
-                className="search-engine-select" 
-                value={searchEngine} 
-                onChange={(e) => setSearchEngine(e.target.value)}
-                style={{
-                  background: 'rgba(255,255,255,0.1)', color: 'var(--text-primary)',
-                  border: '1px solid rgba(255,255,255,0.2)', padding: '4px 8px',
-                  borderRadius: '16px', outline: 'none', fontSize: '12px', cursor: 'pointer'
-                }}
-              >
-                {Object.entries(ENGINES).map(([key, eng]) => (
-                  <option key={key} value={key} style={{ background: '#0a0a1a' }}>🔍 {eng.name}</option>
-                ))}
-              </select>
-              <div className="ext-btn" title="Settings">⚙️</div>
-            </div>
+            <button className="nav-btn rs-btn-settings" onClick={() => setSettingsOpen(!settingsOpen)} title="Menu">
+              <MoreVertical size={16} />
+            </button>
+            
+            {/* Setting Dropdown */}
+            {settingsOpen && (
+              <div className="settings-dropdown">
+                <div className="settings-group">
+                  <div className="settings-label">Search Engine</div>
+                  <select 
+                    value={searchEngine} 
+                    onChange={e => { 
+                      const val = e.target.value;
+                      setSearchEngine(val); 
+                      localStorage.setItem('searchEngine', val);
+                      setSettingsOpen(false);
+                    }}
+                    className="cyber-select"
+                  >
+                    {Object.entries(ENGINES).map(([key, eng]) => (
+                      <option key={key} value={key}>{eng.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <hr className="settings-divider" />
+                <button className="settings-item"><Settings size={14}/> Settings</button>
+                <button className="settings-item" onClick={() => { setAllHistory([]); setHistoryIdx({}); setHistoryStack({}); setSettingsOpen(false); }}><Trash2 size={14}/> Clear Data</button>
+                <button className="settings-item" onClick={() => setVpnOn(!vpnOn)}><Shield size={14}/> Toggle VPN</button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -382,14 +371,13 @@ const Browser: React.FC<Props> = ({ authToken }) => {
               <button className="nav-btn" style={{ marginLeft: 4 }} onClick={() => navigate(urlInput)} title="Go">→</button>
             </div>
 
-            <button className="nav-btn" style={{ fontSize: 16 }} onClick={() => setHistoryOpen(h => !h)} title="History">🕰️</button>
+            <button className="nav-btn rs-btn-history" style={{ fontSize: 16 }} onClick={() => setHistoryOpen(h => !h)} title="History">🕰️</button>
           </div>
         </div>
       </div>
 
       {/* ── History Drawer ── */}
-      {historyOpen && <div className="history-backdrop" style={{position: 'fixed', inset: 0, zIndex: 998}} onClick={() => setHistoryOpen(false)} />}
-      <div className={`history-drawer ${historyOpen ? 'open' : ''}`} style={{zIndex: 999}}>
+      <div className={`history-drawer ${historyOpen ? 'open' : ''}`}>
         <div className="history-header">
           <h2 className="history-title">Browsing History</h2>
           <button className="nav-btn" onClick={() => setHistoryOpen(false)}>✖</button>

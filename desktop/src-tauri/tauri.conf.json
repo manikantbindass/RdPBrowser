@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/schema.json",
   "productName": "RemoteShield X",
-  "version": "2.2.3",
+  "version": "2.2.4",
   "identifier": "com.remoteshieldx.browser",
   "build": {
     "beforeDevCommand": "npm run dev",
