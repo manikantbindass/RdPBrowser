@@ -1,6 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { Search as SearchIcon, ExternalLink, Zap } from 'lucide-react';
 
+const LailaLogo = () => (
+  <svg width="40" height="40" viewBox="0 0 24 24" style={{ marginRight: 16 }}>
+    <defs>
+      <linearGradient id="vg1" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stopColor="#534AB7"/>
+        <stop offset="100%" stopColor="#1D9E75"/>
+      </linearGradient>
+    </defs>
+    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z" fill="url(#vg1)"/>
+  </svg>
+);
+
 interface Props {
   query: string;
   onNavigate: (url: string) => void;
@@ -48,8 +60,9 @@ const LailaSearch: React.FC<Props> = ({ query, onNavigate }) => {
   return (
     <div className="laila-search-container animate-fade">
       {/* ── Navbar ── */}
-      <div className="laila-nav">
-        <div className="laila-brand glow-text">Laila</div>
+      <div className="laila-nav" style={{ display: 'flex', alignItems: 'center' }}>
+        <LailaLogo />
+        <div className="laila-brand glow-text" style={{ fontSize: '2rem', backgroundImage: 'linear-gradient(135deg, #534AB7 0%, #1D9E75 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: 700, marginRight: '40px' }}>Laila</div>
         <form className="laila-search-bar" onSubmit={handleSearchSubmit}>
           <input 
             type="text" 
