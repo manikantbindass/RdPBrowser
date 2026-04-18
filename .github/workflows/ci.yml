@@ -245,6 +245,11 @@ jobs:
           cp android/app/src/main/AndroidManifest.xml /tmp/rm_backup/AndroidManifest.xml || true
           flutter create --platforms=android .
           cp /tmp/rm_backup/AndroidManifest.xml android/app/src/main/AndroidManifest.xml || true
+          
+          # Force Android 14 compatibility to fix crashes on OnePlus/Samsung
+          sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 26/' android/app/build.gradle || true
+          sed -i 's/targetSdkVersion flutter.targetSdkVersion/targetSdkVersion 34/' android/app/build.gradle || true
+          sed -i 's/compileSdkVersion flutter.compileSdkVersion/compileSdkVersion 34/' android/app/build.gradle || true
         working-directory: android
 
       - name: Get Flutter packages
