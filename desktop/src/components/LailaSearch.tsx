@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search as SearchIcon, ExternalLink, Zap } from 'lucide-react';
+import { Search as SearchIcon } from 'lucide-react';
 
 const LailaLogo = () => (
   <svg width="40" height="40" viewBox="0 0 24 24" style={{ marginRight: 16 }}>
