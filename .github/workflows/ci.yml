@@ -237,19 +237,15 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
 
-      - name: Scaffold Missing Android Native Files
+      - name: Verify Android Gradle Files
         run: |
-          # The android platform wrapper lost its gradle configuration in source control.
-          # We securely backup our custom AndroidManifest.xml, let flutter scaffold the V2 structure, and restore the manifest.
-          mkdir -p /tmp/rm_backup
-          cp android/app/src/main/AndroidManifest.xml /tmp/rm_backup/AndroidManifest.xml || true
-          flutter create --platforms=android .
-          cp /tmp/rm_backup/AndroidManifest.xml android/app/src/main/AndroidManifest.xml || true
-          
-          # Force Android 14 compatibility to fix crashes on OnePlus/Samsung
-          sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 26/' android/app/build.gradle || true
-          sed -i 's/targetSdkVersion flutter.targetSdkVersion/targetSdkVersion 34/' android/app/build.gradle || true
-          sed -i 's/compileSdkVersion flutter.compileSdkVersion/compileSdkVersion 34/' android/app/build.gradle || true
+          # Gradle files now live in source control — just verify they exist
+          test -f android/build.gradle || { echo "ERROR: android/build.gradle missing"; exit 1; }
+          test -f android/app/build.gradle || { echo "ERROR: android/app/build.gradle missing"; exit 1; }
+          test -f android/settings.gradle || { echo "ERROR: android/settings.gradle missing"; exit 1; }
+          echo "✅ All Android Gradle files present"
+          grep -q "compileSdk 35" android/app/build.gradle && echo "✅ compileSdk 35 (Android 16 compat)"
+          grep -q "targetSdk 35" android/app/build.gradle && echo "✅ targetSdk 35 (Android 16 compat)"
         working-directory: android
 
       - name: Get Flutter packages
@@ -445,7 +441,7 @@ jobs:
             - **Linux Arch**: `yay -S webkit2gtk-4.1` then extract the `.tar.gz` or run the `.AppImage`
             - **Linux (AppImage)**: `chmod +x *.AppImage && ./RemoteShield*.AppImage`
             - **macOS**: macOS 10.15 Catalina or later (Intel + Apple Silicon)
-            - **Android**: Android 8.0+ (API 26+), supports Android 14/15/16/17
+            - **Android**: Android 8.0+ (API 26+), compiled against SDK 35 — supports Android 14/15/16
 
             ### 🔒 Security
             All traffic routes through WireGuard VPN — configure your VPS endpoint in settings after first launch.
