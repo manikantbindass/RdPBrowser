@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Launch-screen background used by Flutter's SplashScreenDrawable -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Solid dark background matching the app's theme -->
+    <item android:drawable="@android:color/black" />
+</layer-list>

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    RemoteShield X adaptive icon foreground.
+    Shield shape rendered as a vector drawable so no bitmap assets are needed.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Shield outline -->
+    <path
+        android:fillColor="#00D4FF"
+        android:pathData="M54,22 L30,32 L30,52 C30,68 40,82 54,86 C68,82 78,68 78,52 L78,32 Z" />
+
+    <!-- Inner shield -->
+    <path
+        android:fillColor="#1A1A2E"
+        android:pathData="M54,26 L34,35 L34,52 C34,66 42,78 54,82 C66,78 74,66 74,52 L74,35 Z" />
+
+    <!-- Check mark inside shield -->
+    <path
+        android:fillColor="#00D4FF"
+        android:pathData="M46,55 L51,60 L63,46"
+        android:strokeWidth="3"
+        android:strokeColor="#00D4FF"
+        android:fillType="nonZero" />
+</vector>
