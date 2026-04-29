@@ -1,0 +1,9 @@
+# key.properties.template
+# Copy this file to key.properties (gitignored) and fill in your keystore details.
+# For CI/CD, these values are injected via GitHub Actions Secrets.
+# DO NOT commit key.properties to version control.
+
+storePassword=YOUR_KEYSTORE_PASSWORD
+keyPassword=YOUR_KEY_PASSWORD
+keyAlias=remoteshieldx
+storeFile=../keystore/remoteshieldx-release.jks
