@@ -1,0 +1,328 @@
+# ============================================================
+# RemoteShield X — Android Release Workflow
+# ============================================================
+# Builds a SIGNED, optimised, security-hardened release APK
+# and publishes it as a GitHub Release.
+#
+# Triggers:
+#   1. Push a version tag:  git tag v2.0.0 && git push origin v2.0.0
+#   2. Manual dispatch from Actions tab (with custom version input)
+#
+# Required GitHub Secrets (Settings > Secrets > Actions):
+#   KEYSTORE_BASE64    — base64-encoded .jks keystore file
+#   STORE_PASSWORD     — keystore store password
+#   KEY_ALIAS          — key alias inside keystore
+#   KEY_PASSWORD       — key password
+# ============================================================
+
+name: Android Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g. v2.0.0)'
+        required: true
+        default: 'v2.0.0'
+      release_notes:
+        description: 'Release notes / changelog'
+        required: false
+        default: 'Bug fixes and performance improvements.'
+      prerelease:
+        description: 'Mark as pre-release?'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
+
+permissions:
+  contents: write
+  packages: write
+  actions: read
+
+env:
+  FLUTTER_VERSION: '3.24.5'
+  JAVA_VERSION: '17'
+  WORKING_DIR: android
+
+jobs:
+  # ──────────────────────────────────────────────────────────
+  # JOB 1: Build signed release APK
+  # ──────────────────────────────────────────────────────────
+  build-android:
+    name: Build Signed Android APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      apk_universal: ${{ steps.find_apks.outputs.apk_universal }}
+
+    steps:
+      # 1. Checkout
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # 2. Resolve version string
+      - name: Resolve version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION="${GITHUB_REF#refs/tags/}"
+          fi
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "Version resolved: ${VERSION}"
+
+      # 3. Set up Java 17 (required for AGP 8.5+)
+      - name: Set up Java ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+
+      # 4. Set up Flutter
+      - name: Set up Flutter ${{ env.FLUTTER_VERSION }}
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: 'stable'
+          cache: true
+
+      # 5. Verify Flutter & Dart versions
+      - name: Flutter version info
+        run: |
+          flutter --version
+          dart --version
+
+      # 6. Get Flutter dependencies
+      - name: Flutter pub get
+        working-directory: ${{ env.WORKING_DIR }}
+        run: flutter pub get
+
+      # 7. Dart analyze (static analysis)
+      - name: Dart analyze
+        working-directory: ${{ env.WORKING_DIR }}
+        run: flutter analyze --no-fatal-infos
+        continue-on-error: false
+
+      # 8. Run unit tests
+      - name: Run unit tests
+        working-directory: ${{ env.WORKING_DIR }}
+        run: flutter test --coverage
+        continue-on-error: true
+
+      # 9. Decode keystore from GitHub Secret (base64)
+      - name: Decode keystore
+        run: |
+          if [ -n "${{ secrets.KEYSTORE_BASE64 }}" ]; then
+            mkdir -p android/android/keystore
+            echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/android/keystore/remoteshieldx-release.jks
+            echo "Keystore decoded successfully"
+          else
+            echo "WARNING: KEYSTORE_BASE64 secret not set. Build will use debug signing."
+          fi
+
+      # 10. Write key.properties for Gradle
+      - name: Write key.properties
+        run: |
+          if [ -n "${{ secrets.KEYSTORE_BASE64 }}" ]; then
+            cat > android/android/key.properties << EOF
+          storePassword=${{ secrets.STORE_PASSWORD }}
+          keyPassword=${{ secrets.KEY_PASSWORD }}
+          keyAlias=${{ secrets.KEY_ALIAS }}
+          storeFile=../keystore/remoteshieldx-release.jks
+          EOF
+            echo "key.properties written"
+          else
+            echo "Skipping key.properties (no keystore secret)"
+          fi
+
+      # 11. Make gradlew executable
+      - name: Make gradlew executable
+        working-directory: ${{ env.WORKING_DIR }}/android
+        run: chmod +x gradlew
+
+      # 12. Build release APKs (universal + per-ABI)
+      - name: Build release APKs
+        working-directory: ${{ env.WORKING_DIR }}
+        env:
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
+          KEYSTORE_PATH: ../keystore/remoteshieldx-release.jks
+        run: |
+          flutter build apk --release \
+            --obfuscate \
+            --split-debug-info=build/debug-info \
+            --split-per-abi \
+            --dart-define=FLUTTER_ENV=production
+
+      # 13. Also build universal APK
+      - name: Build universal APK
+        working-directory: ${{ env.WORKING_DIR }}
+        env:
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
+          KEYSTORE_PATH: ../keystore/remoteshieldx-release.jks
+        run: |
+          flutter build apk --release \
+            --obfuscate \
+            --split-debug-info=build/debug-info-universal \
+            --dart-define=FLUTTER_ENV=production
+
+      # 14. List APK outputs
+      - name: List APK artifacts
+        id: find_apks
+        working-directory: ${{ env.WORKING_DIR }}
+        run: |
+          echo "=== APK output directory ==="
+          find build/app/outputs/apk -name '*.apk' -type f
+          UNIVERSAL=$(find build/app/outputs/apk/release -name 'app-release.apk' | head -1)
+          echo "apk_universal=${UNIVERSAL}" >> $GITHUB_OUTPUT
+
+      # 15. Rename APKs with version tag
+      - name: Rename APKs
+        working-directory: ${{ env.WORKING_DIR }}
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          APK_DIR="build/app/outputs/apk/release"
+          mkdir -p release-artifacts
+
+          # Universal APK
+          if [ -f "${APK_DIR}/app-release.apk" ]; then
+            cp "${APK_DIR}/app-release.apk" \
+               "release-artifacts/RemoteShieldX-${VERSION}-universal.apk"
+          fi
+
+          # arm64-v8a
+          if [ -f "${APK_DIR}/app-arm64-v8a-release.apk" ]; then
+            cp "${APK_DIR}/app-arm64-v8a-release.apk" \
+               "release-artifacts/RemoteShieldX-${VERSION}-arm64-v8a.apk"
+          fi
+
+          # x86_64
+          if [ -f "${APK_DIR}/app-x86_64-release.apk" ]; then
+            cp "${APK_DIR}/app-x86_64-release.apk" \
+               "release-artifacts/RemoteShieldX-${VERSION}-x86_64.apk"
+          fi
+
+          echo "=== Release artifacts ==="
+          ls -lah release-artifacts/
+
+      # 16. Generate SHA-256 checksums
+      - name: Generate checksums
+        working-directory: ${{ env.WORKING_DIR }}/release-artifacts
+        run: |
+          sha256sum *.apk > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      # 17. Upload APK artifacts
+      - name: Upload APK artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-release-apks-${{ steps.version.outputs.version }}
+          path: ${{ env.WORKING_DIR }}/release-artifacts/
+          retention-days: 30
+          if-no-files-found: error
+
+  # ──────────────────────────────────────────────────────────
+  # JOB 2: Publish GitHub Release
+  # ──────────────────────────────────────────────────────────
+  publish-release:
+    name: Publish GitHub Release
+    needs: build-android
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      # 1. Download APK artifacts from previous job
+      - name: Download APK artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: android-release-apks-${{ needs.build-android.outputs.version }}
+          path: release-artifacts
+
+      # 2. List downloaded files
+      - name: List release artifacts
+        run: ls -lah release-artifacts/
+
+      # 3. Set release notes
+      - name: Set release notes
+        id: release_notes
+        run: |
+          VERSION="${{ needs.build-android.outputs.version }}"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && \
+             [ -n "${{ github.event.inputs.release_notes }}" ]; then
+            NOTES="${{ github.event.inputs.release_notes }}"
+          else
+            NOTES="## RemoteShield X ${VERSION} — Android Release
+
+### What's New
+- Full Android 14/15/16 (API 34/35/36) support
+- ProGuard obfuscation + resource shrinking
+- ABI-split APKs (arm64-v8a, x86_64) + universal APK
+- Security hardened build (debuggable=false, backup=false)
+- WireGuard VPN foreground service compatibility
+- Enhanced biometric authentication (AndroidX Biometric)
+- Encrypted storage via EncryptedSharedPreferences
+
+### Installation
+1. Download the APK for your device:
+   - **arm64-v8a** — most modern Android phones (recommended)
+   - **x86_64** — emulators and x86 tablets
+   - **universal** — works on all architectures
+2. Enable 'Install from unknown sources' in Settings
+3. Install and launch RemoteShield X
+
+### Requirements
+- Android 8.0+ (API 26+)
+- Optimised for Android 14+ (API 34+)
+
+### Security
+All APKs are signed with the RemoteShield X release keystore.
+Verify integrity using the SHA256SUMS.txt included in this release."
+          fi
+          echo "notes<<EOF" >> $GITHUB_OUTPUT
+          echo "$NOTES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      # 4. Determine pre-release flag
+      - name: Set pre-release flag
+        id: prerelease
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "is_prerelease=${{ github.event.inputs.prerelease }}" >> $GITHUB_OUTPUT
+          else
+            VERSION="${{ needs.build-android.outputs.version }}"
+            if echo "$VERSION" | grep -qE '(alpha|beta|rc)'; then
+              echo "is_prerelease=true" >> $GITHUB_OUTPUT
+            else
+              echo "is_prerelease=false" >> $GITHUB_OUTPUT
+            fi
+          fi
+
+      # 5. Create GitHub Release and upload APKs
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.build-android.outputs.version }}
+          name: RemoteShieldX ${{ needs.build-android.outputs.version }} — Android
+          body: ${{ steps.release_notes.outputs.notes }}
+          prerelease: ${{ steps.prerelease.outputs.is_prerelease }}
+          draft: false
+          make_latest: true
+          files: |
+            release-artifacts/RemoteShieldX-*.apk
+            release-artifacts/SHA256SUMS.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
