@@ -1,6 +1,6 @@
 name: remoteshield_x
 description: RemoteShield X — Enterprise Secure Remote Work Browser (Android)
-version: 1.0.0+1
+version: 2.0.0+2
 publish_to: none
 
 environment:
@@ -36,6 +36,22 @@ dependencies:
   google_fonts: ^6.2.1
   cupertino_icons: ^1.0.6
 
+  # Browser features — tabs, bookmarks, history, downloads
+  path_provider: ^2.1.2
+  share_plus: ^7.2.2
+  url_launcher: ^6.2.6
+  permission_handler: ^11.3.1
+  dio: ^5.4.3+1
+  connectivity_plus: ^6.0.3
+  cached_network_image: ^3.3.1
+  flutter_colorpicker: ^1.1.0
+  font_awesome_flutter: ^10.7.0
+  html: ^0.15.4
+  flutter_inappwebview: ^6.0.0
+  open_file: ^3.3.2
+  archive: ^3.6.1
+  image_picker: ^1.1.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -43,3 +59,7 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/
+    - assets/icons/
+    - assets/search_engines/
