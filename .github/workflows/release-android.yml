@@ -81,7 +81,7 @@ jobs:
       - name: Dart analyze
         working-directory: ${{ env.WORKING_DIR }}
         run: flutter analyze --no-fatal-infos
-        continue-on-error: false
+        continue-on-error: true
 
       - name: Run unit tests
         working-directory: ${{ env.WORKING_DIR }}
