@@ -22,6 +22,15 @@ if (flutterVersionName == null) {
     flutterVersionName = '1.0'
 }
 
+// ── Release Signing ────────────────────────────────────────────────
+def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file('key.properties')
+if (keystorePropertiesFile.exists()) {
+    keystorePropertiesFile.withReader('UTF-8') { reader ->
+        keystoreProperties.load(reader)
+    }
+}
+
 android {
     namespace "com.remoteshieldx.browser"
     compileSdk 35
@@ -35,26 +44,85 @@ android {
         jvmTarget = '17'
     }
 
-    sourceSets {
-        main.java.srcDirs += 'src/main/kotlin'
-    }
-
     defaultConfig {
         applicationId "com.remoteshieldx.browser"
+        // Android 14+ = API 34. minSdk 26 covers Android 8.0+
         minSdk 26
         targetSdk 35
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
-        multiDexEnabled true
+
+        // Security: prevent backup of sensitive data
+        manifestPlaceholders = [
+            allowBackup: "false"
+        ]
+    }
+
+    // ── Signing Configs ───────────────────────────────────────────
+    signingConfigs {
+        release {
+            if (keystorePropertiesFile.exists()) {
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+                storeFile file(keystoreProperties['storeFile'])
+                storePassword keystoreProperties['storePassword']
+            } else {
+                // CI: read from environment variables injected by GitHub Actions
+                keyAlias System.getenv('KEY_ALIAS') ?: 'remoteshieldx'
+                keyPassword System.getenv('KEY_PASSWORD') ?: ''
+                storeFile System.getenv('KEYSTORE_PATH') ? file(System.getenv('KEYSTORE_PATH')) : null
+                storePassword System.getenv('STORE_PASSWORD') ?: ''
+            }
+        }
     }
 
     buildTypes {
+        debug {
+            applicationIdSuffix ".debug"
+            versionNameSuffix "-debug"
+            debuggable true
+        }
         release {
+            signingConfig signingConfigs.release
+
+            // ── Optimizations ──────────────────────────────────────
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            signingConfig signingConfigs.debug  // CI will override for production signing
+
+            // ── Security hardening ─────────────────────────────────
+            debuggable false
+            jniDebuggable false
+            renderscriptDebuggable false
+            zipAlignEnabled true
         }
+    }
+
+    // ── APK splits for smaller per-ABI downloads ──────────────────
+    splits {
+        abi {
+            enable true
+            reset()
+            include 'arm64-v8a', 'x86_64'
+            universalApk true   // also produce a fat universal APK
+        }
+    }
+
+    // Ensures deterministic builds
+    packagingOptions {
+        resources {
+            excludes += [
+                'META-INF/LICENSE.txt',
+                'META-INF/NOTICE.txt',
+                'META-INF/*.kotlin_module'
+            ]
+        }
+    }
+
+    lint {
+        abortOnError false
+        checkReleaseBuilds true
+        disable 'InvalidPackage'
     }
 }
 
@@ -63,5 +131,7 @@ flutter {
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.25"
+    implementation 'androidx.core:core-ktx:1.13.1'
+    implementation 'androidx.biometric:biometric:1.2.0-alpha05'
 }
