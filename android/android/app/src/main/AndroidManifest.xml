@@ -6,10 +6,11 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.BIND_VPN_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <!-- Android 14+ (API 34): must declare specific foreground service type -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
-    <!-- Biometric auth -->
+    <!-- Biometric auth (USE_FINGERPRINT deprecated; USE_BIOMETRIC covers all) -->
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
-    <uses-permission android:name="android.permission.USE_FINGERPRINT" />
 
     <application
         android:label="RemoteShield X"
@@ -44,9 +45,17 @@
         </activity>
 
         <!-- ─── VPN Service ───────────────────────────────────────── -->
+        <!--
+            Android 14+ (API 34) REQUIREMENT:
+            All foreground services MUST declare android:foregroundServiceType.
+            VPN connections use "connectedDevice" type.
+            Without this attribute the app crashes on Android 14+ when the
+            service calls startForeground().
+        -->
         <service
             android:name=".vpn.RemoteShieldVpnService"
             android:exported="false"
+            android:foregroundServiceType="connectedDevice"
             android:permission="android.permission.BIND_VPN_SERVICE">
             <intent-filter>
                 <action android:name="android.net.VpnService" />

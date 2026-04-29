@@ -15,7 +15,8 @@ permissions:
 
 env:
   NODE_VERSION: '22'
-  FLUTTER_VERSION: '3.19.0'
+  # Flutter 3.24.5 — stable channel, full Android 14/15/16 (API 34/35/36) support
+  FLUTTER_VERSION: '3.24.5'
 
 # ═══════════════════════════════════════════════════════════════════
 # JOB 1 — Backend: Lint + Test
@@ -235,17 +236,26 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: 'stable'
           cache: true
 
       - name: Verify Android Gradle Files
         run: |
-          # Gradle files now live in source control — just verify they exist
-          test -f android/build.gradle || { echo "ERROR: android/build.gradle missing"; exit 1; }
+          test -f android/build.gradle   || { echo "ERROR: android/build.gradle missing"; exit 1; }
           test -f android/app/build.gradle || { echo "ERROR: android/app/build.gradle missing"; exit 1; }
           test -f android/settings.gradle || { echo "ERROR: android/settings.gradle missing"; exit 1; }
           echo "✅ All Android Gradle files present"
-          grep -q "compileSdk 35" android/app/build.gradle && echo "✅ compileSdk 35 (Android 16 compat)"
-          grep -q "targetSdk 35" android/app/build.gradle && echo "✅ targetSdk 35 (Android 16 compat)"
+          grep -q "compileSdk 35" android/app/build.gradle && echo "✅ compileSdk 35 confirmed"
+          grep -q "targetSdk 35"  android/app/build.gradle && echo "✅ targetSdk 35 confirmed"
+          grep -q "minSdk 26"     android/app/build.gradle && echo "✅ minSdk 26 (Android 8.0+) confirmed"
+          # Verify Android 14 foreground service type is declared
+          grep -q "foregroundServiceType" android/app/src/main/AndroidManifest.xml && \
+            echo "✅ Android 14+ foregroundServiceType declared" || \
+            { echo "❌ Missing foregroundServiceType — will crash on Android 14+"; exit 1; }
+          # Verify FOREGROUND_SERVICE_CONNECTED_DEVICE permission
+          grep -q "FOREGROUND_SERVICE_CONNECTED_DEVICE" android/app/src/main/AndroidManifest.xml && \
+            echo "✅ FOREGROUND_SERVICE_CONNECTED_DEVICE permission present" || \
+            { echo "❌ Missing FOREGROUND_SERVICE_CONNECTED_DEVICE permission"; exit 1; }
         working-directory: android
 
       - name: Get Flutter packages
@@ -257,7 +267,7 @@ jobs:
         working-directory: android
         continue-on-error: true
 
-      - name: Build release APK
+      - name: Build release APK (split per ABI — arm64, armeabi-v7a, x86_64)
         run: |
           flutter build apk \
             --release \
@@ -429,7 +439,7 @@ jobs:
             | 🐧 **Linux Arch** | `RemoteShield-Linux-Arch-x86_64.tar.gz` | Extract + run binary, or use AppImage below |
             | 🐧 **Linux Universal** | `remoteshield-x_*_amd64.AppImage` | Works on Arch, Fedora, openSUSE, etc. |
             | 🍎 **macOS** | `RemoteShield.X_*_universal.dmg` | Universal binary (M1/M2 + Intel) |
-            | 🤖 **Android** | `app-arm64-v8a-release.apk` | ARM64 (most modern phones) |
+            | 🤖 **Android** | `app-arm64-v8a-release.apk` | ARM64 (most modern phones, Android 8.0+) |
             | 🤖 **Android** | `app-armeabi-v7a-release.apk` | ARMv7 (older phones) |
             | 🤖 **Android** | `app-x86_64-release.apk` | x86_64 (emulators / some tablets) |
 
@@ -441,7 +451,7 @@ jobs:
             - **Linux Arch**: `yay -S webkit2gtk-4.1` then extract the `.tar.gz` or run the `.AppImage`
             - **Linux (AppImage)**: `chmod +x *.AppImage && ./RemoteShield*.AppImage`
             - **macOS**: macOS 10.15 Catalina or later (Intel + Apple Silicon)
-            - **Android**: Android 8.0+ (API 26+), compiled against SDK 35 — supports Android 14/15/16
+            - **Android**: Android 8.0+ (API 26+), **fully supports Android 14/15/16** (API 34/35/36)
 
             ### 🔒 Security
             All traffic routes through WireGuard VPN — configure your VPS endpoint in settings after first launch.
