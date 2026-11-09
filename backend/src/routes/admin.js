@@ -80,7 +80,7 @@ router.get('/ip-logs', async (req, res, next) => {
       LIMIT $1 OFFSET $2
     `, params);
 
-    const countResult = await query(`SELECT COUNT(*) FROM ip_logs ${whereClause}`);
+    const countResult = await query(`SELECT COUNT(*) FROM ip_logs l ${whereClause}`);
     res.json({
       logs: result.rows,
       total: parseInt(countResult.rows[0].count),

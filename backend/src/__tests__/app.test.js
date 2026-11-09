@@ -26,12 +26,23 @@ process.env.PORT = '3001';
 process.env.ANOMALY_DETECTION_ENABLED = 'false';
 
 let app;
+let server;
+let io;
 beforeAll(() => {
-  ({ app } = require('../index'));
+  ({ app, server, io } = require('../index'));
 });
 
 afterAll((done) => {
-  done();
+  // The imported HTTP server intentionally never listens; Socket.io forwards
+  // ERR_SERVER_NOT_RUNNING from closing it. Only that expected state is benign.
+  io.close((err) => done(err?.code === 'ERR_SERVER_NOT_RUNNING' ? undefined : err));
+});
+
+describe('Application lifecycle', () => {
+  it('importing the app does not bind a port or initialize the database', () => {
+    expect(server.listening).toBe(false);
+    expect(require('../db/db').initDB).not.toHaveBeenCalled();
+  });
 });
 
 describe('Health Check', () => {

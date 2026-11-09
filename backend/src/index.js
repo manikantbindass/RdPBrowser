@@ -232,6 +232,10 @@ async function start() {
   }
 }
 
-start();
+// Importing the app for tests/tools must not bind a port or initialize the DB.
+// npm start and direct node execution retain the existing startup behavior.
+if (require.main === module) {
+  start();
+}
 
 module.exports = { app, server, io };
