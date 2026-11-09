@@ -2,6 +2,8 @@
 
 # 🛡️ RemoteShield X Browser
 
+> **Phase 01 audit status (2026-11-09): PARTIAL.** This repository contains experimental and incomplete components. Production readiness, VPN/DNS/kill-switch enforcement, Android compatibility, screenshot protection and signed release guarantees have not been established. Read the [audit](docs/PROJECT_AUDIT.md), [defect register](docs/BUG_REGISTER.md), [verified feature inventory](docs/IMPLEMENTATION_STATUS.md), [dependency matrix](docs/DEPENDENCY_MATRIX.md) and [recovery roadmap](docs/ROADMAP.md) before relying on the historical feature claims below.
+
 <img src="./assets/logo.png" width="200" alt="RemoteShield X Logo" style="border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); margin-bottom: 20px;" />
 
 **Enterprise-Grade Secure Remote Work Browser Platform**

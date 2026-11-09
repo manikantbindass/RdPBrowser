@@ -1,0 +1,5 @@
+{
+  "command": "node --check <each tracked .js/.cjs>",
+  "checked": 16,
+  "failures": []
+}

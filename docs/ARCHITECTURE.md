@@ -2,6 +2,8 @@
 
 Baseline inspected: 0aa4b400aeb87c248632f7760db1be30ba4bac88. See PROJECT_AUDIT.md for evidence and limitations.
 
+Phase 01 update: backend module imports no longer initialize DB or listen; direct execution remains the production entry point. Filtered IP-log count SQL alias is repaired. The desktop application's tested dependency graph is now retained in Cargo.lock. No network, auth, schema or deployment boundary has otherwise changed. BUG_REGISTER.md is the current detailed defect inventory; earlier initial-audit observations are superseded by Phase 01 command snapshots where applicable.
+
 ## Current components
 
 | Component | Implementation | Responsibility and limitation |

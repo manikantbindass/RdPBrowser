@@ -1,0 +1,596 @@
+{
+  "auditReportVersion": 2,
+  "vulnerabilities": {
+    "@jimp/core": {
+      "name": "@jimp/core",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "@jimp/types",
+        "@jimp/utils"
+      ],
+      "effects": [
+        "@jimp/plugin-blur"
+      ],
+      "range": ">=1.0.2--canary.4e85de0.0",
+      "nodes": [
+        "node_modules/@jimp/core"
+      ],
+      "fixAvailable": {
+        "name": "jimp",
+        "version": "0.22.12",
+        "isSemVerMajor": true
+      }
+    },
+    "@jimp/diff": {
+      "name": "@jimp/diff",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "@jimp/plugin-resize",
+        "@jimp/types",
+        "@jimp/utils"
+      ],
+      "effects": [],
+      "range": "*",
+      "nodes": [
+        "node_modules/@jimp/diff"
+      ],
+      "fixAvailable": true
+    },
+    "@jimp/js-bmp": {
+      "name": "@jimp/js-bmp",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "@jimp/core",
+        "@jimp/types",
+        "@jimp/utils"
+      ],
+      "effects": [],
+      "range": "*",
+      "nodes": [
+        "node_modules/@jimp/js-bmp"
+      ],
+      "fixAvailable": true
+    },
+    "@jimp/js-gif": {
+      "name": "@jimp/js-gif",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "@jimp/core",
+        "@jimp/types"
+      ],
+      "effects": [],
+      "range": "*",
+      "nodes": [
+        "node_modules/@jimp/js-gif"
+      ],
+      "fixAvailable": true
+    },
+    "@jimp/js-jpeg": {
+      "name": "@jimp/js-jpeg",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "@jimp/core",
+        "@jimp/types"
+      ],
+      "effects": [],
+      "range": "*",
+      "nodes": [
+        "node_modules/@jimp/js-jpeg"
+      ],
+      "fixAvailable": true
+    },
+    "@jimp/js-png": {
+      "name": "@jimp/js-png",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "@jimp/core",
+        "@jimp/types"
+      ],
+      "effects": [],
+      "range": "*",
+      "nodes": [
+        "node_modules/@jimp/js-png"
+      ],
+      "fixAvailable": true
+    },
+    "@jimp/js-tiff": {
+      "name": "@jimp/js-tiff",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "@jimp/core",
+        "@jimp/types"
+      ],
+      "effects": [],
+      "range": "*",
+      "nodes": [
+        "node_modules/@jimp/js-tiff"
+      ],
+      "fixAvailable": true
+    },
+    "@jimp/plugin-blit": {
+      "name": "@jimp/plugin-blit",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "@jimp/types",
+        "@jimp/utils",
+        "zod"
+      ],
+      "effects": [
+        "jimp"
+      ],
+      "range": ">=1.0.2--canary.4e85de0.0",
+      "nodes": [
+        "node_modules/@jimp/plugin-blit"
+      ],
+      "fixAvailable": {
+        "name": "jimp",
+        "version": "0.22.12",
+        "isSemVerMajor": true
+      }
+    },
+    "@jimp/plugin-blur": {
+      "name": "@jimp/plugin-blur",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "@jimp/core",
+        "@jimp/utils"
+      ],
+      "effects": [
+        "jimp"
+      ],
+      "range": ">=1.1.2",
+      "nodes": [
+        "node_modules/@jimp/plugin-blur"
+      ],
+      "fixAvailable": {
+        "name": "jimp",
+        "version": "0.22.12",
+        "isSemVerMajor": true
+      }
+    },
+    "@jimp/plugin-circle": {
+      "name": "@jimp/plugin-circle",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "@jimp/types",
+        "zod"
+      ],
+      "effects": [],
+      "range": ">=1.0.2--canary.4e85de0.0",
+      "nodes": [
+        "node_modules/@jimp/plugin-circle"
+      ],
+      "fixAvailable": true
+    },
+    "@jimp/plugin-color": {
+      "name": "@jimp/plugin-color",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "@jimp/core",
+        "@jimp/types",
+        "@jimp/utils",
+        "zod"
+      ],
+      "effects": [],
+      "range": ">=1.0.2--canary.4e85de0.0",
+      "nodes": [
+        "node_modules/@jimp/plugin-color"
+      ],
+      "fixAvailable": true
+    },
+    "@jimp/plugin-contain": {
+      "name": "@jimp/plugin-contain",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "@jimp/core",
+        "@jimp/plugin-blit",
+        "@jimp/plugin-resize",
+        "@jimp/types",
+        "@jimp/utils",
+        "zod"
+      ],
+      "effects": [],
+      "range": ">=1.0.2--canary.4e85de0.0",
+      "nodes": [
+        "node_modules/@jimp/plugin-contain"
+      ],
+      "fixAvailable": true
+    },
+    "@jimp/plugin-cover": {
+      "name": "@jimp/plugin-cover",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "@jimp/core",
+        "@jimp/plugin-crop",
+        "@jimp/plugin-resize",
+        "@jimp/types",
+        "zod"
+      ],
+      "effects": [],
+      "range": ">=1.0.2--canary.4e85de0.0",
+      "nodes": [
+        "node_modules/@jimp/plugin-cover"
+      ],
+      "fixAvailable": true
+    },
+    "@jimp/plugin-crop": {
+      "name": "@jimp/plugin-crop",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "@jimp/core",
+        "@jimp/types",
+        "@jimp/utils",
+        "zod"
+      ],
+      "effects": [
+        "@jimp/plugin-rotate"
+      ],
+      "range": ">=1.0.2--canary.4e85de0.0",
+      "nodes": [
+        "node_modules/@jimp/plugin-crop"
+      ],
+      "fixAvailable": true
+    },
+    "@jimp/plugin-displace": {
+      "name": "@jimp/plugin-displace",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "@jimp/types",
+        "@jimp/utils",
+        "zod"
+      ],
+      "effects": [],
+      "range": ">=1.0.2--canary.4e85de0.0",
+      "nodes": [
+        "node_modules/@jimp/plugin-displace"
+      ],
+      "fixAvailable": true
+    },
+    "@jimp/plugin-dither": {
+      "name": "@jimp/plugin-dither",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "@jimp/types"
+      ],
+      "effects": [],
+      "range": ">=1.0.2--canary.4e85de0.0",
+      "nodes": [
+        "node_modules/@jimp/plugin-dither"
+      ],
+      "fixAvailable": true
+    },
+    "@jimp/plugin-fisheye": {
+      "name": "@jimp/plugin-fisheye",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "@jimp/types",
+        "@jimp/utils",
+        "zod"
+      ],
+      "effects": [],
+      "range": ">=1.0.2--canary.4e85de0.0",
+      "nodes": [
+        "node_modules/@jimp/plugin-fisheye"
+      ],
+      "fixAvailable": true
+    },
+    "@jimp/plugin-flip": {
+      "name": "@jimp/plugin-flip",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "@jimp/types",
+        "zod"
+      ],
+      "effects": [],
+      "range": ">=1.0.2--canary.4e85de0.0",
+      "nodes": [
+        "node_modules/@jimp/plugin-flip"
+      ],
+      "fixAvailable": true
+    },
+    "@jimp/plugin-hash": {
+      "name": "@jimp/plugin-hash",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "@jimp/core",
+        "@jimp/js-bmp",
+        "@jimp/js-jpeg",
+        "@jimp/js-png",
+        "@jimp/js-tiff",
+        "@jimp/plugin-color",
+        "@jimp/plugin-resize",
+        "@jimp/types",
+        "@jimp/utils"
+      ],
+      "effects": [],
+      "range": "*",
+      "nodes": [
+        "node_modules/@jimp/plugin-hash"
+      ],
+      "fixAvailable": true
+    },
+    "@jimp/plugin-mask": {
+      "name": "@jimp/plugin-mask",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "@jimp/types",
+        "zod"
+      ],
+      "effects": [],
+      "range": ">=1.0.2--canary.4e85de0.0",
+      "nodes": [
+        "node_modules/@jimp/plugin-mask"
+      ],
+      "fixAvailable": true
+    },
+    "@jimp/plugin-print": {
+      "name": "@jimp/plugin-print",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "@jimp/core",
+        "@jimp/js-jpeg",
+        "@jimp/js-png",
+        "@jimp/plugin-blit",
+        "@jimp/types",
+        "zod"
+      ],
+      "effects": [],
+      "range": ">=1.0.2--canary.4e85de0.0",
+      "nodes": [
+        "node_modules/@jimp/plugin-print"
+      ],
+      "fixAvailable": true
+    },
+    "@jimp/plugin-quantize": {
+      "name": "@jimp/plugin-quantize",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "zod"
+      ],
+      "effects": [
+        "jimp"
+      ],
+      "range": "*",
+      "nodes": [
+        "node_modules/@jimp/plugin-quantize"
+      ],
+      "fixAvailable": {
+        "name": "jimp",
+        "version": "0.22.12",
+        "isSemVerMajor": true
+      }
+    },
+    "@jimp/plugin-resize": {
+      "name": "@jimp/plugin-resize",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "@jimp/core",
+        "@jimp/types",
+        "zod"
+      ],
+      "effects": [
+        "@jimp/diff",
+        "@jimp/plugin-hash"
+      ],
+      "range": ">=1.0.2--canary.4e85de0.0",
+      "nodes": [
+        "node_modules/@jimp/plugin-resize"
+      ],
+      "fixAvailable": true
+    },
+    "@jimp/plugin-rotate": {
+      "name": "@jimp/plugin-rotate",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "@jimp/core",
+        "@jimp/plugin-crop",
+        "@jimp/plugin-resize",
+        "@jimp/types",
+        "@jimp/utils",
+        "zod"
+      ],
+      "effects": [],
+      "range": "<=0.3.6-alpha.6 || >=1.0.2--canary.4e85de0.0",
+      "nodes": [
+        "node_modules/@jimp/plugin-rotate"
+      ],
+      "fixAvailable": true
+    },
+    "@jimp/plugin-threshold": {
+      "name": "@jimp/plugin-threshold",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "@jimp/core",
+        "@jimp/plugin-color",
+        "@jimp/plugin-hash",
+        "@jimp/types",
+        "@jimp/utils",
+        "zod"
+      ],
+      "effects": [],
+      "range": ">=1.0.2--canary.4e85de0.0",
+      "nodes": [
+        "node_modules/@jimp/plugin-threshold"
+      ],
+      "fixAvailable": true
+    },
+    "@jimp/types": {
+      "name": "@jimp/types",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "zod"
+      ],
+      "effects": [
+        "@jimp/core",
+        "@jimp/js-bmp",
+        "@jimp/js-gif",
+        "@jimp/js-jpeg",
+        "@jimp/js-png",
+        "@jimp/js-tiff",
+        "@jimp/plugin-dither",
+        "@jimp/utils"
+      ],
+      "range": ">=1.0.1--canary.1285.8595111491.0",
+      "nodes": [
+        "node_modules/@jimp/types"
+      ],
+      "fixAvailable": {
+        "name": "jimp",
+        "version": "0.22.12",
+        "isSemVerMajor": true
+      }
+    },
+    "@jimp/utils": {
+      "name": "@jimp/utils",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "@jimp/types"
+      ],
+      "effects": [],
+      "range": ">=1.0.1--canary.1285.8595111491.0",
+      "nodes": [
+        "node_modules/@jimp/utils"
+      ],
+      "fixAvailable": true
+    },
+    "jimp": {
+      "name": "jimp",
+      "severity": "high",
+      "isDirect": true,
+      "via": [
+        "@jimp/core",
+        "@jimp/diff",
+        "@jimp/js-bmp",
+        "@jimp/js-gif",
+        "@jimp/js-jpeg",
+        "@jimp/js-png",
+        "@jimp/js-tiff",
+        "@jimp/plugin-blit",
+        "@jimp/plugin-blur",
+        "@jimp/plugin-circle",
+        "@jimp/plugin-color",
+        "@jimp/plugin-contain",
+        "@jimp/plugin-cover",
+        "@jimp/plugin-crop",
+        "@jimp/plugin-displace",
+        "@jimp/plugin-dither",
+        "@jimp/plugin-fisheye",
+        "@jimp/plugin-flip",
+        "@jimp/plugin-hash",
+        "@jimp/plugin-mask",
+        "@jimp/plugin-print",
+        "@jimp/plugin-quantize",
+        "@jimp/plugin-resize",
+        "@jimp/plugin-rotate",
+        "@jimp/plugin-threshold",
+        "@jimp/types",
+        "@jimp/utils"
+      ],
+      "effects": [],
+      "range": ">=1.0.2--canary.4e85de0.0",
+      "nodes": [
+        "node_modules/jimp"
+      ],
+      "fixAvailable": {
+        "name": "jimp",
+        "version": "0.22.12",
+        "isSemVerMajor": true
+      }
+    },
+    "zod": {
+      "name": "zod",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1243066,
+          "name": "zod",
+          "dependency": "zod",
+          "title": "Zod can exhaust memory while validating oversized constrained collections",
+          "url": "https://github.com/advisories/GHSA-mrhx-c7xc-m3w5",
+          "severity": "high",
+          "cwe": [
+            "CWE-770"
+          ],
+          "cvss": {
+            "score": 7.5,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+          },
+          "range": "<4.6.6"
+        }
+      ],
+      "effects": [
+        "@jimp/plugin-blit",
+        "@jimp/plugin-circle",
+        "@jimp/plugin-color",
+        "@jimp/plugin-contain",
+        "@jimp/plugin-cover",
+        "@jimp/plugin-crop",
+        "@jimp/plugin-displace",
+        "@jimp/plugin-fisheye",
+        "@jimp/plugin-flip",
+        "@jimp/plugin-mask",
+        "@jimp/plugin-print",
+        "@jimp/plugin-quantize",
+        "@jimp/plugin-resize",
+        "@jimp/plugin-rotate",
+        "@jimp/plugin-threshold",
+        "@jimp/types"
+      ],
+      "range": "<4.6.6",
+      "nodes": [
+        "node_modules/zod"
+      ],
+      "fixAvailable": {
+        "name": "jimp",
+        "version": "0.22.12",
+        "isSemVerMajor": true
+      }
+    }
+  },
+  "metadata": {
+    "vulnerabilities": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 29,
+      "critical": 0,
+      "total": 29
+    },
+    "dependencies": {
+      "prod": 65,
+      "dev": 0,
+      "optional": 0,
+      "peer": 0,
+      "peerOptional": 0,
+      "total": 64
+    }
+  }
+}

@@ -1,62 +1,81 @@
-# RemoteShield X repository audit
+# Phase 01: evidence-based repository audit
 
-Audit date: 2026-11-09 (Asia/Calcutta). Baseline: `0aa4b400aeb87c248632f7760db1be30ba4bac88`.
-Scope: initial source/configuration inspection, available local verification, and GitHub metadata. No functional changes are authorized in this audit. This is not a penetration test or production certification.
+Audit date: 2026-11-09, Asia/Calcutta. Scope: existing implementation, source/configuration/dependency review, reproducible available checks, prioritized defects and recovery planning. This is an engineering audit, not a penetration test or production certification.
 
-## Method and repository state
+## Repository and method
 
-The supplied workspace was empty, not a checkout. Cloned the requested repository, fetched origin, and created `codex/remoteshield-enterprise-completion` from main. The initial checkout was clean. No AGENTS.md was found in the repository. Read README, manifests, lockfile presence, both workflows, Dockerfiles/Compose, environment template, backend routes/middleware/schema/tests, desktop entry points/native modules, Android entry points/security/VPN bridge, dashboard, Nginx and WireGuard configuration. README assertions were treated as claims.
+Phase 01 began on clean branch codex/remoteshield-enterprise-completion at c5f7c81cd99aab7fcc31b011e66fbf95e531c525 (initial audit documents). Application baseline is main commit 0aa4b400aeb87c248632f7760db1be30ba4bac88. Fetched origin; did not reset, merge, force-push or modify main. Existing draft PR #3 targets main. No repository AGENTS.md was found. The earlier empty-workspace clone history remains in Git.
 
-Plan followed: inventory and Git review; inspect trust boundaries; run baseline commands; classify findings; write architecture, status and gated roadmap; review documentation diff; commit and attempt branch publication. Later implementation phases require the user's phase prompt.
+The specific plan is PHASE01_PLAN.md. Inspected desktop React/Tauri/Rust, Android Dart/Flutter/Gradle/manifest, backend Express routes/middleware/SQL/schema/tests, admin HTML/JS/CSS, integrity and anomaly modules, all WireGuard client/server templates and setup script, Nginx, Docker/Compose, environment templates, README/release notes, manifests/locks and both workflows. Searched tracked sources for unresolved local imports, unused declarations, placeholders, swallowed errors, credential patterns, policy bypasses and missing tests. Did not run provisioning or change host routing/firewall.
 
-## Existing assets
+Evidence is classified in BUG_REGISTER.md (B01–B52): confirmed source/config defects, command failures, unverified runtime risks and narrowly fixed defects. Source evidence is not proof of exploitability. Every entry states severity, affected component, impact and proposed remediation. IMPLEMENTATION_STATUS.md distinguishes source presence from actual verification; DEPENDENCY_MATRIX.md inventories direct declared/locked dependencies and unresolved platform requirements.
 
-The repository contains Express/JWT/Joi routes, PostgreSQL schema, parameterized database queries, REST admin role checks, Socket.io events, SSH relay, React/Tauri browser UI, Flutter browser UI, dashboard, VPN templates, integrity utilities, rule-based anomaly detection, and release pipelines. Their presence does not establish end-to-end operation. See IMPLEMENTATION_STATUS.md.
+## Baseline reproduction
 
-## Prioritized findings
+Prerequisites: Windows with Node/npm, Rust/MSVC/WebView2 toolchain and Git. Run from the repository root. Use the Node version recorded in reports to reproduce this host; CI currently uses a different Node version. Linux/macOS require their own native runners. Do not use production secrets in tests.
 
-| ID | Priority | Source evidence and implication | Required verification/remediation |
-|---|---|---|---|
-| A01 | Critical | `backend/src/index.js`: `ssh_connect`, `ssh_data`, `ssh_resize`, `force_logout` handlers are registered without authentication/authorization gates. `join_admin` verification protects room joining only. | Authenticate connection and each privileged action; validate destinations and credentials; verify SSH host keys; negative socket tests and network isolation. |
-| A02 | High | `middleware/vpnCheck.js` trusts the first X-Forwarded-For entry from any caller. Nginx appends forwarded headers. `.env.example` sets VPN_REQUIRED=false even with production NODE_ENV. | Define trusted proxy hops and replace untrusted forwarding; validate startup policy; spoofing and direct-backend tests. |
-| A03 | High | Desktop `vpn.rs` checks public `/health` reachability, not tunnel/routing state. App.tsx exposes manual bypass and auto-bypasses invocation errors; Browser.tsx permits navigation when native policy invocation fails. Native guest navigation bypasses server policy. Android main.dart also exposes VPN bypass. | Separate unmanaged and managed modes with explicit policy; enforce managed routing and navigation below UI; tunnel failure, redirects, subresources, DNS/IPv6 and recovery tests. |
-| A04 | High | `auth.js` refresh issues a new access token without adding its hash to sessions, so authenticated middleware cannot accept it. Registration also returns tokens without session insertion. Refresh tokens have no persisted rotation/revocation and do not check active/locked user status. | Transactional token lifecycle, migration, replay/revocation and account lock tests; document client migration. |
-| A05 | High | Android manifest uses the generic FlutterActivity and references `.vpn.RemoteShieldVpnService`, but no Kotlin/Java channel/service implementation or Gradle wrapper scripts/JAR are tracked. Dart security channels swallow unavailable-native errors; signature verification defaults to success. | Implement native channels/real tunnel integration and restore wrapper; fail according to documented security policy; real-device tests. |
-| A06 | High | `db.js` disables production TLS certificate verification and swallows initialization failure; server subsequently logs database success and `/health` returns OK without DB readiness. Compose PostgreSQL has no TLS provisioning. | Explicit deployment TLS model, readiness/liveness separation, startup failure behavior and DB outage tests. |
-| A07 | High | Compose schema mount is `./backend/...` relative to docker/, not `../backend/...`. Nginx container upstream points to itself at 127.0.0.1:3000. Backend Compose healthcheck requires curl absent from Dockerfile. Certificate/domain placeholders are not rendered. `more_clear_headers` needs a module not configured by Dockerfile. | Repair and test clean Compose boot, `nginx -t`, migrations, TLS and healthchecks. Compose schema validation alone cannot prove deployment works. |
-| A08 | High | Desktop integrity returns success without an expected hash. Android screenshot/root/debug assertions lack the native implementation in this checkout. No platform-specific leakage/tamper evidence was found. | Signed artifact trust design and OS/device verification; qualify all protection claims. |
-| A09 | High | Both workflows allow analyzer failures; release workflow allows Flutter test failure; CI npm audit uses `|| true`, Trivy continues on error, and uses a mutable master ref. Android Gradle lint abortOnError=false. | Required checks with pinned inputs, reviewed exceptions and artifact provenance; do not weaken existing checks further. |
-| A10 | High | `schema.sql` has no tenant model or tenant-scoped policies; refresh/session/device flows trust client identifiers. | Design tenancy and authenticated device enrollment before enterprise isolation claims; migrations and cross-tenant negative tests. |
-| A11 | High | Dashboard app.js interpolates API/log values into innerHTML templates. | Trace all untrusted fields, render text safely, and test stored/reflected HTML payloads. Runtime exploitability not tested here. |
-| A12 | Medium | `npm run migrate` references missing src/db/migrate.js. No versioned migrations. Cargo.lock is ignored and pubspec.lock is absent. | Versioned migration/rollback discipline and reproducible application dependency resolution. |
-| A13 | Medium | Backend anomaly import traverses to ../../../security from backend/src, outside repository root; container security files are placed at /app/security. Detector is optional and failures are silently swallowed. | Resolve packaged module paths and assert detector startup; current detector is rules, not verified AI. |
-| A14 | Medium | CORS uses prefix/substring matching; dashboard origin example includes /admin, whereas browser Origin contains no path. URL policy uses incompletely escaped regexes; navigation endpoint authorizes a URL but does not proxy traffic. | Exact origin allowlist; safe pattern semantics, scheme validation, navigation enforcement tests. |
-| A15 | Medium | WireGuard templates contain routing/NAT and teardown rules, not verified client kill-switch enforcement. No tested IPv6/DNS failure policy. | Per-platform firewall lifecycle, tunnel flap/reboot and DNS/IPv6 leakage validation. |
+```powershell
+# Install the checked-in npm resolutions. Earlier installation succeeded this way.
+npm ci --prefix backend --ignore-scripts --no-audit
+npm ci --prefix desktop --ignore-scripts --no-audit
+# No automatic dependency upgrades, provisioning or audit fixes:
+node scripts/audit-baseline.mjs local
+node scripts/audit-source.mjs
+node scripts/audit-dependencies.mjs
+# Advisory refreshes (nonzero is expected while vulnerabilities remain):
+npm audit --prefix backend --json
+npm audit --prefix desktop --json
+npm audit --json
+```
 
-## Baseline commands and results
+The baseline runner records exact commands, exit codes, stdout/stderr, duration, UTC timestamp, Git head/status and SHA-256 input hashes under docs/audit/phase01/<label>.json. It returns nonzero if any command fails/is unavailable/times out; it never converts red checks to green. Labels before, after and final are recorded evidence; use local or another label to avoid overwriting them. Timeouts terminate the command tree. Commands use installed dependencies only. Fresh offline Rust runs require the locked crates already cached; use cargo fetch --locked on an approved network otherwise. No claim is made that skipped lifecycle scripts establish native package install acceptance.
 
-Host: Windows PowerShell, Node 24.14.1, npm 11.11.0, Cargo 1.94.1; CI declares Node 22, Docker backend uses Node 20. Flutter/Dart were not on PATH. Dependencies installed with `npm ci --ignore-scripts --no-audit`; lifecycle scripts were not executed.
+Before/after reports were captured during work at c5f7c81 with working-tree state recorded. Final report was captured after backend fix commit 291f6e5 and before the documentation/lockfile commit; its input hashes identify the checked files. Before used unlocked offline Cargo with the generated local lock; final uses --locked. Final adds the native Windows debug build and uses Git Bash after PATH bash resolved to unavailable WSL. These differences are explicit, not hidden comparisons.
 
-| Working directory | Command | Result |
-|---|---|---|
-| backend | npm run lint | PASS, zero reported warnings/errors |
-| backend | npm test -- --runInBand --forceExit | PASS: 1 suite, 9 tests; statements 28.76%, branches 12.32%, lines 29.38%. Initial sandbox run failed all requests with localhost EACCES; authorized rerun outside sandbox passed. Existing CI also uses forceExit; server lifecycle remains unverified. |
-| desktop | npm run build | PASS: TypeScript and Vite; 528.79 kB minified JS chunk warning; no native installer validation implied. |
-| desktop/src-tauri | cargo test --offline (via --manifest-path) | PASS compilation, 0 tests found/executed; not behavioral verification. Dependency resolution generated ignored Cargo.lock from available cache. |
-| repository | docker compose -f docker/docker-compose.yml config --quiet | PASS syntax/model validation; obsolete version warning. |
-| repository | docker info | BLOCKED: Docker Desktop engine pipe absent; no container runtime verification. |
-| backend | npm audit --json | FAIL: 30 dependency findings (7 low, 10 moderate, 12 high, 1 critical), including development dependencies. |
-| desktop | npm audit --json | FAIL: 13 dependency findings (1 low, 4 moderate, 7 high, 1 critical), including development dependencies. Critical finding includes @tauri-apps/plugin-shell. Advisory count is not proof of reachable exploitability. |
-| android | flutter analyze / flutter test / flutter build apk | NOT RUN: Flutter/Dart unavailable; native sources/wrapper missing. |
+## Actual command results
 
-Real PostgreSQL integration, SSH host verification, native installers, browser E2E, accessibility, VPN failover, load, backup recovery and signing tests remain unverified. No tests or checks were disabled or changed.
+| Check | Before / final result and limits |
+|---|---|
+| Backend npm run lint | PASS, no reported warnings/errors |
+| Backend npm test -- --runInBand --detectOpenHandles | Before: all 9 assertions pass, but process fails to exit and is terminated at 45s. After fixes: 2 suites, 12 tests PASS, exits normally without forceExit; statements29.82%, branches14.55%, lines30.49%. DB mocked; VPN bypassed in original suite. |
+| Regression tests before fix | 2 failures, 10 passes: filtered count SQL missing alias and import calling initDB. Same regressions pass after fixes. Router test checks SQL contract, not a real PostgreSQL execution. |
+| Desktop npm run build | PASS TypeScript/Vite; 528.79kB minified JS chunk warning, CJS API deprecation. |
+| Windows native debug build | PASS: npm run tauri -- build --debug --no-bundle --ci -- --locked --offline. No installer, release signing, GUI launch or runtime protection inference. |
+| cargo test --locked --offline | PASS native test compilation; 0 Rust tests. Original unlocked run also passed. |
+| cargo fmt -- --check | FAIL: existing source formatting differences. No formatting suppression applied. |
+| cargo clippy --all-targets -- -D warnings (locked/offline in final) | FAIL: needless_return in integrity.rs debug branch. Check is stricter than current CI; no allow attribute added. |
+| docker compose -f docker/docker-compose.yml config --quiet | PASS syntax/model validation; obsolete version warning. Does not check path existence, installed Nginx modules or healthy deployment. |
+| docker info | UNAVAILABLE: Docker Desktop Windows engine pipe missing. No container build/start or PostgreSQL integration. |
+| flutter version/analyze/test/APK build | UNAVAILABLE: command not found. Source scan independently confirms five missing screen imports and absent native service/channels/wrapper. No fake Dart compiler result. |
+| bash -n vpn-server/setup.sh | PATH bash fails because WSL has no /bin/bash; final installed Git Bash check PASSES. Syntax check is not a provisioning/routing test. |
+| npm ls --depth=0, backend and desktop | PASS; no missing installed direct dependencies reported. |
+| node --check on tracked JS/CJS | PASS: 16 original tracked files, including backend/security/dashboard/root tools. Scripts added in this phase separately syntax-checked. |
+| Source inventory | FAIL: 5 unresolved Dart imports; migration runner, Gradle wrapper and pubspec.lock absent; no tracked native Android source. Limited secret signatures yielded 0 candidates. |
+| npm audit, backend | FAIL: 30 findings: 7 low,10 moderate,12 high,1 critical. Critical includes proxy-addr. |
+| npm audit, desktop | FAIL: 13 findings: 1 low,4 moderate,7 high,1 critical. Critical includes JS plugin-shell2.0.0; Rust resolved version differs. |
+| npm audit, root icon tools | FAIL: 29 high package findings; not 29 independent vulnerabilities proven reachable. |
+| cargo audit/actionlint/Gitleaks | UNAVAILABLE: commands not installed. Rust/Dart advisory, workflow semantic lint and full secret/history scans not completed. |
 
-## GitHub evidence
+Machine output is in audit/phase01/before.json, after.json, final.json, javascript-syntax.json and three *-npm-audit.json files. Advisory counts include transitive/development dependencies and inherited severity; snapshots retain exact ranges and URLs. Scanner coverage is intentionally bounded: no credentials were found by selected signatures, but this does not prove a secret-free repository/history.
 
-Queried latest five workflow runs, ten issues and PRs, and five releases through authenticated gh API. Both latest workflows at baseline SHA failed: [CI run](https://github.com/manikantbindass/RdPBrowser/actions/runs/25126670549) and [Android release run](https://github.com/manikantbindass/RdPBrowser/actions/runs/25126711621). Job summaries show backend, desktop Windows/Linux/macOS and Docker succeeded; Android jobs failed. The API returned no failed step details, so root cause is not established from job summaries. A successful security job is insufficient evidence because checks are non-blocking.
+## Safe changes and preservation
 
-The recent issue response contained closed [#1](https://github.com/manikantbindass/RdPBrowser/issues/1) and [#2](https://github.com/manikantbindass/RdPBrowser/issues/2), both Android compatibility/startup complaints. The PR endpoint returned an empty list. Latest returned release: [v2.4.0](https://github.com/manikantbindass/RdPBrowser/releases/tag/v2.4.0), published 2026-04-18. Release existence does not establish correct signing or operation; artifacts were not installed.
+Backend fix commit 291f6e5 repairs the filtered IP-log count by defining alias l and guards start() with require.main===module. Existing npm start/direct node behavior and exported app/server/io remain intact; imports intentionally no longer initialize DB or bind a socket. Test teardown closes Socket.io and accepts only the expected ERR_SERVER_NOT_RUNNING from the deliberately unbound HTTP server. New tests verify import behavior and filtered/unfiltered pagination. No endpoint or response shape was removed.
 
-## Audit disposition
+The desktop application Cargo.lock is retained via a narrow gitignore exception, capturing the resolution already used by passing compilation. No dependency version upgrade was performed. This improves repeatability without asserting the graph is vulnerability-free or works on all OS/MSRV targets. Added read-only audit scripts, evidence and documentation. Other application features/configurations are preserved, including known defects; no security signal, native service or production function was simulated.
 
-PARTIAL verification: source audit and available checks performed; enterprise readiness is not established. Only documentation is changed. All existing application source and configurations are preserved byte-for-byte. Fixes and production rollout remain gated on phase prompts and acceptance evidence.
+## GitHub review
+
+Refreshed existing [draft PR #3](https://github.com/manikantbindass/RdPBrowser/pull/3) and latest runs. At inspection, the initial audit PR [CI run 42553874960](https://github.com/manikantbindass/RdPBrowser/actions/runs/42553874960) was in progress. Baseline main [CI run 25126670549](https://github.com/manikantbindass/RdPBrowser/actions/runs/25126670549) failed in Android; backend, desktop Windows/Linux/macOS and Docker jobs had succeeded. [Android release run 25126711621](https://github.com/manikantbindass/RdPBrowser/actions/runs/25126711621) also failed. Failed job metadata contained no step details, and both log endpoints returned HTTP410. Therefore Android CI root cause is not established from logs; missing code/wrapper and import failures are independently confirmed source defects.
+
+Closed [issue #1](https://github.com/manikantbindass/RdPBrowser/issues/1) reports incompatibility above Android15; [#2](https://github.com/manikantbindass/RdPBrowser/issues/2) reports Android16 incompatibility. Closure is not validation of a fix. Earlier release inspection returned [v2.4.0](https://github.com/manikantbindass/RdPBrowser/releases/tag/v2.4.0), published2026-04-18. Artifacts were not installed or signatures verified. CI security success is insufficient: audit, Trivy, analyzers or tests may be non-blocking in current workflows.
+
+## Claims and gaps
+
+README claims all-traffic routing, kill switch, production readiness, all-platform integrity, Android14–17/ARMv7 support, full screenshot prevention, Windows Defender integration, Gatekeeper sandboxing, offline sync and AI detection exceed established evidence. Navigation is authorized by a REST endpoint but WebViews fetch directly. Public health reachability is not proof of VPN. Detector implements fixed rules, not a model. RDP and parts of browser modules are placeholder UI; no working RDP implementation found. See feature-by-feature evidence in IMPLEMENTATION_STATUS and B13–B25/B35/B51.
+
+No real PostgreSQL transaction/migration acceptance, SSH host-key test, tenant isolation, tunnel/DNS/IPv6 leakage/failure check, native GUI E2E, accessibility assessment, load test, backup/restore drill or signed release verification was completed. These are explicit remaining gates, not successful tests.
+
+## Disposition
+
+PARTIAL: audit artifacts, prioritized register, available baseline and recovery plan delivered; cross-platform/infrastructure/security runtime acceptance remains unverified. Two narrowly understood backend defects are fixed and regression-tested. High/critical defects remain open. ROADMAP defines recovery order and rollback; no production deploy or main merge is authorized by this report.
