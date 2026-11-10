@@ -192,47 +192,17 @@ RdPBrowser/
 
 ## 🚀 Quick Start
 
-### Prerequisites
-- Node.js ≥ 18
-- Rust (for Tauri desktop)
-- Flutter ≥ 3.0 (for Android)
-- Docker + Docker Compose
-- A VPS with Ubuntu 22.04 and a **static IP**
+Phase 02 adds validated configuration, explicit migrations and a loopback-only development stack. Follow [Local development](docs/LOCAL_DEVELOPMENT.md) for prerequisites, exact commands and tests. Existing deployments must follow [Phase 02 migration](docs/MIGRATION_PHASE02.md) before changing configuration or mapping data volumes.
 
-### 1. Clone & Configure
-
-```bash
-git clone https://github.com/manikantbindass/RdPBrowser.git
-cd RdPBrowser
-
-# Copy and fill environment variables
-cp backend/.env.example backend/.env
-# Edit backend/.env with your PostgreSQL credentials, JWT secret, server IP
+```powershell
+node scripts/setup-dev.mjs
+npm ci --prefix backend
+npm ci --prefix desktop
+npm run config:check --prefix backend
+docker compose --env-file docker/.env -f docker/docker-compose.yml -f docker/compose.dev.yml up -d --build --wait
 ```
 
-### 2. Start Backend (Local Dev)
-
-```bash
-cd backend
-npm install
-npm run dev
-```
-
-### 3. Start Desktop Browser
-
-```bash
-cd desktop
-npm install
-npm run tauri dev
-```
-
-### 4. Build Android APK
-
-```bash
-cd android
-flutter pub get
-flutter build apk --release
-```
+On Windows use a Linux Docker context as described in the guide. This local profile deliberately disables the API VPN source filter and publishes only loopback ports; it is not a production security configuration. Backend migrations run before startup. [Architecture and diagrams](docs/ARCHITECTURE.md), [ADRs](docs/adr/0001-modular-monolith.md), [contracts](contracts/README.md) and [integration boundaries](docs/INTEGRATIONS.md) describe current behavior and remaining gaps.
 
 ---
 
@@ -305,16 +275,7 @@ flutter build apk --release --obfuscate --split-debug-info=build/debug-info
 
 ## 🐳 Docker Deployment
 
-```bash
-cd docker
-# Edit docker-compose.yml: replace YOUR_SERVER_IP and credentials
-docker-compose up -d
-```
-
-Services started:
-- `backend` — Node.js API on port 3000
-- `postgres` — PostgreSQL DB on port 5432
-- `nginx` — Reverse proxy on port 80/443
+Use the validated [local workflow](docs/LOCAL_DEVELOPMENT.md) for development. The production base Compose file publishes only the Nginx edge and requires reviewed secrets, exact origins, an explicit DB trust model and real TLS certificates. Read the [cutover guide](docs/MIGRATION_PHASE02.md) before using an existing database volume. Do not run the development override or privileged VPN provisioner on a production host.
 
 ---
 

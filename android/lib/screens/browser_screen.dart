@@ -1,3 +1,4 @@
+import '../config.dart';
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:http/http.dart' as http;
@@ -14,7 +15,6 @@ import 'downloads_screen.dart';
 import 'settings_screen.dart';
 import 'search_engine_screen.dart';
 
-const _serverUrl = String.fromEnvironment('SERVER_URL', defaultValue: 'https://YOUR_SERVER_STATIC_IP');
 
 class BrowserScreen extends StatefulWidget {
   final String authToken;

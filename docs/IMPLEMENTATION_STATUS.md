@@ -1,5 +1,11 @@
 # Phase 01 verified feature inventory
 
+## Phase 02 update (2026-11-10)
+
+The table below is the historical Phase 01 snapshot. Current architectural changes, verification evidence and remaining limits are in [PHASE02_REPORT.md](PHASE02_REPORT.md). Implemented: modular HTTP/realtime/runtime/config/logging boundaries, portable schemas, v1 with legacy aliases, explicit checksummed migrations/readiness, shared endpoint configuration, local Docker workflow and ADRs/diagrams. Organization/device/policy DTO definitions are design contracts, not tenant persistence or enforcement. Original auth/session/URL client interfaces remain; configuration and realtime handshake requirements have a migration guide.
+
+Backend unit/contract/lifecycle tests pass (42), and the earlier real PostgreSQL integration run passed four tests. Rust formatting, one config test and strict Clippy pass. Final container/database verification and its exact disposition are recorded in the Phase 02 report; do not infer full platform readiness from this summary. Missing Android implementations, refresh rotation, tenant isolation, network protection and signed release acceptance remain open.
+
 Date: 2026-11-09. Baseline main0aa4b40; safe backend fixes291f6e5. Source presence is distinct from functional acceptance. Defect IDs refer to BUG_REGISTER.md.
 
 | Capability | Observed implementation | Verification / actual status | Gaps |

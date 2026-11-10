@@ -1,8 +1,8 @@
+import '../config.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-const _serverUrl = String.fromEnvironment('SERVER_URL', defaultValue: 'https://YOUR_SERVER_STATIC_IP');
 
 class LoginScreen extends StatefulWidget {
   final void Function(String token) onLogin;
@@ -30,7 +30,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       final res = await http.post(
-        Uri.parse('$_serverUrl/api/auth/login'),
+        controlPlaneUri('/api/auth/login'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'username': username, 'password': password, 'deviceOs': 'android'}),
       ).timeout(const Duration(seconds: 10));

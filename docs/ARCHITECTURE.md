@@ -1,38 +1,98 @@
-# Architecture: current state and intended boundaries
+# RemoteShield X architecture
 
-Baseline inspected: 0aa4b400aeb87c248632f7760db1be30ba4bac88. See PROJECT_AUDIT.md for evidence and limitations.
+Phase 02 evolves the existing stack into a modular control-plane backend and explicit client/network/deployment boundaries. One Node/Express deployable and PostgreSQL remain; no broker, Redis, Kubernetes or microservice split is introduced. The Phase 01 audit remains historical evidence; current changes/limits are in PHASE02_REPORT.md.
 
-Phase 01 update: backend module imports no longer initialize DB or listen; direct execution remains the production entry point. Filtered IP-log count SQL alias is repaired. The desktop application's tested dependency graph is now retained in Cargo.lock. No network, auth, schema or deployment boundary has otherwise changed. BUG_REGISTER.md is the current detailed defect inventory; earlier initial-audit observations are superseded by Phase 01 command snapshots where applicable.
+## Component ownership and dependencies
 
-## Current components
-
-| Component | Implementation | Responsibility and limitation |
+| Boundary | Owns | Must not claim / depend on |
 |---|---|---|
-| Desktop | React/TypeScript, Vite, Rust/Tauri 2 | Browser UI, native commands, token memory, health watchdog. Managed policy has bypasses; health is not VPN attestation. |
-| Android | Flutter/Dart | Browser state/screens, secure-storage dependency, security/VPN MethodChannels. Required native implementations are absent. |
-| API | Node.js/Express JavaScript | Joi validation, bcrypt passwords, JWT, REST roles and session lookup. No tenant isolation or complete refresh lifecycle. |
-| Realtime/remote access | Socket.io, ssh2 | Admin room events and SSH relay. Privileged handlers lack authentication gates. |
-| Persistence | PostgreSQL | Users, sessions, URL rules, audit/IP logs and alerts; startup schema application, no migration runner. |
-| Admin | Static HTML/CSS/JavaScript | REST queries and socket updates; unsafe HTML interpolation needs review. |
-| Edge/network | Nginx, WireGuard templates | TLS reverse proxy and external VPN setup. Compose edge wiring and tunnel enforcement unverified. |
-| Security utilities | Node integrity tool, rule detector, Rust/Dart checks | Partial signals; cannot establish trustworthy device or binary state. |
+| desktop/ | Rust/Tauri process and native adapters, React/TypeScript UI, public endpoint config | Backend internals or proof of OS routing from a health response |
+| android/ | Dart/Flutter UI/state and native platform channels | npm/Rust runtime dependency; currently missing screens/native implementation remain open |
+| backend/ | Config/contracts, HTTP/realtime composition, auth/policy/admin adapters, SQL and lifecycle | Client UI imports or packet-level tunnel enforcement |
+| admin-dashboard/ | Browser admin presentation using control API and Socket.io | Direct DB access, client-authoritative roles or simulated infrastructure inventory |
+| contracts/ | Versioned JSON Schema DTO/request/error definitions | Secrets, executable platform implementation or proof of tenant isolation |
+| vpn-server/ | Privileged WireGuard/route/firewall/DNS provisioning | Automatic execution by control-plane startup; scripts require separate OS-specific verification |
+| nginx/,docker/ | Edge TLS/routing, process packaging, development isolation, migration sequencing | Browser content proxy, VPN attestations or embedded signing credentials |
+| security/ | Optional local detector and integrity utility | AI/durable audit/export or signing guarantees unsupported by tests |
 
-## Current request flow
+```mermaid
+flowchart TD
+  React[Desktop React] --> Rust[Tauri Rust commands]
+  React --> HTTP[HTTP control API]
+  Rust --> HTTP
+  Flutter[Android Flutter] --> HTTP
+  Admin[Admin browser] --> Edge[Nginx control edge]
+  Edge --> HTTP
+  Admin --> RT[Socket.io control events]
+  HTTP --> Routes[Auth / admin / policy adapters]
+  RT --> Identity[Shared active-session authentication]
+  Routes --> DB[PostgreSQL adapter]
+  Identity --> DB
+  Migration[Explicit migration CLI] --> DB
+  HTTP --> Schemas[Portable contracts]
+  Flutter -. native types later .-> Schemas
+  Rust -. native types later .-> Schemas
+  RT --> SSH[Development-only SSH adapter]
+```
 
-Clients call /api/auth for credentials and tokens. Protected REST routes run VPN middleware and token/session validation; admin router adds role validation. /api/laila is mounted before VPN middleware. /health is public and does not test DB readiness. Socket.io runs separately from Express middleware, so REST authentication does not secure socket events.
+Existing route modules retain the database facade while the composition root is separated. This is incremental architecture, not a claim that every route already uses a complete repository/service layer. Config/logging are process concerns; bootstrap imports do not connect, migrate or listen. Optional detector has an explicit stop handle. Runtime starts only after DB/migration verification and closes sockets/pool on shutdown.
 
-Navigation policy returns permission and a target URL. WebViews load content themselves; the backend is not a content proxy. VPN routing therefore depends on actual OS configuration, not this REST response. Desktop uses separate VITE_SERVER_URL (frontend) and REMOTESHIELD_SERVER (native) settings; defaults differ and include placeholders. Android channels require native services before their state can be trusted.
+## Control-plane data flow
 
-## Trust boundaries
+```mermaid
+sequenceDiagram
+  participant Client as Desktop / Android / Admin
+  participant Edge as Nginx edge
+  participant API as Express HTTP
+  participant Contract as Shared schema validator
+  participant DB as PostgreSQL
+  Client->>Edge: HTTPS /api/v1 request
+  Edge->>API: Forward request; overwrite proxy headers
+  API->>API: Generate request ID, exact CORS/rate/source checks
+  API->>Contract: Validate request DTO
+  Contract-->>API: Accepted or typed validation error
+  API->>DB: Verify active session; query/update state
+  DB-->>API: Result
+  API-->>Client: Compatible success or error + code/requestId
+  Note over API,DB: /ready verifies dependency and migration history
+  Note over Client,API: /api remains a compatibility alias
+```
 
-Treat client device IDs, VPN flags, Origin headers, URLs, socket payloads and forwarded headers as untrusted. Verify identity, active session, role and future tenant scope server-side on every privileged path. Terminate TLS at a defined edge, trust only configured proxy hops, and prevent direct backend exposure. SSH destinations and host keys require an explicit policy. Certificates, refresh credentials and signing keys need managed lifecycles.
+Public endpoints: /health liveness, /ready dependency readiness, /api/v1/meta API metadata, existing /api[/v1]/laila search. Auth/admin/policy routes use configured source filtering; protected routes use token/session verification; admin routes also check roles. Socket.io separately reuses active-session authentication. No implicit REST authentication is assumed to cover sockets.
 
-## Incremental target design (not implemented)
+## Network traffic flow and enforcement ownership
 
-Preserve Tauri/Rust/React, Flutter/Dart, Express/PostgreSQL, Socket.io, WireGuard, Nginx and Docker. Establish validated configuration, modular API services, migrations, transactional session/token management, tenant-scoped authorization and auditable device enrollment. Separate liveness from readiness. Add shared socket authorization and destination restrictions. Managed mode must enforce policy in native/network layers and fail closed under a documented availability policy.
+```mermaid
+flowchart LR
+  UI[User navigation] --> Decision[Control-plane policy decision]
+  Decision -. allow/deny advice .-> Native[Native WebView adapter]
+  Native --> OS[OS routes / firewall / DNS]
+  OS --> WG[WireGuard encrypted tunnel]
+  WG --> VPS[VPS routing / NAT]
+  VPS --> Site[Destination website]
+  OS -. direct path must be blocked by verified native policy .-> Site
+  Status[Health / UI VPN flag] -. observation only .-> UI
+```
 
-UI indicators are observations, not security proofs. Document unmanaged development mode explicitly and keep it unavailable to managed production policy. Use feature flags for unfinished features. Validate platform support through native builds, real-device checks and routing tests before making claims. Any schema/API change needs a migration and compatibility note in its phase report.
+The API is not in the website-content path. Native redirect/subresource interception, tunnel/DNS/IPv6 failure behavior, screenshot restrictions and tamper-resistant device trust remain platform work. Existing bypass/fail-open risks remain documented. The development profile deliberately permits direct control-plane access and must never be presented as managed security.
 
-## Operational gaps
+## Domain and persistence
 
-No verified horizontal socket/session coordination, graceful shutdown, readiness contracts, backup/restore drills, load targets, tenant isolation or signed supply-chain attestations were established. A future design must specify retention, audit integrity, recovery objectives and bounded resource use. No cloud resources or production settings were changed during this audit.
+contracts/README.md maps organization/user/device/session/policy/event DTOs to existing tables and missing future persistence. No organization/device registry/tenant migrations are introduced. The only migration is the existing schema baseline plus the migration ledger. Nullable legacy fields need deliberate migration before tenant APIs can be exposed. Events are versioned DTO designs, not a durable queue.
+
+## Deployment topology
+
+```mermaid
+flowchart LR
+  Client[Client] --> Edge[Nginx edge network]
+  Edge --> API[Backend: edge + DB networks]
+  API --> PG[(PostgreSQL: private DB network)]
+  Job[One-shot migrator: DB network] --> PG
+  Job -. completed successfully .-> API
+  Cert[Operator TLS certificate] --> Edge
+  Env[Validated process configuration] --> API
+```
+
+Local override publishes PostgreSQL5432, backend3001 and Nginx8180 only on127.0.0.1. Production base publishes only Nginx80/443. Nginx cannot directly reach PostgreSQL's private network. Compose uses health and migration completion dependencies; probes use installed Node, not missing curl. Images use tested digests, backend/root module layout is preserved in /app, and .dockerignore excludes secrets/caches. Production certificates, source topology, least-privilege DB roles and routing still need deployment review.
+
+See LOCAL_DEVELOPMENT.md for executable setup/checks, MIGRATION_PHASE02.md for compatibility/cutover, INTEGRATIONS.md for extension ports, and adr/0001–0005 for decisions/tradeoffs.

@@ -3,6 +3,12 @@ node_modules/
 dist/
 build/
 .env
+.env.local
+.env.production
+docker/certs/
+*.jks
+*.keystore
+key.properties
 *.log
 npm-debug.log*
 yarn-debug.log*

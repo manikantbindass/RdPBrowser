@@ -1,10 +1,10 @@
+import { SERVER_URL } from '../config';
 import React, { useState } from 'react';
 
 interface Props {
   onLogin: (token: string) => void;
 }
 
-const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:3001';
 
 const LoginScreen: React.FC<Props> = ({ onLogin }) => {
   const [username, setUsername] = useState('');

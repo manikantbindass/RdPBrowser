@@ -438,7 +438,7 @@ const Browser: React.FC<Props> = ({ authToken }) => {
           </div>
 
         ) : activeTab.url.startsWith('ssh://') ? (
-          <Terminal url={activeTab.url} />
+          <Terminal url={activeTab.url} authToken={authToken} />
 
         ) : activeTab.url.startsWith('https://laila.search') ? (
           <LailaSearch 

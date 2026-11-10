@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:remoteshield:http:v1",
+  "$defs": {
+    "loginRequest": {
+      "type": "object", "additionalProperties": false, "required": ["username", "password"],
+      "properties": {
+        "username": { "type": "string", "pattern": "^[a-zA-Z0-9]{3,80}$" },
+        "password": { "type": "string", "minLength": 8, "maxLength": 128 },
+        "deviceId": { "type": "string", "minLength": 1, "maxLength": 255 },
+        "deviceOs": { "enum": ["windows", "linux", "macos", "android"] }
+      }
+    },
+    "navigateRequest": {
+      "type": "object", "additionalProperties": false, "required": ["url"],
+      "properties": { "url": { "type": "string", "format": "uri", "maxLength": 8192 } }
+    },
+    "apiError": {
+      "type": "object", "required": ["error", "code", "requestId"], "additionalProperties": true,
+      "properties": {
+        "error": { "type": "string" }, "code": { "type": "string", "pattern": "^[A-Z_]+$" },
+        "requestId": { "type": "string", "format": "uuid" }
+      }
+    },
+    "metadata": {
+      "type": "object", "required": ["apiVersion", "service", "trafficEnforcement", "experimentalSsh"],
+      "properties": { "apiVersion": { "const": "1" }, "service": { "type": "string" }, "trafficEnforcement": { "const": "external" }, "experimentalSsh": { "type": "boolean" } }
+    }
+  }
+}

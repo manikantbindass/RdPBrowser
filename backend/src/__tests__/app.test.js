@@ -13,11 +13,16 @@ jest.mock('../db/db', () => ({
     release: jest.fn(),
   }),
   initDB: jest.fn().mockResolvedValue(undefined),
+  configure: jest.fn(),
+  checkReady: jest.fn().mockResolvedValue(undefined),
+  close: jest.fn().mockResolvedValue(undefined),
   pool: { on: jest.fn(), end: jest.fn() },
 }));
 
 // Set required env vars before requiring the app
 process.env.NODE_ENV = 'test';
+process.env.DATABASE_URL = 'postgresql://test:local@127.0.0.1/test';
+process.env.VPN_REQUIRED = 'false';
 process.env.JWT_SECRET = 'test_jwt_secret_at_least_32_chars_long';
 process.env.JWT_REFRESH_SECRET = 'test_refresh_secret_32_chars_min';
 process.env.VPN_SUBNET = '10.8.0.0/24';

@@ -1,3 +1,4 @@
+import '../config.dart';
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -7,7 +8,6 @@ import '../models/browser_tab.dart';
 import '../models/bookmark.dart';
 import '../models/history_entry.dart';
 
-const _serverUrl = String.fromEnvironment('SERVER_URL', defaultValue: 'https://YOUR_SERVER_STATIC_IP');
 
 class BrowserProvider extends ChangeNotifier {
   final String authToken;
@@ -242,7 +242,7 @@ class BrowserProvider extends ChangeNotifier {
   Future<bool> _checkUrl(String url) async {
     try {
       final res = await http.post(
-        Uri.parse('$_serverUrl/api/proxy/navigate'),
+        controlPlaneUri('/api/proxy/navigate'),
         headers: {
           'Authorization': 'Bearer $authToken',
           'Content-Type': 'application/json',

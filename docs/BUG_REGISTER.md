@@ -1,5 +1,22 @@
 # Phase 01 defect register
 
+## Phase 02 disposition (2026-11-10)
+
+Entries below remain the Phase 01 evidence snapshot. This delta supersedes their status only to the stated extent; see PHASE02_REPORT.md for final verification.
+
+| IDs | Phase 02 change | Remaining limit |
+|---|---|---|
+| B01 | Realtime uses active-session handshake auth; admin room/action gates; SSH isolated and default-off, forbidden in production | SSH host identity/destination enforcement and complete realtime revocation remain open |
+| B03/B08 | Explicit trusted proxy CIDRs, overwrite/ignore untrusted forwarded headers, exact origin allowlist; negative tests | Correct production topology still requires verification; dependency advisory B02 remains |
+| B04 | Validated config rejects production bypass, placeholder/same secrets and ambiguous DB TLS settings | Operator secret management/rotation and least-privilege deployment still needed |
+| B07 | Unique JWT IDs fix same-second collisions; DB session expiry follows JWT expiry | Full rotation/device enrollment/concurrency model remains open |
+| B26/B27 | Explicit verified TLS or private-network decision; startup and readiness verify DB/schema | Production TLS credentials/topology and outage acceptance not certified |
+| B31 | Same-origin Socket.io script and delegated DOM row actions replace CSP-incompatible script/handlers | Full browser/XSS remediation remains open |
+| B32/B33 | Correct detector/package paths, stop handle, explicit checksummed/advisory-lock migration CLI | Detector rules not AI; activation/operational acceptance is separate |
+| B37–B40 | Correct image layout, installed-runtime probes, migration sequencing, local Nginx edge and config source | Production TLS/source-access deployment remains operator-verified |
+| B44/B50 | New blocking architecture workflow and real PostgreSQL/realtime integration suite | Existing older workflow exceptions and missing platform/E2E/load tests remain |
+| B48/B49 | Locked installs/image digests; Rust formatting and strict Clippy pass | Android resolution/toolchain and cross-platform release verification remain |
+
 Date: 2026-11-09, Asia/Calcutta. Inspected application baseline: `0aa4b400aeb87c248632f7760db1be30ba4bac88`; Phase 01 started from `c5f7c81`. Severity prioritizes likely impact, not a claim that an exploit was demonstrated. Critical = privileged access/supply-chain advisory requiring urgent triage; High = security boundary, core feature or release blocker; Medium = material correctness/operability gap; Low = maintenance/UX issue. Open = source evidence or observed check failure; Unverified = runtime acceptance absent; Fixed = narrowly repaired and regression checked. Findings are grouped by shared cause; paths are repository-relative.
 
 ## Security, identity and API

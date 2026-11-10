@@ -1,5 +1,7 @@
 # Phase 01 roadmap and recovery plan
 
+Phase 02 was explicitly authorized to modernize architecture. Its implementation plan is PHASE02_PLAN.md; architecture/config/contracts/migrations/local deployment/ADR work and final verification are reported in PHASE02_REPORT.md. Use LOCAL_DEVELOPMENT.md and MIGRATION_PHASE02.md for the current workflow. Proposed later work below remains gated on a new phase prompt; Phase 02 does not authorize tenant enforcement, Android feature completion or production deployment.
+
 The user's phase prompts define scope. Phase 01 is audit plus safe baseline repair; the earlier proposed phase numbering is superseded by this explicit Phase 01 scope. No later product phase starts automatically. PLAN and BUG_REGISTER contain the scoped work and defect references.
 
 ## Delivered Phase 01 baseline

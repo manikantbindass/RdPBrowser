@@ -1,57 +1,27 @@
 'use strict';
-
 const { Pool } = require('pg');
 const fs = require('fs');
-const path = require('path');
-
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-  max: 20,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
-});
-
-pool.on('error', (err) => {
-  console.error('Unexpected PostgreSQL client error:', err);
-});
-
-/**
- * Initialize DB — run schema.sql on first boot
- */
-async function initDB() {
-  const schemaPath = path.join(__dirname, 'schema.sql');
-  const schema = fs.readFileSync(schemaPath, 'utf8');
-  try {
-    const client = await pool.connect();
-    try {
-      await client.query(schema);
-    } finally {
-      client.release();
-    }
-  } catch (error) {
-    console.warn("Postgres DB connection failed locally. Proceeding in degraded mode without DB state.", error.message);
+const { verifyMigrations } = require('./migrations');
+let config;
+let logger;
+let pool;
+function configure(nextConfig, nextLogger) {
+  if (pool && config !== nextConfig) throw new Error('Database already initialized');
+  config = nextConfig; logger = nextLogger;
+}
+function getPool() {
+  if (!config) throw new Error('Database is not configured');
+  if (!pool) {
+    pool = new Pool({ connectionString: config.DATABASE_URL,
+      ssl: config.DB_SSL_MODE === 'verify-full' ? { rejectUnauthorized: true, ...(config.DB_SSL_CA_FILE ? { ca: fs.readFileSync(config.DB_SSL_CA_FILE, 'utf8') } : {}) } : false,
+      max: 20, idleTimeoutMillis: 30000, connectionTimeoutMillis: 2000, statement_timeout: 15000 });
+    pool.on('error', () => logger?.error({ event: 'database.pool_error' }));
   }
+  return pool;
 }
-
-/**
- * Execute a parameterised query
- */
-async function query(text, params) {
-  const start = Date.now();
-  const res = await pool.query(text, params);
-  const duration = Date.now() - start;
-  if (duration > 1000) {
-    console.warn(`Slow query (${duration}ms): ${text}`);
-  }
-  return res;
-}
-
-/**
- * Get a client for transactions
- */
-async function getClient() {
-  return pool.connect();
-}
-
-module.exports = { query, getClient, initDB, pool };
+async function query(text, params) { return getPool().query(text, params); }
+async function getClient() { return getPool().connect(); }
+async function checkReady() { await query('SELECT 1'); await verifyMigrations(getPool()); }
+async function initDB() { await checkReady(); }
+async function close() { if (pool) { const previous = pool; pool = undefined; await previous.end(); } }
+module.exports = { query, getClient, initDB, checkReady, configure, getPool, close };

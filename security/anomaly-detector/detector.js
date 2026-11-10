@@ -135,8 +135,9 @@ function startAnomalyDetector(io, logger) {
   };
 
   run();
-  setInterval(run, RULES.CHECK_INTERVAL_MS);
+  const timer = setInterval(run, RULES.CHECK_INTERVAL_MS);
   logger?.info('🔍 Anomaly detector active (30s interval)');
+  return () => clearInterval(timer);
 }
 
 module.exports = { startAnomalyDetector };

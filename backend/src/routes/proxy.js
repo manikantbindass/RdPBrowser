@@ -66,8 +66,8 @@ async function logRequest(req, res, next) {
     const countryCode = geo ? geo.country : 'XX';
 
     // Geo-restriction check
-    if (process.env.GEO_RESTRICTION_ENABLED === 'true') {
-      const allowed = (process.env.ALLOWED_COUNTRIES || 'IN').split(',');
+    if (req.app.locals.config.GEO_RESTRICTION_ENABLED) {
+      const allowed = req.app.locals.config.ALLOWED_COUNTRIES.split(',');
       if (!allowed.includes(countryCode)) {
         return res.status(403).json({ error: `Access denied from country: ${countryCode}` });
       }
@@ -92,12 +92,12 @@ async function logRequest(req, res, next) {
 }
 
 // ─── POST /api/proxy/navigate — Browser navigation request ───────────────────
-router.post('/navigate', urlBlocklistCheck, logRequest, async (req, res) => {
+router.post('/navigate', require('../contracts').validateBody('navigateRequest'), urlBlocklistCheck, logRequest, async (req, res) => {
   // Return the proxy target — the actual request is made from the Tauri/Flutter WebView
   res.json({
     allowed: true,
     url: req.targetUrl,
-    serverIp: process.env.SERVER_PUBLIC_IP,
+    serverIp: req.app.locals.config.SERVER_PUBLIC_IP,
   });
 });
 

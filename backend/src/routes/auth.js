@@ -11,12 +11,7 @@ const crypto = require('crypto');
 const router = express.Router();
 
 // ─── Validation Schemas ───────────────────────────────────────────────────────
-const loginSchema = Joi.object({
-  username: Joi.string().alphanum().min(3).max(80).required(),
-  password: Joi.string().min(8).max(128).required(),
-  deviceId: Joi.string().max(255).optional(),
-  deviceOs: Joi.string().valid('windows', 'linux', 'macos', 'android').optional(),
-});
+const { validateBody } = require('../contracts');
 
 const registerSchema = Joi.object({
   username: Joi.string().alphanum().min(3).max(80).required(),
@@ -30,16 +25,16 @@ const registerSchema = Joi.object({
 });
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-function generateTokens(userId, role, deviceId) {
+function generateTokens(config, userId, role, deviceId) {
   const accessToken = jwt.sign(
     { sub: userId, role, deviceId },
-    process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRES_IN || '8h' }
+    config.JWT_SECRET,
+    { expiresIn: config.JWT_EXPIRES_IN, jwtid: crypto.randomUUID() }
   );
   const refreshToken = jwt.sign(
     { sub: userId, type: 'refresh' },
-    process.env.JWT_REFRESH_SECRET,
-    { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' }
+    config.JWT_REFRESH_SECRET,
+    { expiresIn: config.JWT_REFRESH_EXPIRES_IN, jwtid: crypto.randomUUID() }
   );
   return { accessToken, refreshToken };
 }
@@ -71,7 +66,7 @@ router.post('/register', async (req, res, next) => {
     );
 
     const user = result.rows[0];
-    const { accessToken, refreshToken } = generateTokens(user.id, user.role, deviceId);
+    const { accessToken, refreshToken } = generateTokens(req.app.locals.config, user.id, user.role, deviceId);
 
     // Log audit
     await query(
@@ -91,12 +86,9 @@ router.post('/register', async (req, res, next) => {
 });
 
 // ─── POST /api/auth/login ─────────────────────────────────────────────────────
-router.post('/login', async (req, res, next) => {
+router.post('/login', validateBody('loginRequest'), async (req, res, next) => {
   try {
-    const { error, value } = loginSchema.validate(req.body);
-    if (error) return res.status(400).json({ error: error.details[0].message });
-
-    const { username, password, deviceId, deviceOs } = value;
+    const { username, password, deviceId, deviceOs } = req.body;
 
     const result = await query(
       'SELECT id, username, password_hash, role, device_id, is_active, is_locked FROM users WHERE username=$1',
@@ -112,7 +104,7 @@ router.post('/login', async (req, res, next) => {
     if (user.is_locked) return res.status(403).json({ error: 'Account locked — contact admin' });
 
     // Device binding check
-    if (process.env.DEVICE_BINDING_ENABLED === 'true' && user.device_id && user.device_id !== deviceId) {
+    if (req.app.locals.config.DEVICE_BINDING_ENABLED && user.device_id && user.device_id !== deviceId) {
       await query(
         `INSERT INTO anomaly_alerts (user_id, alert_type, severity, details)
          VALUES ($1, 'device_mismatch', 'high', $2)`,
@@ -122,7 +114,7 @@ router.post('/login', async (req, res, next) => {
     }
 
     // Enforce single session
-    const maxSessions = parseInt(process.env.MAX_SESSIONS_PER_USER) || 1;
+    const maxSessions = req.app.locals.config.MAX_SESSIONS_PER_USER;
     await query(
       `UPDATE sessions SET is_active=FALSE, ended_at=NOW()
        WHERE user_id=$1 AND is_active=TRUE
@@ -130,8 +122,8 @@ router.post('/login', async (req, res, next) => {
       [user.id, maxSessions - 1]
     );
 
-    const { accessToken, refreshToken } = generateTokens(user.id, user.role, deviceId);
-    const expiresAt = new Date(Date.now() + 8 * 60 * 60 * 1000);
+    const { accessToken, refreshToken } = generateTokens(req.app.locals.config, user.id, user.role, deviceId);
+    const expiresAt = new Date(jwt.decode(accessToken).exp * 1000);
 
     await query(
       `INSERT INTO sessions (user_id, token_hash, device_id, device_os, vpn_ip, expires_at)
@@ -176,14 +168,14 @@ router.post('/refresh', async (req, res, next) => {
     const { refreshToken } = req.body;
     if (!refreshToken) return res.status(400).json({ error: 'Refresh token required' });
 
-    const payload = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+    const payload = jwt.verify(refreshToken, req.app.locals.config.JWT_REFRESH_SECRET);
     if (payload.type !== 'refresh') throw new Error('Invalid token type');
 
     const userResult = await query('SELECT id, username, role, device_id FROM users WHERE id=$1', [payload.sub]);
     const user = userResult.rows[0];
     if (!user) return res.status(401).json({ error: 'User not found' });
 
-    const { accessToken, refreshToken: newRefresh } = generateTokens(user.id, user.role, user.device_id);
+    const { accessToken, refreshToken: newRefresh } = generateTokens(req.app.locals.config, user.id, user.role, user.device_id);
     res.json({ accessToken, refreshToken: newRefresh });
   } catch (err) {
     if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError') {

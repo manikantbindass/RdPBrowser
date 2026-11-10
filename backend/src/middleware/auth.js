@@ -17,7 +17,7 @@ async function authenticateToken(req, res, next) {
   const token = authHeader.split(' ')[1];
 
   try {
-    const payload = jwt.verify(token, process.env.JWT_SECRET);
+    const payload = jwt.verify(token, req.app.locals.config.JWT_SECRET);
 
     // Verify session is still active in DB (catches force-logout)
     const tokenHash = crypto.createHash('sha256').update(token).digest('hex');

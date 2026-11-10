@@ -1,40 +1,17 @@
-# ─── Build Stage ──────────────────────────────────────────────────────────────
-FROM node:20-alpine AS builder
-
-WORKDIR /app
-
-# Install dependencies only (cached layer)
+FROM node:22-alpine@sha256:0e1754758c2df4cfa3e68d59e2e1b7374bb7fd9ea6328eaaacf15cc934af8202 AS dependencies
+WORKDIR /app/backend
 COPY backend/package*.json ./
-RUN npm ci --only=production
+RUN npm ci --omit=dev
 
-# ─── Production Stage ─────────────────────────────────────────────────────────
-FROM node:20-alpine AS production
-
-# Security: run as non-root user
-RUN addgroup -g 1001 -S remoteshield && \
-    adduser  -u 1001 -S remoteshield -G remoteshield
-
-WORKDIR /app
-
-# Copy node_modules from builder
-COPY --from=builder /app/node_modules ./node_modules
-
-# Copy source (exclude dev files)
-COPY backend/src ./src
+FROM node:22-alpine@sha256:0e1754758c2df4cfa3e68d59e2e1b7374bb7fd9ea6328eaaacf15cc934af8202
+RUN addgroup -g 1001 -S remoteshield && adduser -u 1001 -S remoteshield -G remoteshield
+WORKDIR /app/backend
+COPY --from=dependencies /app/backend/node_modules ./node_modules
 COPY backend/package.json ./
-
-# Copy security module
-COPY security ./security
-
-# Create logs dir with correct permissions
-RUN mkdir -p logs && chown -R remoteshield:remoteshield /app
-
+COPY backend/src ./src
+COPY contracts /app/contracts
+COPY security /app/security
 USER remoteshield
-
 EXPOSE 3000
-
-# Health check
-HEALTHCHECK --interval=15s --timeout=5s --start-period=10s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3000/health', r => process.exit(r.statusCode === 200 ? 0 : 1))"
-
+HEALTHCHECK --interval=10s --timeout=4s --start-period=10s --retries=6 CMD node src/healthcheck.js
 CMD ["node", "src/index.js"]

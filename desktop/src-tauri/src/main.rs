@@ -1,14 +1,15 @@
 // Prevents additional console window on Windows in release
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-mod vpn;
+mod config;
 mod integrity;
 mod platform;
+mod vpn;
 
+use log::{error, info, warn};
 use std::sync::Arc;
-use tauri::{WindowEvent, Emitter};
+use tauri::{Emitter, WindowEvent};
 use tokio::sync::Mutex;
-use log::{info, warn, error};
 
 pub struct AppState {
     pub vpn_connected: Arc<Mutex<bool>>,
@@ -51,10 +52,7 @@ async fn request_navigate(
 }
 
 #[tauri::command]
-async fn set_auth_token(
-    token: String,
-    state: tauri::State<'_, AppState>,
-) -> Result<(), String> {
+async fn set_auth_token(token: String, state: tauri::State<'_, AppState>) -> Result<(), String> {
     let mut t = state.auth_token.lock().await;
     *t = Some(token);
     Ok(())
@@ -75,7 +73,7 @@ fn main() {
     info!("RemoteShield X starting...");
 
     match integrity::verify_app_integrity() {
-        Ok(true)  => info!("✅ Integrity check passed"),
+        Ok(true) => info!("✅ Integrity check passed"),
         Ok(false) => {
             error!("❌ App integrity check FAILED");
             std::process::exit(1);
@@ -83,8 +81,18 @@ fn main() {
         Err(e) => warn!("⚠️  Integrity check skipped in dev mode: {e}"),
     }
 
-    let server_url = std::env::var("REMOTESHIELD_SERVER")
-        .unwrap_or_else(|_| "https://YOUR_SERVER_STATIC_IP".to_string());
+    let configured_server = std::env::var("REMOTESHIELD_SERVER")
+        .ok()
+        .or_else(|| option_env!("REMOTESHIELD_SERVER").map(str::to_string))
+        .unwrap_or_else(|| {
+            if cfg!(debug_assertions) {
+                "http://127.0.0.1:3001".into()
+            } else {
+                String::new()
+            }
+        });
+    let server_url = config::validate_server_url(&configured_server, cfg!(debug_assertions))
+        .expect("Set REMOTESHIELD_SERVER to a valid control-plane origin");
 
     let state = AppState {
         vpn_connected: Arc::new(Mutex::new(false)),
@@ -110,16 +118,22 @@ fn main() {
 
                     if !is_connected && was_connected {
                         warn!("VPN disconnected");
-                        let _ = app_handle.emit("vpn_status", serde_json::json!({
-                            "connected": false,
-                            "message": "VPN disconnected — browser blocked for security"
-                        }));
+                        let _ = app_handle.emit(
+                            "vpn_status",
+                            serde_json::json!({
+                                "connected": false,
+                                "message": "VPN disconnected — browser blocked for security"
+                            }),
+                        );
                     } else if is_connected && !was_connected {
                         info!("VPN reconnected");
-                        let _ = app_handle.emit("vpn_status", serde_json::json!({
-                            "connected": true,
-                            "message": "VPN connected"
-                        }));
+                        let _ = app_handle.emit(
+                            "vpn_status",
+                            serde_json::json!({
+                                "connected": true,
+                                "message": "VPN connected"
+                            }),
+                        );
                     }
                     was_connected = is_connected;
                 }
@@ -127,9 +141,7 @@ fn main() {
 
             Ok(())
         })
-        .on_window_event(|_window, event| {
-            if let WindowEvent::DragDrop(_) = event {}
-        })
+        .on_window_event(|_window, event| if let WindowEvent::DragDrop(_) = event {})
         .invoke_handler(tauri::generate_handler![
             check_vpn_status,
             request_navigate,
