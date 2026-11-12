@@ -30,7 +30,7 @@ Reproduce with installed backend dependencies, running PostgreSQL and a dedicate
 |---|---|
 | ESLint, zero warnings | PASS |
 | Unit/HTTP/config/lifecycle/OpenAPI tests | PASS, final 53 tests across 8 suites; includes in-flight worker shutdown regression |
-| PostgreSQL migration/API/realtime integration | Earlier PASS, 19 tests; final local rerun failed during Docker outage; unique schemas/roles confined to dedicated test DB |
+| PostgreSQL migration/API/realtime integration | PASS, final implementation commit verified in GitHub CI: 19 tests; final local rerun failed during Docker outage |
 | Migration adoption, repeat/concurrent runner, checksum and failed-DDL rollback | PASS against PostgreSQL 15 |
 | Tenant negatives: lists, spoofed header/claims, admin mutations, devices/sessions/policies/events, direct SQL and ownership FK | PASS under non-superuser/NOBYPASSRLS runtime role |
 | Concurrent login cap, refresh replay, logout/lock revocation, audit-failure rollback | PASS against real PostgreSQL |
@@ -48,6 +48,10 @@ Unit-only coverage remains modest because most authenticated paths execute in th
 During the final container rebuild the local Docker engine became unresponsive. An intermediate final rerun therefore failed PostgreSQL/container probes despite the earlier passing 19-test database suite and successful production image build. That failed attempt is retained in `audit/phase04/docker-outage.json`; it is not a passing result. Docker restart itself timed out while stopping its backend process; recovery was attempted without deleting volumes or force-killing Docker. Final dispositions must follow the latest verification record rather than extrapolating from earlier runs. Connection/query and runner deadlines were added so unavailable infrastructure fails explicitly.
 
 After the bounded verification record, a final shutdown repair makes the runtime await in-flight anomaly work before closing the database and prevents starting another tenant scan during stop. `npm run lint --prefix backend` and `npm test --prefix backend -- --runInBand --detectOpenHandles --coverage=false` then passed: 8 suites/53 tests. The earlier full coverage table has 52 tests; it predates this added worker regression and is not represented as a 53-test coverage run. Final local PostgreSQL/container acceptance remains blocked on the unresponsive engine; CI must verify the current commit on a healthy PostgreSQL service. No checks are suppressed.
+
+### Final implementation CI acceptance
+
+Implementation commit `beb1e1d476c5a80b4e25c49bb7dbaca7f10ca0fe` subsequently passed [Architecture baseline run 43201574639](https://github.com/manikantbindass/RdPBrowser/actions/runs/43201574639), job `contracts-and-postgres`: clean install, zero-warning lint, reproducible OpenAPI/no generated drift, 8 unit suites/53 tests and 2 real PostgreSQL suites/19 tests. Job steps and decoded logs were read from GitHub; counts/results are retained in [github-ci.json](audit/phase04/github-ci.json). This verifies the final backend source on the configured Node22/Linux/PostgreSQL15 runner despite the failed final local Docker rerun. The broad workflow's backend job also passed; its security job ignores known failures and is not treated as a clean audit. Other platform jobs are separate gates and were still running when checked. No merge or production approval follows from this backend CI success. Overall status remains PARTIAL because dependency findings and production operational acceptance remain open.
 
 ## Files and remaining work
 
