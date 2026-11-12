@@ -8,11 +8,13 @@ const transactions = new AsyncLocalStorage();
 let config;
 let logger;
 let pool;
+let closed=false;
 function configure(nextConfig, nextLogger) {
   if (pool && config !== nextConfig) throw new Error('Database already initialized');
-  config = nextConfig; logger = nextLogger;
+  config = nextConfig; logger = nextLogger; closed=false;
 }
 function getPool() {
+  if (closed) throw new Error('Database is closed');
   if (!config) throw new Error('Database is not configured');
   if (!pool) {
     pool = new Pool({ connectionString: config.DATABASE_URL,
@@ -52,5 +54,5 @@ async function assertRuntimeRole(pool) {
 }
 async function checkReady() { const pool=getPool(); await assertRuntimeRole(pool); await verifyMigrations(pool); }
 async function initDB() { await checkReady(); }
-async function close() { if (pool) { const previous = pool; pool = undefined; await previous.end(); } }
+async function close() { closed=true; if (pool) { const previous = pool; pool = undefined; await previous.end(); } }
 module.exports = { query, transaction, getClient, initDB, checkReady, assertRuntimeRole, configure, getPool, close };

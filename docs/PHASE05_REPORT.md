@@ -36,7 +36,7 @@ Run `node scripts/verify-phase05.mjs`. With INTEGRATION_DATABASE_URL it uses a d
 |---|---|
 | Baseline before functionality | PASS53 unit tests |
 | ESLint with zero warnings | PASS |
-| Unit/config/HTTP/domain/lifecycle/OpenAPI | PASS76 tests /10 suites, including unsafe provider config, role/tenant/device/MFA/session negatives |
+| Unit/config/HTTP/domain/lifecycle/OpenAPI | PASS77 tests /11 suites, including unsafe provider config, role/tenant/device/MFA/session negatives and late async shutdown guard |
 | PostgreSQL migration/API/realtime/identity | PASS23 tests /3 suites; final verification record is authoritative |
 | Native signed OIDC fixture |19 protocol/lifecycle scenarios inside the identity integration test, with actual openid-client/JWKS/RSA verification and real PostgreSQL/HTTP |
 | OIDC negatives | Wrong nonce/audience/issuer/expiry/signature/algorithm/authentication time, missing browser cookie, state replay/expiry, cross-tenant provider mix-up, matching-email unlinked subject and missing MFA rejected |
@@ -52,6 +52,8 @@ The OIDC fixture replaces only outbound HTTPS provider transport with determinis
 Docker remained unavailable. To meet the requirement to run relevant checks **before committing**, a pinned test-only PostgreSQL15.19 Windows binary package was downloaded into ignored `.local-tests`, initialized with a random password and random loopback port, used only for dedicated test databases and stopped afterward. No existing database or Docker data was changed. Initial Windows process-pipe handling timed out after PostgreSQL had started; the identified test-only instance was stopped, inherited pipe handling was corrected, and subsequent runs completed successfully. An early OIDC harness count assertion exposed14 grouped scenarios against a15 minimum; additional algorithm/browser/auth-time and policy-activation cases were added, yielding19 rather than reducing the assertion or suppressing failures.
 
 Unit coverage output is retained without changing thresholds. Most authenticated paths execute in the separate real-DB suite and the native protocol child, so unit-only coverage is not represented as total combined coverage. Host Node24.14.1 and PostgreSQL15.19 were actually exercised; configured Node22/PostgreSQL15 CI is a separate verification gate after push. No test, analyzer or security check was disabled.
+
+The main identity commit `1a8666a07e03bb1e600f065aa31f205e34237b1a` passed [Architecture baseline on Node22/PostgreSQL15](https://github.com/manikantbindass/RdPBrowser/actions/runs/43211406523): lint/OpenAPI reproducibility,76 unit tests and23 integration tests. A final lifecycle review then added a pool-closed guard so asynchronous OIDC work cannot reopen a database pool after shutdown. Explicit configure begins a new lifecycle; in-flight drain semantics remain. Before committing that follow-up, the full local verification passed again with77 unit tests/11 suites and23 integration tests/3 suites. The final machine record includes this guard and regression test; live-provider acceptance remains separate.
 
 ## Security limitations and remaining acceptance
 

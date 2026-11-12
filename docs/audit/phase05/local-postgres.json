@@ -1,9 +1,9 @@
 {
-  "capturedAt": "2026-11-12T11:40:00.267Z",
+  "capturedAt": "2026-11-12T11:44:46.418Z",
   "node": "v24.14.1",
   "postgres": "postgres (PostgreSQL) 15.19",
   "scope": "Disposable password-authenticated loopback cluster; isolated schemas and restricted runtime roles",
   "command": "npm run test:integration --prefix backend",
   "exitCode": 0,
-  "output": "\n> @manikantbindass/remoteshield-x-backend@1.0.0 test:integration\n> jest --runInBand --testPathIgnorePatterns=/__tests__/ --testMatch=**/integration/*.integration.js --coverage=false\n\nPASS integration/enterprise.integration.js (13.2 s)\nPASS integration/identity.integration.js\nPASS integration/architecture.integration.js\n\nTest Suites: 3 passed, 3 total\nTests:       23 passed, 23 total\nSnapshots:   0 total\nTime:        17.815 s\nRan all test suites.\n"
+  "output": "\n> @manikantbindass/remoteshield-x-backend@1.0.0 test:integration\n> jest --runInBand --testPathIgnorePatterns=/__tests__/ --testMatch=**/integration/*.integration.js --coverage=false\n\nPASS integration/enterprise.integration.js (12.115 s)\nPASS integration/identity.integration.js\nPASS integration/architecture.integration.js\n\nTest Suites: 3 passed, 3 total\nTests:       23 passed, 23 total\nSnapshots:   0 total\nTime:        15.694 s, estimated 18 s\nRan all test suites.\n"
 }
