@@ -57,6 +57,8 @@ The main identity commit `1a8666a07e03bb1e600f065aa31f205e34237b1a` passed [Arch
 
 ## Security limitations and remaining acceptance
 
+Final code commit `8459103c1b0f244b5a9a47fb0210b2fcb11f57d3` passed [Architecture baseline run43212014411](https://github.com/manikantbindass/RdPBrowser/actions/runs/43212014411): clean install, zero-warning lint, OpenAPI generation/no drift,77 unit tests/11 suites and23 real PostgreSQL integration tests/3 suites, including native signed OIDC. Job steps and decoded logs were read; [github-ci.json](audit/phase05/github-ci.json) records this final source acceptance. This does not convert fixture-provider tests into live vendor acceptance or resolve dependency/security debt. Following changes only record evidence/documentation; the PR stays draft.
+
 1. No production IdP tenant/client credentials were supplied. Actual Okta/Entra discovery/redirect, provider MFA/Conditional Access claim semantics, secret/key rotation, outage and administrator recovery must be validated with the operator. The standards adapter is implemented; vendor-wide presets/certification are not claimed.
 2. Native external-browser handoff, SSO UI and secure device private-key/token storage in Tauri/Flutter remain unimplemented integrations. No bearer tokens are put in redirect URLs and no confidential client secret is shipped to clients as a workaround.
 3. Device approval is a reviewed operator assertion; ECDSA proof establishes key possession, not hardware identity, malware/root compliance or MDM attestation. No per-request DPoP/mTLS. A copied key or stolen bearer session within its proof freshness window remains a risk. Compatibility mode is deliberately less restrictive and must not be presented as enforced enterprise posture.
