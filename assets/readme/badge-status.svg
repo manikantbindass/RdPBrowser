@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="292" height="36" viewBox="0 0 292 36" role="img" aria-labelledby="title desc">
+<title id="title">STATUS: Experimental</title><desc id="desc">Repository metadata: Experimental. Not a certification.</desc>
+<defs><linearGradient id="accent"><stop stop-color="#58e7f3"/><stop offset="1" stop-color="#2788ff"/></linearGradient>
+<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10" fill="#58e7f3"/></marker></defs>
+<rect width="292" height="36" rx="20" fill="#071426"/>
+<g font-family="Segoe UI,Arial,sans-serif"><rect x="1" y="1" width="290" height="34" rx="8" fill="#0d2038" stroke="#244364"/><text x="14" y="24" fill="#58e7f3" font-size="12" font-weight="600">STATUS</text><text x="80" y="24" fill="#f1f7ff" font-size="13" font-weight="600">Experimental</text></g></svg>
