@@ -3,6 +3,7 @@
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const { query } = require('../db/db');
+const { withTenant,DEFAULT_ORGANIZATION } = require('../db/tenant');
 
 /**
  * JWT Authentication Middleware
@@ -17,14 +18,18 @@ async function authenticateToken(req, res, next) {
   const token = authHeader.split(' ')[1];
 
   try {
-    const payload = jwt.verify(token, req.app.locals.config.JWT_SECRET);
+    const payload = jwt.verify(token, req.app.locals.config.JWT_SECRET, { algorithms:['HS256'] });
+    const organizationId = payload.organizationId || DEFAULT_ORGANIZATION;
 
     // Verify session is still active in DB (catches force-logout)
     const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    return await withTenant(organizationId, async () => {
     const sessionResult = await query(
-      `SELECT s.id, s.is_active, s.expires_at
-       FROM sessions s
-       WHERE s.token_hash = $1 AND s.user_id = $2`,
+      `SELECT s.id, s.is_active, s.expires_at, u.role
+       FROM sessions s JOIN users u ON u.id=s.user_id AND u.organization_id=s.organization_id
+       JOIN organizations o ON o.id=s.organization_id
+       WHERE s.token_hash = $1 AND s.user_id = $2 AND s.is_active AND u.is_active AND NOT u.is_locked AND o.is_active
+       AND NOT EXISTS (SELECT 1 FROM devices d WHERE d.external_id=s.device_id AND d.status='revoked')`,
       [tokenHash, payload.sub]
     );
 
@@ -37,9 +42,10 @@ async function authenticateToken(req, res, next) {
       return res.status(401).json({ error: 'Session expired', code: 'SESSION_EXPIRED' });
     }
 
-    req.user = payload;
+    req.user = { ...payload, organizationId, role:sessionResult.rows[0].role };
     req.sessionId = sessionResult.rows[0].id;
     next();
+    });
   } catch (err) {
     if (err.name === 'TokenExpiredError') {
       return res.status(401).json({ error: 'Token expired', code: 'TOKEN_EXPIRED' });

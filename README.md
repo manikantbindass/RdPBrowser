@@ -28,19 +28,20 @@ The repository is being improved incrementally. Existing API clients retain `/ap
 
 | Capability | Current evidence | Status |
 |---|---|---|
-| Modular backend and validated configuration | 42 local unit/contract/lifecycle tests; architecture CI | Implemented |
+| Modular backend and validated configuration | Phase 04 unit/OpenAPI/PostgreSQL verification; architecture CI | Implemented |
 | API v1, legacy aliases, structured errors | Shared JSON Schemas and compatibility tests | Implemented |
-| PostgreSQL migration tracking | Adoption, concurrency, rollback/checksum integration tests | Implemented; local final rerun was Docker-blocked |
+| PostgreSQL migration tracking and isolation | Adoption, concurrency, rollback/checksums, restricted-role RLS and cross-tenant tests | Implemented; production recovery drill pending |
 | Desktop frontend and Windows native debug build | TypeScript/Vite, Rust test, formatting and Clippy | Build verified; runtime security unverified |
-| Admin REST controls and realtime authentication | Existing role/session checks; integration coverage | Partial |
-| URL policy | Existing allow/deny decisions; known bypass/parity defects | Partial |
+| Admin REST controls and realtime authentication | Tenant roles, live sessions, per-delivery revocation checks | Backend implemented; full admin UI acceptance pending |
+| URL policy | Shared literal wildcard evaluator, revisioned storage, deny/allow parity | Backend implemented; client enforcement incomplete |
 | Android application | Flutter source; missing screens, native channels and wrapper | Blocked |
-| Device registry and organization isolation | Portable domain definitions; no implemented tenant/device registry | Planned |
+| Device registry and organization isolation | Tenant persistence, RLS/composite ownership, self-enrollment/revocation | Implemented; device attestation absent |
 | VPN, DNS and kill-switch enforcement | WireGuard templates; native failure/bypass gaps | Unverified/incomplete |
-| Refresh rotation, device trust, signed releases | Open defects and missing acceptance evidence | Incomplete |
+| Refresh rotation | Persisted single-use refresh, session revocation and race tests | Implemented; client secure storage remains |
+| Device trust and signed releases | Open defects and missing acceptance evidence | Incomplete |
 | RDP, media/AI modules, offline audit sync | Placeholder UI or no implementation found | Not implemented |
 
-See the [verified inventory](docs/IMPLEMENTATION_STATUS.md), [audit](docs/PROJECT_AUDIT.md) and [Phase 02 evidence](docs/PHASE02_REPORT.md). No all-traffic, screenshot-prevention, tamper-resistance, AI-detection or universal Android-compatibility guarantee is made.
+See the [verified inventory](docs/IMPLEMENTATION_STATUS.md), [audit](docs/PROJECT_AUDIT.md) and [Phase 04 evidence](docs/PHASE04_REPORT.md). No all-traffic, screenshot-prevention, tamper-resistance, AI-detection or universal Android-compatibility guarantee is made.
 
 ## Architecture
 
@@ -77,9 +78,10 @@ See the [capture ledger](assets/readme/SCREENSHOTS.md) for actual captures and b
 - Exact CORS origins and explicit trusted proxies replace loose origin/header trust.
 - Errors carry server-owned request IDs; structured logs omit request bodies and redact credential fields.
 - Explicit migrations precede startup. `/health` is liveness; `/ready` checks database/schema availability.
-- Native enforcement, tenant isolation, refresh-token lifecycle, device attestation and durable audit delivery still require dedicated work.
+- Tenant-scoped database/service access and single-use refresh rotation have real PostgreSQL negative/race tests.
+- Native enforcement, device attestation, external audit retention and remaining dependency findings require further work.
 
-Development mode deliberately permits direct control-plane access. Experimental SSH is default-off and forbidden by production configuration. Read the [security policy](SECURITY.md) and [cutover requirements](docs/MIGRATION_PHASE02.md) before relying on any deployment.
+Development mode deliberately permits direct control-plane access. Experimental SSH is default-off and forbidden by production configuration. Read the [security policy](SECURITY.md) and [cutover requirements](docs/MIGRATION_PHASE04.md) before relying on any deployment.
 
 ## Platform compatibility
 
@@ -137,13 +139,14 @@ New clients use `/api/v1`; existing `/api` aliases remain. Login and navigation 
 | Entry point | Purpose |
 |---|---|
 | `/api/v1/meta` | Public API metadata; enforcement reported as external |
-| `/api/v1/auth/*` | Existing authentication/session flows; known refresh gaps |
+| `/api/v1/auth/*` | Persisted registration/login sessions and single-use refresh rotation |
 | `/api/v1/admin/*` | Role-gated sessions, rules, users and audit views |
 | `/api/v1/proxy/navigate` | Policy approval, not content proxying |
+| `/api/v1/devices`, `/sessions`, `/policies`, `/events` | Tenant-aware backend registry, lifecycle, decisions and event intake |
 | `/health`, `/ready` | Independent process/dependency observations |
 | `/admin/` | Existing web administration frontend |
 
-[API inventory](contracts/API.md) · [Domain contracts](contracts/README.md) · [Admin source](admin-dashboard/) · [Integration ports](docs/INTEGRATIONS.md)
+[API inventory](contracts/API.md) · [OpenAPI specification](contracts/openapi.json) · [Domain contracts](contracts/README.md) · [Admin source](admin-dashboard/) · [Integration ports](docs/INTEGRATIONS.md)
 
 ## Testing
 
@@ -169,9 +172,9 @@ python scripts/validate_readme.py
 ## Roadmap
 
 1. Restore complete Android sources/toolchain and enforce reliable release gates.
-2. Finish authentication/refresh/device lifecycle and tenant-scoped authorization.
+2. Review remaining dependencies, production role provisioning and authentication operations.
 3. Verify managed native navigation, tunnel failure, DNS and IPv6 behavior per platform.
-4. Implement real device/policy management and safe administration flows.
+4. Complete device attestation, client policy enforcement and safe administration UI flows.
 5. Establish signing, performance, audit retention and tested recovery targets.
 
 [Prioritized roadmap](docs/ROADMAP.md) · [Defect register](docs/BUG_REGISTER.md) · [Current phase reports](docs/)

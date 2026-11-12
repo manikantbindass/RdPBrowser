@@ -1,125 +1,24 @@
 'use strict';
-
-const express = require('express');
-// 4: 251onst { createProxyMiddleware } = require('http-proxy-middleware')
-const { query } = require('../db/db');
-const geoip = require('geoip-lite');
-
-const router = express.Router();
-
-// ─── URL Blocklist Middleware ─────────────────────────────────────────────────
-async function urlBlocklistCheck(req, res, next) {
-  try {
-    const targetUrl = req.query.url || req.body?.url;
-    if (!targetUrl) return res.status(400).json({ error: 'Target URL required' });
-
-    // Normalize URL
-    let parsedUrl;
-    try { parsedUrl = new URL(targetUrl); } catch {
-      return res.status(400).json({ error: 'Invalid URL' });
-    }
-
-    // Check against blocklist in DB
-    const blocked = await query(
-      'SELECT pattern, reason FROM blocked_urls WHERE is_active=TRUE'
-    );
-
-    for (const row of blocked.rows) {
-      const pattern = row.pattern;
-      // Support wildcard glob matching
-      const regex = new RegExp('^' + pattern.replace(/\./g, '\\.').replace(/\*/g, '.*') + '$', 'i');
-      if (regex.test(parsedUrl.hostname) || regex.test(parsedUrl.href)) {
-        await query(
-          `INSERT INTO ip_logs (user_id, request_ip, vpn_confirmed, url_requested, flagged, flag_reason)
-           VALUES ($1, $2, TRUE, $3, TRUE, $4)`,
-          [req.user.sub, req.vpnClientIp, targetUrl, `Blocked URL: ${row.reason || pattern}`]
-        );
-        return res.status(403).json({ error: 'URL blocked by administrator', reason: row.reason });
-      }
-    }
-
-    // Check whitelist if enabled
-    const whitelist = await query('SELECT pattern FROM allowed_urls WHERE is_active=TRUE');
-    if (whitelist.rows.length > 0) {
-      const isAllowed = whitelist.rows.some((row) => {
-        const regex = new RegExp('^' + row.pattern.replace(/\./g, '\\.').replace(/\*/g, '.*') + '$', 'i');
-        return regex.test(parsedUrl.hostname);
-      });
-      if (!isAllowed) {
-        return res.status(403).json({ error: 'URL not on whitelist' });
-      }
-    }
-
-    req.targetUrl = targetUrl;
-    req.parsedUrl = parsedUrl;
-    next();
-  } catch (err) {
-    next(err);
-  }
-}
-
-// ─── IP / Geo Logging Middleware ──────────────────────────────────────────────
-async function logRequest(req, res, next) {
-  try {
-    const ip = req.vpnClientIp || req.ip;
-    const geo = geoip.lookup(ip);
-    const countryCode = geo ? geo.country : 'XX';
-
-    // Geo-restriction check
-    if (req.app.locals.config.GEO_RESTRICTION_ENABLED) {
-      const allowed = req.app.locals.config.ALLOWED_COUNTRIES.split(',');
-      if (!allowed.includes(countryCode)) {
-        return res.status(403).json({ error: `Access denied from country: ${countryCode}` });
-      }
-    }
-
-    await query(
-      `INSERT INTO ip_logs (user_id, session_id, request_ip, vpn_confirmed, url_requested, user_agent, country_code)
-       VALUES ($1, $2, $3, TRUE, $4, $5, $6)`,
-      [req.user.sub, null, ip, req.targetUrl, req.headers['user-agent'] || '', countryCode]
-    );
-
-    // Update session last_activity
-    await query(
-      'UPDATE sessions SET last_activity=NOW() WHERE user_id=$1 AND is_active=TRUE',
-      [req.user.sub]
-    );
-
-    next();
-  } catch (err) {
-    next(err);
-  }
-}
-
-// ─── POST /api/proxy/navigate — Browser navigation request ───────────────────
-router.post('/navigate', require('../contracts').validateBody('navigateRequest'), urlBlocklistCheck, logRequest, async (req, res) => {
-  // Return the proxy target — the actual request is made from the Tauri/Flutter WebView
-  res.json({
-    allowed: true,
-    url: req.targetUrl,
-    serverIp: req.app.locals.config.SERVER_PUBLIC_IP,
+const router=require('express').Router();
+const { query,transaction }=require('../db/db');
+const { evaluate }=require('../services/policy');
+const { Joi,validate,wrap,fail }=require('../services/validation');
+const geoip=require('geoip-lite');
+async function decision(req,res,navigate) {
+  const url=navigate ? req.body.url : validate(Joi.string().uri({ scheme:['http','https'] }).max(8192).required(),req.query.url);
+  const country=geoip.lookup(req.vpnClientIp || req.ip)?.country || 'XX';
+  if (req.app.locals.config.GEO_RESTRICTION_ENABLED && !req.app.locals.config.ALLOWED_COUNTRIES.split(',').includes(country)) fail(403,'Country not allowed');
+  const result=await evaluate(url);
+  if (navigate) await transaction(async () => {
+    // Do not persist URL credentials, query tokens or fragments in activity logs.
+    const parsed=new URL(url); parsed.search=''; parsed.hash='';
+    await query(`INSERT INTO ip_logs(user_id,session_id,request_ip,vpn_confirmed,url_requested,country_code,flagged,flag_reason)
+      VALUES($1,$2,$3,$4,$5,$6,$7,$8)`,[req.user.sub,req.sessionId,req.vpnClientIp || req.ip,req.app.locals.config.VPN_REQUIRED,parsed.toString(),country,!result.allowed,result.allowed ? null : result.reason]);
+    await query('UPDATE sessions SET last_activity=NOW() WHERE id=$1',[req.sessionId]);
   });
-});
-
-// ─── GET /api/proxy/check — Check if URL is allowed ─────────────────────────
-router.get('/check', async (req, res, next) => {
-  try {
-    const targetUrl = req.query.url;
-    if (!targetUrl) return res.status(400).json({ error: 'URL required' });
-
-    const blocked = await query('SELECT pattern FROM blocked_urls WHERE is_active=TRUE');
-    let parsedUrl;
-    try { parsedUrl = new URL(targetUrl); } catch {
-      return res.status(400).json({ error: 'Invalid URL' });
-    }
-
-    const isBlocked = blocked.rows.some((row) => {
-      const regex = new RegExp('^' + row.pattern.replace(/\./g, '\\.').replace(/\*/g, '.*') + '$', 'i');
-      return regex.test(parsedUrl.hostname);
-    });
-
-    res.json({ allowed: !isBlocked, url: targetUrl });
-  } catch (err) { next(err); }
-});
-
-module.exports = router;
+  if (navigate && !result.allowed) return res.status(403).json({ error:'URL blocked by administrator',reason:result.reason });
+  res.json({ ...result,...(navigate ? { serverIp:req.app.locals.config.SERVER_PUBLIC_IP } : {}) });
+}
+router.post('/navigate',require('../contracts').validateBody('navigateRequest'),wrap((req,res) => decision(req,res,true)));
+router.get('/check',wrap((req,res) => decision(req,res,false)));
+module.exports=router;

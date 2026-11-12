@@ -1,5 +1,9 @@
 # Phase 01 roadmap and recovery plan
 
+## Phase 04 delivered backend and next gates
+
+Tenant-aware backend interfaces, atomic token/session lifecycle, database RLS/constraints/indexes, OpenAPI and negative integration coverage are delivered; [PHASE04_REPORT.md](PHASE04_REPORT.md) records verification. Upgrade using [MIGRATION_PHASE04.md](MIGRATION_PHASE04.md), which supersedes earlier migration/local-setup instructions where they differ. Production approval remains withheld: remediate/review GeoIP maintenance advisories, validate an operator backup/restore, measure load/outage targets, review deployment role/secret scopes and perform independent security testing. Device attestation, managed client/network enforcement, Android completion and admin UI acceptance remain future phases. No later phase starts automatically.
+
 Phase 02 was explicitly authorized to modernize architecture. Its implementation plan is PHASE02_PLAN.md; architecture/config/contracts/migrations/local deployment/ADR work and final verification are reported in PHASE02_REPORT.md. Use LOCAL_DEVELOPMENT.md and MIGRATION_PHASE02.md for the current workflow. Proposed later work below remains gated on a new phase prompt; Phase 02 does not authorize tenant enforcement, Android feature completion or production deployment.
 
 The user's phase prompts define scope. Phase 01 is audit plus safe baseline repair; the earlier proposed phase numbering is superseded by this explicit Phase 01 scope. No later product phase starts automatically. PLAN and BUG_REGISTER contain the scoped work and defect references.

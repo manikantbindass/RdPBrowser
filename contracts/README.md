@@ -1,5 +1,11 @@
 # Shared contract boundary
 
+## Phase 04 persistence and executed contracts
+
+[openapi.json](openapi.json) is the executed REST contract, validated by the backend suite; its request schemas mirror route validation. Existing domain.schema.json DTOs remain an extension design, not a claim that every optional/future field is exposed. Organizations/users/sessions/devices/policies/security_events are now persisted by migration002 with mandatory organization ownership and forced RLS. Legacy device external IDs remain strings, while registry/device-event references are UUIDs; they are not blindly cast. Policies carry integer revisions and deny/allow rules; client events have an allowlisted intake contract rather than arbitrary event data. No durable queue, attestation or DTO-wide mapping guarantee is added. See [upgrade guide](../docs/MIGRATION_PHASE04.md).
+
+The table below is the historical Phase 02 model plan; its missing-persistence statements are superseded to the extent described above.
+
 http.schema.json defines executed login/navigation requests and API error/metadata responses. domain.schema.json defines future organization/user/device/session/policy/event DTOs. Backend uses Ajv2020 with formats and no coercion. Tests compile all definitions and check API responses. Requests reject unknown fields; response schemas allow additive evolution. Schema IDs and DTO revision fields are independent of database migration versions.
 
 | Model | Ownership / identifier | Current persistence mapping | Future acceptance |

@@ -1,6 +1,6 @@
 # RemoteShield X architecture
 
-Phase 02 evolves the existing stack into a modular control-plane backend and explicit client/network/deployment boundaries. One Node/Express deployable and PostgreSQL remain; no broker, Redis, Kubernetes or microservice split is introduced. The Phase 01 audit remains historical evidence; current changes/limits are in PHASE02_REPORT.md.
+Phase 02 established the modular control plane. Phase 04 adds tenant-aware persistence, RLS, lifecycle transactions and enterprise REST interfaces within the same Node/Express deployable and PostgreSQL database. No broker, Redis, Kubernetes or microservice split is introduced. Current backend verification/limits are in PHASE04_REPORT.md; the Phase 01 audit remains historical evidence.
 
 ## Component ownership and dependencies
 
@@ -78,7 +78,22 @@ The API is not in the website-content path. Native redirect/subresource intercep
 
 ## Domain and persistence
 
-contracts/README.md maps organization/user/device/session/policy/event DTOs to existing tables and missing future persistence. No organization/device registry/tenant migrations are introduced. The only migration is the existing schema baseline plus the migration ledger. Nullable legacy fields need deliberate migration before tenant APIs can be exposed. Events are versioned DTO designs, not a durable queue.
+Migration002 adopts legacy data into the default organization, introduces mandatory tenant keys/composite ownership constraints and forces RLS across tenant tables. Organization, user, device, session, revisioned policy and security-event persistence is implemented; API fields are defined by contracts/openapi.json. Domain DTOs in domain.schema.json also contain future integration fields and are not identical wire/storage models. Events are database intake records, not a durable queue. Restricted runtime credentials are separate from operator migration credentials; see MIGRATION_PHASE04.md.
+
+```mermaid
+flowchart LR
+  Client[Desktop / Android / admin] --> Gate[Source / origin / rate / input gates]
+  Gate --> Auth[Verified token + live organization/user/session]
+  Auth --> Tenant[Server-owned async tenant context]
+  Tenant --> Service[Ownership / role / policy services]
+  Service --> Tx[Transaction-local tenant setting]
+  Tx --> PG[(Restricted PostgreSQL role + forced RLS + composite FKs)]
+  Tx --> Audit[Atomic canonical audit rows]
+  Operator[Privileged migration operator] --> Migration[Checksummed migration + runtime grants]
+  Migration --> PG
+  Service --> Decision[Control-plane decision]
+  Decision -. separate integration .-> Native[Native browser / OS / WireGuard enforcement]
+```
 
 ## Deployment topology
 

@@ -1,5 +1,20 @@
 # Phase 01 defect register
 
+## Phase 04 disposition (2026-11-12)
+
+| IDs | Backend change / status | Remaining limit |
+|---|---|---|
+| B05/B06 | Fixed: persisted registration sessions, hashed single-use refresh rotation, logout/lock revocation, live DB role/account checks; real DB race/replay tests | No refresh-family theft detection, secure client storage or MFA claim |
+| B07 | Fixed session-cap race using user row locks; authenticated self device registry and revocation | External device ID is untrusted; no attestation/native key provisioning |
+| B09/B10/B11 | Fixed literal wildcard matching and decision parity, HTTP(S) validation, strict IDs/booleans and bounded pagination; real SQL tests | Native redirects/subresources/client bypass remain B14 |
+| B28 | Implemented service tenant context + forced RLS, composite FK ownership and restricted runtime role | Trusted operator provisioning, backups and independent production penetration review required |
+| B01 | Tenant-isolated realtime; per-delivery session/role checks; force-logout now revokes DB sessions | Optional development SSH remains experimental/default-off and is not enterprise-approved |
+| B12 | Bounded public search input/upstream deadlines/bytes/redirects; truthful name; outage tests | External-provider uptime/content is not guaranteed |
+| B02 | Compatible backend dependency updates and unused dependency removal | Two production findings remain (GeoIP/ip-address); platform and dev findings remain; see Phase 04 advisory snapshots |
+| B27/B33/B34 | Startup validates role/schema; migration adoption/replay/rollback; drain-aware readiness and atomic audit writes | No production restore drill, immutable external retention or global abuse quotas |
+
+No unrelated Android/native/VPN/release issue is closed by these backend tests. Historical entries below retain the original source evidence.
+
 ## Phase 02 disposition (2026-11-10)
 
 Entries below remain the Phase 01 evidence snapshot. This delta supersedes their status only to the stated extent; see PHASE02_REPORT.md for final verification.

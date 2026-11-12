@@ -1,5 +1,15 @@
 # Control-plane API v1
 
+## Phase 04 current contract (2026-11-12)
+
+The historical inventory below is superseded by the validated [OpenAPI 3.1 specification](openapi.json), [upgrade guide](../docs/MIGRATION_PHASE04.md) and [Phase 04 report](../docs/PHASE04_REPORT.md). Regenerate with `node scripts/build-openapi.cjs`; validate with `node backend/src/validate-openapi.js` after installing backend dev dependencies. CI's unit suite validates schema/references. `/api/v1` is canonical, `/api` remains the compatibility alias. All tenant queries require service tenant context and forced PostgreSQL RLS. The server derives tenant from a verified token and checks live organization/account/session state; no tenant header grants authority.
+
+Implemented additions: GET organization; POST users (organization admin); GET/POST/DELETE devices; GET/DELETE sessions; GET/POST/PUT policies with expected revisions; POST policies/evaluate; POST/GET events. See OpenAPI for methods, schemas, ownership/admin gates and bounded filters. Admin routes remain tenant-scoped, including superadmin. Public registration is flag-controlled/default-organization-only. Registration persists sessions, refresh rotates once, logout/lock/device revocation invalidate refresh, concurrent login is serialized. `/proxy/check` and `/proxy/navigate` use the same policy evaluator as the new interface. There is no application traffic proxy, attestation or durable realtime event bus.
+
+Pagination defaults to 50 and caps at 100 rows/page and 10000 pages; lists use stable timestamp/UUID ordering. New list wrappers include page/limit, legacy wrappers retain their names. Events filter severity/eventType; devices filter status; sessions filter active; IP logs filter flagged. Errors preserve error/code/requestId and X-Request-ID. New validation tightening, refresh/login migration and changed glob behavior are detailed in MIGRATION_PHASE04.
+
+## Historical Phase 02 inventory
+
 New clients use /api/v1; /api aliases the same legacy handlers. Existing clients retain success fields and HTTP status behavior. Requests/responses are UTF-8 JSON, except Socket.io's transport/client assets. No major-version sunset is scheduled. Unknown numeric major versions return404/API_VERSION_UNSUPPORTED. This is the current route inventory, not a claim that all request schemas or security flows have been repaired.
 
 | Relative route | Method | Access / contract |

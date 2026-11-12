@@ -28,10 +28,13 @@ const definitions = {
   MAX_SESSIONS_PER_USER: Joi.number().integer().min(1).max(100).default(1),
   DEVICE_BINDING_ENABLED: Joi.boolean().default(true),
   ANOMALY_DETECTION_ENABLED: Joi.boolean().default(false),
+  ANOMALY_ORGANIZATION_IDS: Joi.string().default('00000000-0000-4000-8000-000000000001'),
   SSH_ENABLED: Joi.boolean().default(false),
   GEO_RESTRICTION_ENABLED: Joi.boolean().default(false),
   ALLOWED_COUNTRIES: Joi.string().pattern(/^[A-Z]{2}(,[A-Z]{2})*$/).default('IN,US,GB'),
   LOG_LEVEL: Joi.string().valid('error', 'warn', 'info', 'debug').default('info'),
+  REGISTRATION_ENABLED: Joi.boolean().default(false),
+  AUTH_RATE_LIMIT_MAX: Joi.number().integer().min(1).max(1000).default(20),
 };
 
 function loadConfig(env = process.env) {
@@ -39,6 +42,7 @@ function loadConfig(env = process.env) {
   if (error) throw new Error(`Invalid configuration keys: ${[...new Set(error.details.map(d => d.path[0]))].join(', ')}`);
   const config = Object.fromEntries(Object.keys(definitions).map(key => [key, value[key]]));
   const invalid = [];
+  if (Joi.array().max(100).items(Joi.string().guid()).validate(config.ANOMALY_ORGANIZATION_IDS.split(',')).error) invalid.push('ANOMALY_ORGANIZATION_IDS');
   if (['sslmode', 'sslcert', 'sslkey', 'sslrootcert'].some(key => new URL(config.DATABASE_URL).searchParams.has(key))) invalid.push('DATABASE_URL (set TLS using DB_SSL_MODE/DB_SSL_CA_FILE)');
   if (config.JWT_SECRET === config.JWT_REFRESH_SECRET) invalid.push('JWT_REFRESH_SECRET');
   if ([config.JWT_SECRET, config.JWT_REFRESH_SECRET].some(v => /CHANGE_ME|YOUR_|example|placeholder/i.test(v))) invalid.push('JWT_SECRET/JWT_REFRESH_SECRET');
@@ -62,6 +66,7 @@ function loadConfig(env = process.env) {
   }
   if (config.DB_SSL_CA_FILE && !fs.existsSync(config.DB_SSL_CA_FILE)) invalid.push('DB_SSL_CA_FILE');
   if (invalid.length) throw new Error(`Invalid configuration keys: ${[...new Set(invalid)].join(', ')}`);
+  if (env.REGISTRATION_ENABLED === undefined && config.NODE_ENV !== 'production') config.REGISTRATION_ENABLED = true;
   return Object.freeze({ ...config, origins: Object.freeze(origins), trustedProxies: Object.freeze(proxies) });
 }
 

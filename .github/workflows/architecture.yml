@@ -33,6 +33,8 @@ jobs:
           cache-dependency-path: backend/package-lock.json
       - run: npm ci
       - run: npm run lint
+      - run: node ../scripts/build-openapi.cjs
+      - run: git diff --exit-code -- ../contracts/openapi.json
       - run: npm test -- --runInBand --detectOpenHandles
       - run: npm run test:integration
         env:

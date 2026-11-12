@@ -1,5 +1,9 @@
 # Phase 01 verified feature inventory
 
+## Phase 04 update (2026-11-12)
+
+Backend tenant persistence/RLS, composite ownership constraints, restricted runtime role checks, atomic registration/session issuance, single-use refresh rotation, live account/role checks, device registry/revocation, policy revision/evaluation, event ingestion/deduplication, bounded lists, transactional audit, realtime tenant delivery, shutdown/readiness and validated OpenAPI are implemented. See [PHASE04_REPORT.md](PHASE04_REPORT.md) for actual verification and unresolved dependency/operational limits. Phase 01/02 tables below remain historical evidence, not current backend status. Client network enforcement, device attestation, external immutable audit retention, full admin UI and Android remain separate acceptance work.
+
 ## Phase 02 update (2026-11-10)
 
 The table below is the historical Phase 01 snapshot. Current architectural changes, verification evidence and remaining limits are in [PHASE02_REPORT.md](PHASE02_REPORT.md). Implemented: modular HTTP/realtime/runtime/config/logging boundaries, portable schemas, v1 with legacy aliases, explicit checksummed migrations/readiness, shared endpoint configuration, local Docker workflow and ADRs/diagrams. Organization/device/policy DTO definitions are design contracts, not tenant persistence or enforcement. Original auth/session/URL client interfaces remain; configuration and realtime handshake requirements have a migration guide.

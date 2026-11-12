@@ -30,6 +30,7 @@ services:
       HOST: 0.0.0.0
       PORT: '3000'
       DATABASE_URL: postgresql://remoteshield:${DB_PASS:?DB_PASS required}@postgres:5432/remoteshield_db
+      DB_RUNTIME_PASSWORD: ${DB_RUNTIME_PASS:?Set a distinct random runtime DB password; see MIGRATION_PHASE04}
       DB_SSL_MODE: ${DB_SSL_MODE:-disable}
       DB_NETWORK_TRUSTED: ${DB_NETWORK_TRUSTED:-false}
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET required}
@@ -43,6 +44,9 @@ services:
       SSH_ENABLED: ${SSH_ENABLED:-false}
       ANOMALY_DETECTION_ENABLED: ${ANOMALY_DETECTION_ENABLED:-false}
       LOG_LEVEL: info
+      REGISTRATION_ENABLED: ${REGISTRATION_ENABLED:-false}
+      AUTH_RATE_LIMIT_MAX: ${AUTH_RATE_LIMIT_MAX:-20}
+      ANOMALY_ORGANIZATION_IDS: ${ANOMALY_ORGANIZATION_IDS:-00000000-0000-4000-8000-000000000001}
     networks: [database]
   backend:
     image: remoteshield-backend:local
@@ -50,10 +54,14 @@ services:
       context: ..
       dockerfile: docker/Dockerfile.backend
     restart: unless-stopped
+    stop_grace_period: 30s
     depends_on:
       migrate:
         condition: service_completed_successfully
-    environment: *backend-environment
+    environment:
+      <<: *backend-environment
+      DATABASE_URL: postgresql://remoteshield_app:${DB_RUNTIME_PASS:?Runtime DB password required}@postgres:5432/remoteshield_db
+      DB_RUNTIME_PASSWORD: ''
     networks: [control, database]
     expose: ['3000']
     init: true

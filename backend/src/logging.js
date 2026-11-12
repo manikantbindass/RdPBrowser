@@ -1,7 +1,7 @@
 'use strict';
 
 const winston = require('winston');
-const secretKey = /password|secret|authorization|cookie|token|credential|database_url/i;
+const secretKey = /password|secret|authorization|cookie|token|credential|database_url|private.?key|preshared.?key/i;
 function redact(value) {
   if (Array.isArray(value)) return value.map(redact);
   if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value).map(([key, child]) => [key, secretKey.test(key) ? '[REDACTED]' : redact(child)]));

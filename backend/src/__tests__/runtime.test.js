@@ -10,4 +10,6 @@ it('refuses to listen when database/schema initialization fails and closes resou
   expect(runtime.server.listening).toBe(false);
   expect(database.close).toHaveBeenCalledTimes(1);
   expect(logger.error).toHaveBeenCalledWith({ event: 'server.start_failed', code: 'STARTUP_FAILED' });
+  await runtime.stop();
+  expect(database.close).toHaveBeenCalledTimes(1);
 });
