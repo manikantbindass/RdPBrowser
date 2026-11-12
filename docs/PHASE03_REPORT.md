@@ -13,3 +13,5 @@ Architecture CI at ae49ba4 was verified green before the rewrite. Badges disting
 Original-art prompt: assets/readme/source/artwork-prompt.md (built-in ImageGen). Media reproduction/provenance: assets/readme/README.md and manifest.json. The repository description is factual; topics are recommendations in docs/REPOSITORY_METADATA.md.
 
 Final status: PARTIAL against the full requested screenshot list; documentation and available assets delivered, with three real-screen blockers explicitly recorded. No stock imagery, invented dashboards, mock API responses or fake security guarantees were substituted. Commit/push use the dedicated development branch; no main merge.
+
+Post-push verification: GitHub Markdown API rendered10 images, retained both picture elements and preserved reduced-motion media queries. GitHub contents API confirmed the pushed media files; the factual repository description update was confirmed. See PHASE03_GITHUB_VALIDATION.json.
