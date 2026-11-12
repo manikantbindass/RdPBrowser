@@ -3,9 +3,9 @@ const { Server } = require('socket.io');
 const { authenticateToken } = require('../middleware/auth');
 const { withTenant,uuid } = require('../db/tenant');
 const { query,transaction } = require('../db/db');
-function authorize(socket, config, token) {
+function authorize(socket, config, token,resource='realtime.connect') {
   return new Promise((resolve, reject) => {
-    const req = { headers: { authorization: `Bearer ${token || ''}` }, app: { locals: { config } } };
+    const req = { accessResource:resource,headers: { authorization: `Bearer ${token || ''}` }, app: { locals: { config } } };
     const res = { status() { return this; }, json() { reject(new Error('Socket authentication failed')); } };
     authenticateToken(req, res, err => err ? reject(err) : resolve(req.user));
   });
@@ -18,7 +18,7 @@ function attachRealtime({ server, config, logger }) {
   io.emitToAdmins=async (organizationId,event,payload) => {
     for (const socket of await io.in(`admin:${organizationId}`).fetchSockets()) {
       try {
-        const user=await authorize(socket,config,socket.handshake.auth?.token);
+        const user=await authorize(socket,config,socket.handshake.auth?.token,'admin.manage');
         if (user.organizationId!==organizationId || !['admin','superadmin'].includes(user.role)) throw new Error('Revoked');
         socket.emit(event,payload);
       } catch { socket.disconnect(true); }
@@ -34,7 +34,7 @@ function attachRealtime({ server, config, logger }) {
     socket.on('join_admin', async (token) => {
       // Verify admin JWT before allowing dashboard events
       try {
-        const payload = await authorize(socket, config, token);
+        const payload = await authorize(socket, config, token,'admin.manage');
         if (!['admin', 'superadmin'].includes(payload.role)) throw new Error('Not admin');
         if (payload.sub!==socket.data.user.sub || payload.organizationId!==socket.data.user.organizationId) throw new Error('Identity changed');
         socket.data.isAdmin = true;
@@ -50,7 +50,7 @@ function attachRealtime({ server, config, logger }) {
         const now=Date.now();
         if (!socket.data.window || now-socket.data.window>60000) { socket.data.window=now; socket.data.operations=0; }
         if (++socket.data.operations>10 || !uuid.test(userId || '')) throw new Error('Invalid operation');
-        const user = await authorize(socket, config, socket.handshake.auth?.token);
+        const user = await authorize(socket, config, socket.handshake.auth?.token,'admin.manage');
         if (!socket.data.isAdmin || !['admin', 'superadmin'].includes(user.role)) throw new Error('Not admin');
         await withTenant(user.organizationId,() => transaction(async () => {
           const target=await query('SELECT id FROM users WHERE id=$1 FOR UPDATE',[userId]);

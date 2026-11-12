@@ -1,5 +1,9 @@
 # Phase 01 dependency matrix
 
+## Phase 05 dependency delta
+
+Runtime adds pinned openid-client6.8.9 with its lockfile-resolved OAuth/JOSE dependencies for standards code/PKCE and explicit ID-token signature verification. It runs in native Node22+ ESM interoperability; native protocol tests avoid Jest29's CJS loader. Production audit snapshot remains2 findings (GeoIP/ip-address), not a clean bill of health. Optional Windows fallback is pinned @embedded-postgres/windows-x6415.19.0-beta.19 from its upstream project, installed only under ignored/excluded `.local-tests`; it is not a backend production dependency or replacement stack. Package integrity and actual binary SHA256 are in audit/phase05/verification.json. No production IdP credentials are included.
+
 ## Phase 04 backend dependency delta (2026-11-12)
 
 Lockfile-compatible security updates include Axios 1.21.1, Express 4.22.1, Socket.io parser 4.2.7 and ws 8.21.3. Patched qs is pinned via override 6.16.2. Removed unused http-proxy-middleware, morgan, node-cron and uuid after source-reference inspection; core crypto UUIDs and the existing interval worker remain. Development-only OpenAPI validator @apidevtools/swagger-parser 13.1.0 requires Node >=22.19; CI Node22 resolves current patch, host checks use Node24.14.1. No runtime stack replacement was introduced.

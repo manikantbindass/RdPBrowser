@@ -38,6 +38,7 @@ The repository is being improved incrementally. Existing API clients retain `/ap
 | Device registry and organization isolation | Tenant persistence, RLS/composite ownership, self-enrollment/revocation | Implemented; device attestation absent |
 | VPN, DNS and kill-switch enforcement | WireGuard templates; native failure/bypass gaps | Unverified/incomplete |
 | Refresh rotation | Persisted single-use refresh, session revocation and race tests | Implemented; client secure storage remains |
+| Enterprise identity and access policy | OIDC/PKCE/signature checks, provider MFA assurance, refresh-family reuse detection, device key proof and live resource decisions | Backend implemented; live IdP/native handoff/attestation acceptance pending |
 | Device trust and signed releases | Open defects and missing acceptance evidence | Incomplete |
 | RDP, media/AI modules, offline audit sync | Placeholder UI or no implementation found | Not implemented |
 
@@ -82,6 +83,8 @@ See the [capture ledger](../assets/readme/SCREENSHOTS.md) for actual captures an
 - Native enforcement, device attestation, external audit retention and remaining dependency findings require further work.
 
 Development mode deliberately permits direct control-plane access. Experimental SSH is default-off and forbidden by production configuration. Read the [security policy](../SECURITY.md) and [cutover requirements](MIGRATION_PHASE04.md) before relying on any deployment.
+
+[Identity flows and enterprise policy configuration](IDENTITY_AND_ACCESS.md) · [Phase 05 verification and limitations](PHASE05_REPORT.md). MFA/trusted-device requirements are explicitly configurable; the default legacy compatibility profile does not enforce them. Device key possession is distinct from hardware attestation and per-request token binding.
 
 ## Platform compatibility
 

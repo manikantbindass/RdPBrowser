@@ -11,6 +11,6 @@ for (const file of files.filter(f => /^(backend|contracts|docker|scripts|securit
     for (const match of text.matchAll(pattern)) matches.push({ file,kind,line:text.slice(0,match.index).split('\n').length });
   }
 }
-writeFileSync('docs/audit/phase04-secret-scan.json',JSON.stringify({ scope:'Current tracked and nonignored new backend/contracts/deployment/scripts/security text files; private-key/GitHub/AWS signatures only; no history/entropy scan',filesChecked:count,matches },null,2)+'\n');
+writeFileSync(process.argv[2] || 'docs/audit/phase04-secret-scan.json',JSON.stringify({ scope:'Current tracked and nonignored new backend/contracts/deployment/scripts/security text files; private-key/GitHub/AWS signatures only; no history/entropy scan',filesChecked:count,matches },null,2)+'\n');
 console.log(`Limited secret signatures: ${matches.length} candidates in ${count} files`);
 process.exitCode=matches.length ? 1 : 0;

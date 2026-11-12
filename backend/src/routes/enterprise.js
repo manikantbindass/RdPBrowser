@@ -26,7 +26,7 @@ router.get('/devices',wrap(async (req,res) => {
   const { limit,offset,page }=pagination(req);
   const status=req.query.status;
   if (status!==undefined) validate(Joi.string().valid('registered','revoked'),status);
-  const result=await query(`SELECT id,user_id,external_id,name,platform,status,created_at FROM devices
+  const result=await query(`SELECT id,user_id,external_id,name,platform,status,trust_state,posture_valid_until,created_at FROM devices
     WHERE organization_id=$1 AND ($2::uuid IS NULL OR user_id=$2) AND ($3::text IS NULL OR status=$3)
     ORDER BY created_at DESC,id LIMIT $4 OFFSET $5`,[tenantId(),admin(req) ? null : req.user.sub,status || null,limit,offset]);
   res.json({ devices:result.rows,page,limit });
@@ -44,7 +44,8 @@ router.delete('/devices/:id',wrap(async (req,res) => {
       AND ($3::uuid IS NULL OR user_id=$3) FOR UPDATE`,[deviceId,tenantId(),admin(req) ? null : req.user.sub]));
     await query('SELECT id FROM users WHERE id=$1 FOR UPDATE',[device.user_id]);
     await query("UPDATE devices SET status='revoked' WHERE id=$1",[deviceId]);
-    await query('UPDATE sessions SET is_active=FALSE,ended_at=NOW(),refresh_hash=NULL WHERE user_id=$1 AND device_id=$2',[device.user_id,device.external_id]);
+    await query("UPDATE devices SET trust_state='revoked',posture_valid_until=NULL WHERE id=$1",[deviceId]);
+    await query('UPDATE sessions SET is_active=FALSE,ended_at=NOW(),refresh_hash=NULL WHERE user_id=$1 AND (device_id=$2 OR registered_device_id=$3)',[device.user_id,device.external_id,deviceId]);
   });
   res.json({ message:'Device revoked' });
 }));

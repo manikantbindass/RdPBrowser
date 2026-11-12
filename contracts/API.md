@@ -1,5 +1,9 @@
 # Control-plane API v1
 
+## Phase 05 identity contract
+
+OpenAPI now includes41 paths: OIDC browser start/callback, explicit admin identity links, versioned organization access-policy configuration, advisory server-resource evaluation, device public-key/challenge/proof/trust and append-only access-decision listing. See [identity flows/migration](../docs/IDENTITY_AND_ACCESS.md). Existing aliases and response keys remain; refresh replay now revokes its family, and current idle/absolute/MFA/device policy applies to access and refresh. Provider configuration is operator-controlled, MFA is validated IdP assurance, and device IDs alone never grant trust. Legacy default policy preserves password clients; no native SSO handoff or live provider certification is implied.
+
 ## Phase 04 current contract (2026-11-12)
 
 The historical inventory below is superseded by the validated [OpenAPI 3.1 specification](openapi.json), [upgrade guide](../docs/MIGRATION_PHASE04.md) and [Phase 04 report](../docs/PHASE04_REPORT.md). Regenerate with `node scripts/build-openapi.cjs`; validate with `node backend/src/validate-openapi.js` after installing backend dev dependencies. CI's unit suite validates schema/references. `/api/v1` is canonical, `/api` remains the compatibility alias. All tenant queries require service tenant context and forced PostgreSQL RLS. The server derives tenant from a verified token and checks live organization/account/session state; no tenant header grants authority.

@@ -78,6 +78,8 @@ The API is not in the website-content path. Native redirect/subresource intercep
 
 ## Domain and persistence
 
+Phase 05 adds identity links, encrypted short-lived OIDC transactions, consumed refresh hashes/families, key-possession challenges, organization access policy and server-owned access decisions via migration003. services/access selects live authorization from server-defined resource sensitivity; routes/oidc delegates protocol validation to openid-client, and services/sessions centralizes atomic issuance. Device enrollment/proof and admin posture are separate controls. See IDENTITY_AND_ACCESS.md and ADR0005; legacy compatibility defaults and missing native/provider/attestation boundaries are explicit.
+
 Migration002 adopts legacy data into the default organization, introduces mandatory tenant keys/composite ownership constraints and forces RLS across tenant tables. Organization, user, device, session, revisioned policy and security-event persistence is implemented; API fields are defined by contracts/openapi.json. Domain DTOs in domain.schema.json also contain future integration fields and are not identical wire/storage models. Events are database intake records, not a durable queue. Restricted runtime credentials are separate from operator migration credentials; see MIGRATION_PHASE04.md.
 
 ```mermaid

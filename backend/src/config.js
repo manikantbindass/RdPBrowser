@@ -35,6 +35,8 @@ const definitions = {
   LOG_LEVEL: Joi.string().valid('error', 'warn', 'info', 'debug').default('info'),
   REGISTRATION_ENABLED: Joi.boolean().default(false),
   AUTH_RATE_LIMIT_MAX: Joi.number().integer().min(1).max(1000).default(20),
+  OIDC_PROVIDERS_FILE:Joi.string().allow('').default(''),
+  OIDC_STATE_KEY:Joi.string().allow('').default(''),
 };
 
 function loadConfig(env = process.env) {
@@ -66,8 +68,10 @@ function loadConfig(env = process.env) {
   }
   if (config.DB_SSL_CA_FILE && !fs.existsSync(config.DB_SSL_CA_FILE)) invalid.push('DB_SSL_CA_FILE');
   if (invalid.length) throw new Error(`Invalid configuration keys: ${[...new Set(invalid)].join(', ')}`);
+  const oidcProviders=require('./services/oidc-config').loadProviders(config.OIDC_PROVIDERS_FILE,env);
+  if (oidcProviders.length && (!/^[0-9a-f]{64}$/i.test(config.OIDC_STATE_KEY) || config.OIDC_STATE_KEY===config.JWT_SECRET || config.OIDC_STATE_KEY===config.JWT_REFRESH_SECRET)) throw new Error('Invalid configuration keys: OIDC_STATE_KEY');
   if (env.REGISTRATION_ENABLED === undefined && config.NODE_ENV !== 'production') config.REGISTRATION_ENABLED = true;
-  return Object.freeze({ ...config, origins: Object.freeze(origins), trustedProxies: Object.freeze(proxies) });
+  return Object.freeze({ ...config,oidcProviders:Object.freeze(oidcProviders), origins: Object.freeze(origins), trustedProxies: Object.freeze(proxies) });
 }
 
 function loadEnvironment() {

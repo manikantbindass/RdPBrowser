@@ -45,6 +45,34 @@ operation('post','/auth/login','Login (organizationId optional for legacy organi
 operation('post','/auth/refresh','Rotate a stored single-use refresh credential',{ input:'Refresh',output:ref('SessionResult'),publicRoute:true });
 operation('post','/auth/logout','Revoke access and refresh session');
 operation('get','/organization','Current organization');
+const accessConfiguration=object({
+  allowedRoles:{ type:'array',minItems:1,uniqueItems:true,items:{ enum:['user','admin','superadmin'] } },
+  allowedAuthMethods:{ type:'array',minItems:1,uniqueItems:true,items:{ enum:['password','oidc'] } },
+  requireMfa:{ type:'boolean' },highSensitivityRequireMfa:{ type:'boolean' },requireTrustedDevice:{ type:'boolean' },
+  sessionMaxAgeSeconds:{ type:'integer',minimum:300,maximum:604800 },idleTimeoutSeconds:{ type:'integer',minimum:60,maximum:86400 },
+  maxProofAgeSeconds:{ type:'integer',minimum:60,maximum:86400 },maxMfaAgeSeconds:{ type:'integer',minimum:60,maximum:86400 },
+});
+schema.AccessConfiguration=accessConfiguration;
+operation('get','/admin/access-policy','Get effective organization access policy and revision',{ admin:true });
+operation('put','/admin/access-policy','Replace access policy using expected revision; bootstrap safety checks apply',{ admin:true,input:object({ revision:{ type:'integer',minimum:0,maximum:2147483646 },configuration:ref('AccessConfiguration') }) });
+operation('post','/admin/identity-links','Link a preexisting local user to exact operator-configured issuer/subject',{ admin:true,status:201,input:object({ userId:uuid,providerId:string(64),subject:string(255) }) });
+operation('delete','/admin/identity-links/{id}','Unlink identity and revoke enterprise sessions',{ admin:true });
+operation('get','/admin/access-decisions','List server-owned organization authorization decisions',{ admin:true,list:true });
+operation('post','/access/evaluate','Evaluate a server-defined resource with live identity/session/device context',{ input:object({ resource:{ enum:['auth.login','session.terminate','device.enroll','session.manage','browser.navigate','events.ingest','admin.manage','realtime.connect'] } }) });
+operation('post','/devices/{id}/key','Enroll an immutable owner P-256 public key; unknown trust until admin approval',{ status:201,input:object({ publicKey:object({ kty:{ const:'EC' },crv:{ const:'P-256' },x:{ type:'string',pattern:'^[A-Za-z0-9_-]{43}$' },y:{ type:'string',pattern:'^[A-Za-z0-9_-]{43}$' } }) }) });
+operation('post','/devices/{id}/challenge','Issue session-bound one-use five-minute device possession challenge',{ status:201 });
+operation('post','/devices/{id}/proof','Prove ECDSA-SHA256-DER key possession; this is not hardware attestation',{ input:object({ challengeId:uuid,nonce:{ type:'string',pattern:'^[A-Za-z0-9_-]{43}$' },signature:{ type:'string',pattern:'^[A-Za-z0-9_-]{80,120}$' } }) });
+operation('patch','/admin/devices/{id}/trust','Update posture trust; revoked devices cannot be restored',{ admin:true,input:object({ trustState:{ enum:['unknown','approved','quarantined','revoked'] },validForSeconds:{ type:'integer',minimum:60,maximum:86400 },reason:{ enum:['operator_verified','noncompliant','compromised','review_required'] } },['trustState','reason']) });
+operation('get','/auth/oidc/{provider}/start','Start browser-bound confidential OIDC authorization code flow',{ publicRoute:true,status:303 });
+doc.paths['/auth/oidc/{provider}/start'].get.parameters=[{ name:'provider',in:'path',required:true,schema:{ type:'string',pattern:'^[a-z][a-z0-9-]{0,63}$' } }];
+doc.paths['/auth/oidc/{provider}/start'].get.responses['303']={ description:'Redirect to configured IdP; sets Secure/HttpOnly/SameSite=Lax browser-binding cookie. No tokens in URL.',headers:{ Location:{ schema:{ type:'string',format:'uri' } } } };
+operation('get','/auth/oidc/{provider}/callback','Consume one-use state/code and issue local tokens only for an explicit identity link',{ publicRoute:true,output:ref('SessionResult') });
+doc.paths['/auth/oidc/{provider}/callback'].get.parameters=[{ name:'provider',in:'path',required:true,schema:{ type:'string',pattern:'^[a-z][a-z0-9-]{0,63}$' } },
+  { name:'__Host-rsx_oidc',in:'cookie',required:true,schema:{ type:'string',pattern:'^[A-Za-z0-9_-]{43}$' } },
+  { name:'state',in:'query',required:true,schema:{ type:'string',pattern:'^[A-Za-z0-9_-]{43}$' } },
+  { name:'code',in:'query',schema:{ type:'string',maxLength:4096 },description:'Exactly one of code/error is required. Browser-binding cookie is required.' },
+  { name:'error',in:'query',schema:{ type:'string',maxLength:100 } },{ name:'error_description',in:'query',schema:{ type:'string',maxLength:1000 } },
+  { name:'iss',in:'query',schema:{ type:'string',format:'uri',maxLength:2048 } },{ name:'session_state',in:'query',schema:{ type:'string',maxLength:2048 } }];
 operation('post','/users','Register an ordinary user in the admin organization',{ input:'Registration',admin:true,status:201 });
 operation('get','/devices','List own devices; admins list organization devices',{ list:true,filters:{ status:{ enum:['registered','revoked'] } } });
 operation('post','/devices','Register own device; this is not device attestation',{ input:'DeviceRegistration',status:201 });

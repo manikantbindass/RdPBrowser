@@ -1,5 +1,15 @@
 # Phase 01 defect register
 
+## Phase 05 identity disposition (2026-11-12)
+
+| IDs | Change | Remaining limit |
+|---|---|---|
+| B05/B06 | Single-use refresh now has bounded absolute family lifetime, replay-family revocation, current access policy and preserved MFA/proof age; identity unlink revokes SSO sessions | Provider-side disable/logout needs SCIM/backchannel integration; secure client storage/key rotation acceptance remains |
+| B07 | Authenticated key enrollment/proof and explicit expiring admin posture; IDs alone never satisfy trusted policy | Software key possession is not attestation; native key protection/per-request sender constraint absent |
+| B28/B34/B50 | Tenant-scoped identity/access tables, append-only runtime access decisions and real-DB/crypto negative tests | Operator trust, external immutable retention, independent penetration/load/restore review remain |
+
+Standards-based OIDC/MFA and organization access policies are implemented at the backend boundary. See PHASE05_REPORT and IDENTITY_AND_ACCESS for status and migration; no unrelated native/VPN/platform defect is closed.
+
 ## Phase 04 disposition (2026-11-12)
 
 | IDs | Backend change / status | Remaining limit |

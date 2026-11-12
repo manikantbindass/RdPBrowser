@@ -46,6 +46,8 @@ services:
       LOG_LEVEL: info
       REGISTRATION_ENABLED: ${REGISTRATION_ENABLED:-false}
       AUTH_RATE_LIMIT_MAX: ${AUTH_RATE_LIMIT_MAX:-20}
+      OIDC_STATE_KEY: ''
+      OIDC_PROVIDERS_FILE: ''
       ANOMALY_ORGANIZATION_IDS: ${ANOMALY_ORGANIZATION_IDS:-00000000-0000-4000-8000-000000000001}
     networks: [database]
   backend:
@@ -62,6 +64,8 @@ services:
       <<: *backend-environment
       DATABASE_URL: postgresql://remoteshield_app:${DB_RUNTIME_PASS:?Runtime DB password required}@postgres:5432/remoteshield_db
       DB_RUNTIME_PASSWORD: ''
+      OIDC_STATE_KEY: ${OIDC_STATE_KEY:-}
+      OIDC_PROVIDERS_FILE: ${OIDC_PROVIDERS_FILE:-}
     networks: [control, database]
     expose: ['3000']
     init: true

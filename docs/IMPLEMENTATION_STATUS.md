@@ -1,5 +1,9 @@
 # Phase 01 verified feature inventory
 
+## Phase 05 update (2026-11-12)
+
+Backend identity now includes confidential OIDC code/PKCE flow with signed-token checks, explicit issuer/subject links, provider-assurance MFA, refresh-family reuse revocation, absolute/idle lifetimes, live resource policy decisions, device key-possession/expiring admin trust and server-owned access logs. Verification and incomplete production/native/provider acceptance are in [PHASE05_REPORT.md](PHASE05_REPORT.md); flows/config/limitations are in [IDENTITY_AND_ACCESS.md](IDENTITY_AND_ACCESS.md). No native SSO UI, hardware attestation or live Okta/Entra acceptance is claimed. Historical tables below are superseded only to this stated extent.
+
 ## Phase 04 update (2026-11-12)
 
 Backend tenant persistence/RLS, composite ownership constraints, restricted runtime role checks, atomic registration/session issuance, single-use refresh rotation, live account/role checks, device registry/revocation, policy revision/evaluation, event ingestion/deduplication, bounded lists, transactional audit, realtime tenant delivery, shutdown/readiness and validated OpenAPI are implemented. See [PHASE04_REPORT.md](PHASE04_REPORT.md) for actual verification and unresolved dependency/operational limits. Phase 01/02 tables below remain historical evidence, not current backend status. Client network enforcement, device attestation, external immutable audit retention, full admin UI and Android remain separate acceptance work.

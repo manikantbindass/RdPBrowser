@@ -20,8 +20,11 @@ function createApp({ config, logger, database }) {
   app.use(requestContext);
   app.use((req, res, next) => {
     const start = process.hrtime.bigint();
-    res.on('finish', () => logger.info({ event: 'http.completed', requestId: req.requestId, method: req.method,
-      path: req.route?.path || 'unmatched', status: res.statusCode, durationMs: Number(process.hrtime.bigint() - start) / 1e6 }));
+    res.on('finish', () => {
+      logger.info({ event: 'http.completed', requestId: req.requestId, method: req.method,
+        path: req.route?.path || 'unmatched', status: res.statusCode, durationMs: Number(process.hrtime.bigint() - start) / 1e6 });
+      if ([401,403].includes(res.statusCode)) logger.warn({ event:'access.denied',requestId:req.requestId,status:res.statusCode,resource:req.route?.path || 'unmatched' });
+    });
     next();
   });
   app.use(helmet());
@@ -57,10 +60,11 @@ function createApp({ config, logger, database }) {
   api.use(vpnCheck);
   api.use('/auth', rateLimit({ windowMs:config.RATE_LIMIT_WINDOW_MS, max:config.AUTH_RATE_LIMIT_MAX,
     standardHeaders:true,legacyHeaders:false, handler:(req,res) => res.status(429).json({ error:'Too many authentication requests' }) }));
-  api.use('/auth', authRoutes);
+  api.use('/auth',(req,res,next) => { res.setHeader('Cache-Control','no-store');res.setHeader('Referrer-Policy','no-referrer');next(); },authRoutes);
   api.use('/admin', authenticateToken, adminRoutes);
   api.use('/proxy', authenticateToken, proxyRoutes); // Compatibility name: policy decisions, not network proxying.
   api.use((req,res,next) => /^\/(organization|users|devices|sessions|policies|events)(\/|$)/.test(req.path) ? authenticateToken(req,res,next) : next(), require('../routes/enterprise'));
+  api.use(require('../routes/identity'));
   app.use('/api/v1', api);
   app.use('/api', (req, res, next) => { res.setHeader('Link', '</api/v1>; rel="successor-version"'); next(); }, api);
   app.use((req, res) => res.status(404).json({ error: 'Route not found' }));

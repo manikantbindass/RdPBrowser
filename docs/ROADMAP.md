@@ -1,5 +1,9 @@
 # Phase 01 roadmap and recovery plan
 
+## Phase 05 identity delivery and remaining gates
+
+Implemented backend OIDC/PKCE/signature checks, provider-assurance MFA, linked identities, bounded token families, organization/resource/session policy, device possession/admin posture and decision logs. Read PHASE05_REPORT.md and IDENTITY_AND_ACCESS.md. Next identity acceptance requires real Okta/Entra tenant testing, native/browser secure handoff/storage UX, MDM/hardware posture/per-request proof, external deprovisioning and production recovery/load/security review. Existing dependency/network/Android/release gates remain open; no subsequent phase starts automatically.
+
 ## Phase 04 delivered backend and next gates
 
 Tenant-aware backend interfaces, atomic token/session lifecycle, database RLS/constraints/indexes, OpenAPI and negative integration coverage are delivered; [PHASE04_REPORT.md](PHASE04_REPORT.md) records verification. Upgrade using [MIGRATION_PHASE04.md](MIGRATION_PHASE04.md), which supersedes earlier migration/local-setup instructions where they differ. Production approval remains withheld: remediate/review GeoIP maintenance advisories, validate an operator backup/restore, measure load/outage targets, review deployment role/secret scopes and perform independent security testing. Device attestation, managed client/network enforcement, Android completion and admin UI acceptance remain future phases. No later phase starts automatically.

@@ -1,6 +1,6 @@
 'use strict';
 const { Pool }=require('pg');
-const { randomUUID,createHash }=require('crypto');
+const { randomUUID,createHash,generateKeyPairSync,sign }=require('crypto');
 const request=require('supertest');
 const bcrypt=require('bcryptjs');
 const jwt=require('jsonwebtoken');
@@ -11,6 +11,7 @@ const { withTenant,DEFAULT_ORGANIZATION:orgA }=require('../src/db/tenant');
 const database=require('../src/db/db');
 const { createRuntime }=require('../src/runtime');
 const { loadConfig }=require('../src/config');
+const { defaults }=require('../src/services/access');
 const url=process.env.INTEGRATION_DATABASE_URL;
 if (!url || !new URL(url).pathname.endsWith('_test')) throw new Error('Dedicated _test database required');
 const schema=`phase04_${randomUUID().replace(/-/g,'')}`;
@@ -166,8 +167,12 @@ test('concurrent logins obey the session limit; refresh is single-use and logout
   expect(refreshes.map(r => r.status).sort()).toEqual([200,401]);
   expect((await call('get','/sessions',live.accessToken)).status).toBe(401);
   const rotated=refreshes.find(r => r.status===200).body;
-  expect((await call('post','/auth/logout',rotated.accessToken,{})).status).toBe(200);
+  // Reuse is a compromise signal: even the winning rotation's family is revoked.
+  expect((await call('get','/sessions',rotated.accessToken)).status).toBe(401);
   expect((await call('post','/auth/refresh',null,{ refreshToken:rotated.refreshToken })).status).toBe(401);
+  const reauthenticated=await login('racer');
+  expect((await call('post','/auth/logout',reauthenticated.accessToken,{})).status).toBe(200);
+  expect((await call('post','/auth/refresh',null,{ refreshToken:reauthenticated.refreshToken })).status).toBe(401);
 });
 test('account lock revokes access and refresh; live DB role overrides token role',async () => {
   const user=await call('post','/users',tokenA,{ username:'locktest',email:'lock@test.example.com',password:'TestPassword1!' });
@@ -201,4 +206,63 @@ test('realtime cannot switch tenant identity or deliver to a revoked admin subsc
     await disconnected;
     expect(received).toBe(false);
   } finally { socket.disconnect(); }
+});
+test('expired JWTs, idle sessions and absolute family expiry deny access/refresh',async () => {
+  const expired=jwt.sign({ sub:userA,organizationId:orgA,role:'admin',type:'access' },config.JWT_SECRET,{ expiresIn:-1 });
+  expect((await call('get','/sessions',expired)).body.code).toBe('TOKEN_EXPIRED');
+  await call('post','/users',tokenA,{ username:'expirytest',email:'expiry@test.example.com',password:'TestPassword1!' });
+  const session=await login('expirytest');
+  await pool.query("UPDATE sessions SET last_activity=NOW()-INTERVAL '2 days' WHERE token_hash=$1",[createHash('sha256').update(session.accessToken).digest('hex')]);
+  expect((await call('get','/sessions',session.accessToken)).body.code).toBe('SESSION_IDLE_EXPIRED');
+  expect((await call('post','/auth/refresh',null,{ refreshToken:session.refreshToken })).body.code).toBe('SESSION_IDLE_EXPIRED');
+  const next=await login('expirytest');
+  await pool.query("UPDATE sessions SET absolute_expires_at=NOW()-INTERVAL '1 second' WHERE token_hash=$1",[createHash('sha256').update(next.accessToken).digest('hex')]);
+  expect((await call('get','/sessions',next.accessToken)).body.code).toBe('SESSION_ABSOLUTE_EXPIRED');
+  expect((await call('post','/auth/refresh',null,{ refreshToken:next.refreshToken })).status).toBe(403);
+});
+test('device possession, approval, expiry and revocation are distinct enforced states',async () => {
+  const device=(await call('post','/devices',tokenA,{ externalId:'proof-device',name:'Proof device',platform:'windows' })).body.device;
+  expect((await call('post','/devices',tokenA,{ externalId:'spoof',name:'spoof',platform:'windows',trustState:'approved' })).status).toBe(400);
+  const keys=generateKeyPairSync('ec',{ namedCurve:'prime256v1' });
+  const jwk=keys.publicKey.export({ format:'jwk' });
+  expect((await call('post',`/devices/${device.id}/key`,tokenA,{ publicKey:jwk })).status).toBe(201);
+  expect((await call('post',`/devices/${device.id}/key`,tokenA,{ publicKey:jwk })).status).toBe(409);
+  const challenge=(await call('post',`/devices/${device.id}/challenge`,tokenA,{})).body;
+  const invalid=sign('sha256',Buffer.from(challenge.message),generateKeyPairSync('ec',{ namedCurve:'prime256v1' }).privateKey).toString('base64url');
+  expect((await call('post',`/devices/${device.id}/proof`,tokenA,{ challengeId:challenge.challengeId,nonce:challenge.nonce,signature:invalid })).status).toBe(403);
+  const next=(await call('post',`/devices/${device.id}/challenge`,tokenA,{})).body;
+  const proof={ challengeId:next.challengeId,nonce:next.nonce,signature:sign('sha256',Buffer.from(next.message),keys.privateKey).toString('base64url') };
+  expect((await call('post',`/devices/${device.id}/proof`,tokenA,proof)).status).toBe(200);
+  expect((await call('post',`/devices/${device.id}/proof`,tokenA,proof)).status).toBe(403);
+  expect((await call('patch',`/admin/devices/${device.id}/trust`,tokenA,{ trustState:'approved',validForSeconds:3600,reason:'operator_verified' })).status).toBe(200);
+  const strict={ ...defaults,requireTrustedDevice:true };
+  expect((await call('put','/admin/access-policy',tokenA,{ revision:0,configuration:strict })).status).toBe(200);
+  expect((await call('get','/admin/users',tokenA)).status).toBe(200);
+  const unbound=await login('newuser');
+  expect((await call('get','/sessions',unbound.accessToken)).body.code).toBe('TRUSTED_DEVICE_REQUIRED');
+  await pool.query("UPDATE sessions SET device_proved_at=NOW()-INTERVAL '1 hour' WHERE registered_device_id=$1",[device.id]);
+  expect((await call('get','/admin/users',tokenA)).body.code).toBe('TRUSTED_DEVICE_REQUIRED');
+  // Test-owned operator recovery, never a client bypass: restore compatibility policy.
+  await pool.query('UPDATE access_policies SET configuration=$1',[defaults]);
+  expect((await call('patch',`/admin/devices/${device.id}/trust`,tokenA,{ trustState:'quarantined',reason:'noncompliant' })).status).toBe(200);
+  expect((await call('get','/sessions',tokenA)).status).toBe(401);
+  expect((await call('post','/auth/login',null,{ username:'admina',password:'TestPassword1!',deviceId:'proof-device' })).status).toBe(403);
+  tokenA=(await login('admina')).accessToken;
+  expect((await call('patch',`/admin/devices/${device.id}/trust`,tokenA,{ trustState:'revoked',reason:'compromised' })).status).toBe(200);
+  expect((await call('patch',`/admin/devices/${device.id}/trust`,tokenA,{ trustState:'approved',validForSeconds:3600,reason:'operator_verified' })).status).toBe(409);
+  expect((await call('post',`/devices/${deviceB}/challenge`,tokenA,{})).status).toBe(404);
+});
+test('identity/access storage remains tenant-bound and decision records are append-only',async () => {
+  await withTenant(orgA,async () => {
+    await expect(database.query("INSERT INTO identity_links(user_id,provider_id,issuer,subject) VALUES($1,'idp','https://idp.test','subject')",[userB])).rejects.toMatchObject({ code:'23503' });
+    await expect(database.query('DELETE FROM access_decisions')).rejects.toMatchObject({ code:'42501' });
+    expect((await database.query('SELECT id FROM access_decisions WHERE organization_id=$1',[orgB])).rows).toEqual([]);
+  });
+  const decisions=await call('get','/admin/access-decisions',tokenA);
+  expect(decisions.status).toBe(200);expect(decisions.body.decisions.every(d => d.request_id && ['allow','deny'].includes(d.outcome))).toBe(true);
+  expect((await call('put','/admin/access-policy',tokenA,{ revision:999,configuration:defaults })).status).toBe(409);
+  expect((await call('put','/admin/access-policy',tokenA,{ revision:1,configuration:{ ...defaults,requireMfa:true } })).status).toBe(400);
+  await pool.query('UPDATE access_policies SET configuration=$1',[{ requireMfa:'false' }]);
+  expect((await call('get','/devices',tokenA)).status).toBe(503);
+  await pool.query('UPDATE access_policies SET configuration=$1',[defaults]);
 });
