@@ -1,21 +1,37 @@
 // Prevents additional console window on Windows in release
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod browser;
 mod config;
+mod download;
 mod integrity;
 mod navigation;
 mod platform;
+mod updates;
 mod vpn;
 
 use log::{error, info, warn};
 use std::sync::Arc;
-use tauri::{Emitter, WindowEvent};
+use tauri::{Emitter, Manager, WindowEvent};
 use tokio::sync::Mutex;
 
 pub struct AppState {
+    pub credential_generation: std::sync::atomic::AtomicU64,
+    pub generation: std::sync::atomic::AtomicU64,
     pub vpn_connected: Arc<Mutex<bool>>,
     pub server_url: String,
     pub auth_token: Arc<Mutex<Option<String>>>,
+}
+
+#[tauri::command]
+fn control_plane_origin(
+    window: tauri::WebviewWindow,
+    state: tauri::State<'_, AppState>,
+) -> Result<String, String> {
+    if window.label() != "main" {
+        return Err("Untrusted caller".into());
+    }
+    Ok(state.server_url.clone())
 }
 
 #[tauri::command]
@@ -69,6 +85,7 @@ async fn request_navigate(
 
 #[tauri::command]
 async fn set_auth_token(
+    app: tauri::AppHandle,
     token: String,
     window: tauri::WebviewWindow,
     state: tauri::State<'_, AppState>,
@@ -80,7 +97,40 @@ async fn set_auth_token(
         return Err("Invalid access token".into());
     }
     let mut t = state.auth_token.lock().await;
-    *t = Some(token);
+    state
+        .generation
+        .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+    state
+        .credential_generation
+        .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+    browser::close_content(&app);
+    *t = if token.is_empty() { None } else { Some(token) };
+    Ok(())
+}
+
+#[tauri::command]
+async fn rotate_auth_token(
+    window: tauri::WebviewWindow,
+    app: tauri::AppHandle,
+    state: tauri::State<'_, AppState>,
+    previous: String,
+    token: String,
+) -> Result<(), String> {
+    if window.label() != "main" || token.is_empty() || token.len() > 8192 {
+        return Err("Invalid token replacement".into());
+    }
+    let mut current = state.auth_token.lock().await;
+    if current.as_deref() != Some(previous.as_str()) {
+        return Err("Session changed".into());
+    }
+    state
+        .generation
+        .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+    state
+        .credential_generation
+        .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+    browser::close_content(&app);
+    *current = Some(token);
     Ok(())
 }
 
@@ -121,19 +171,24 @@ fn main() {
         .expect("Set REMOTESHIELD_SERVER to a valid control-plane origin");
 
     let state = AppState {
+        credential_generation: std::sync::atomic::AtomicU64::new(0),
+        generation: std::sync::atomic::AtomicU64::new(0),
         vpn_connected: Arc::new(Mutex::new(false)),
         server_url: server_url.clone(),
         auth_token: Arc::new(Mutex::new(None)),
     };
 
     tauri::Builder::default()
-        .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .manage(updates::PendingUpdate(tokio::sync::Mutex::new(None)))
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_store::Builder::default().build())
         .manage(state)
         .setup(move |app| {
             let app_handle = app.handle().clone();
+            let monitor_handle = app_handle.clone();
+            tauri::async_runtime::spawn(browser::monitor(monitor_handle));
             let server = server_url.clone();
 
             tauri::async_runtime::spawn(async move {
@@ -167,13 +222,38 @@ fn main() {
 
             Ok(())
         })
-        .on_window_event(|_window, event| if let WindowEvent::DragDrop(_) = event {})
+        .on_window_event(|window, event| {
+            if window.label() == "main"
+                && matches!(
+                    event,
+                    WindowEvent::Destroyed | WindowEvent::Moved(_) | WindowEvent::Resized(_)
+                )
+            {
+                window
+                    .state::<AppState>()
+                    .generation
+                    .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                browser::close_content(window.app_handle());
+                if matches!(event, WindowEvent::Destroyed) {
+                    window.app_handle().exit(0);
+                }
+            }
+        })
         .invoke_handler(tauri::generate_handler![
             check_vpn_status,
             request_navigate,
             set_auth_token,
+            rotate_auth_token,
             get_platform_info,
             verify_integrity,
+            browser::open_content,
+            browser::content_visibility,
+            browser::close_content_tab,
+            updates::check_updates,
+            updates::install_update,
+            download::save_text_download,
+            control_plane_origin,
+            vpn::wireguard_status,
         ])
         .run(tauri::generate_context!())
         .expect("Error while running RemoteShield X");

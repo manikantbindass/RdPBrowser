@@ -45,6 +45,8 @@ operation('post','/auth/login','Login (organizationId optional for legacy organi
 operation('post','/auth/refresh','Rotate a stored single-use refresh credential',{ input:'Refresh',output:ref('SessionResult'),publicRoute:true });
 operation('post','/auth/logout','Revoke access and refresh session');
 operation('get','/organization','Current organization');
+operation('get','/auth/status','Own live session and device bootstrap status; does not grant content access');
+operation('post','/auth/status','Own session plus bounded URL re-evaluation for native policy monitor',{input:object({urls:{type:'array',maxItems:20,items:{type:'string',format:'uri',maxLength:8192}}})});
 const accessConfiguration=object({
   allowedRoles:{ type:'array',minItems:1,uniqueItems:true,items:{ enum:['user','admin','superadmin'] } },
   allowedAuthMethods:{ type:'array',minItems:1,uniqueItems:true,items:{ enum:['password','oidc'] } },

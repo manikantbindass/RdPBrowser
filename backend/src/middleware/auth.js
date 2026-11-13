@@ -57,7 +57,9 @@ async function authenticateToken(req, res, next) {
     await recordDecision(req,principal,session,device,decision,policy.revision);
     if (!decision.allowed) return res.status(403).json({ error:'Access policy denied request',code:decision.reason });
     // Successful validation extends idle activity, never authentication or absolute lifetime.
-    await query('UPDATE sessions SET last_activity=NOW() WHERE id=$1',[session.id]);
+    if (req.route?.path !== '/status') {
+      await query('UPDATE sessions SET last_activity=NOW() WHERE id=$1',[session.id]);
+    }
     req.accessContext={ user:principal,session,device,policy };
     next();
     });

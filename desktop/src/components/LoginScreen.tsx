@@ -1,14 +1,16 @@
 import { SERVER_URL } from '../config';
 import React, { useState } from 'react';
+import { invoke, isTauri } from '@tauri-apps/api/core';
 
 interface Props {
-  onLogin: (token: string) => void;
+  onLogin: (token: string, refresh?: string, owner?: string) => void;
 }
 
 
 const LoginScreen: React.FC<Props> = ({ onLogin }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [organizationId,setOrganizationId]=useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -22,12 +24,17 @@ const LoginScreen: React.FC<Props> = ({ onLogin }) => {
     setError('');
 
     try {
+      if (!isTauri()) throw new Error('Open the native desktop application to sign in.');
+      if (await invoke<string>('control_plane_origin') !== SERVER_URL) throw new Error('Desktop and native control-plane origins differ. Check the application configuration.');
       const res = await fetch(`${SERVER_URL}/api/auth/login`, {
         method: 'POST',
+        redirect: 'error',
+        signal: AbortSignal.timeout(8000),
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           username,
           password,
+          ...(organizationId.trim()?{organizationId:organizationId.trim()}:{}),
           deviceOs: navigator.platform.toLowerCase().includes('win') ? 'windows'
             : navigator.platform.toLowerCase().includes('mac') ? 'macos' : 'linux',
         }),
@@ -36,13 +43,14 @@ const LoginScreen: React.FC<Props> = ({ onLogin }) => {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || 'Login failed');
+        setError(typeof data.error==='string'?data.error:'Login failed');
         return;
       }
 
-      onLogin(data.accessToken);
-    } catch {
-      setError('Cannot connect to RemoteShield server. Is VPN active?');
+      if (typeof data.accessToken!=='string' || typeof data.refreshToken!=='string' || typeof data.user?.id!=='string') throw new Error('Invalid login response');
+      onLogin(data.accessToken, data.refreshToken, `${data.user.organizationId || 'legacy'}:${data.user.id}`);
+    } catch (reason) {
+      setError(reason instanceof Error && reason.name!=='TypeError' ? reason.message : 'Cannot connect to the organization server.');
     } finally {
       setLoading(false);
     }
@@ -83,6 +91,7 @@ const LoginScreen: React.FC<Props> = ({ onLogin }) => {
               autoComplete="current-password"
             />
           </div>
+          <div><label className="login-label" htmlFor="rs-organization">Organization ID (optional)</label><input id="rs-organization" className="input" value={organizationId} onChange={e=>setOrganizationId(e.target.value)} autoComplete="organization" placeholder="Default organization when empty"/></div>
 
           {error && <div className="login-error">⚠️ {error}</div>}
 

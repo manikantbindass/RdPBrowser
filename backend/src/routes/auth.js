@@ -9,6 +9,20 @@ const { audit } = require('../services/audit');
 const { authenticateToken } = require('../middleware/auth');
 const router = express.Router();
 const { issueSession,hashToken }=require('../services/sessions');
+async function sessionStatus(req,res){
+  const {session,device}=req.accessContext;
+  const {decide}=require('../services/access');
+  const access=decide({...req.accessContext,policy:req.accessContext.policy.configuration,resource:'browser.navigate'});
+  await require('../services/access').recordDecision(req,req.accessContext.user,session,device,access,req.accessContext.policy.revision);
+  const urls=req.method==='POST'?validate(Joi.object({urls:Joi.array().items(Joi.string().uri({scheme:['http','https']}).max(8192)).max(20).required()}),req.body).urls:[];
+  if (req.method==='POST') require('./proxy').navigationCountry(req);
+  const decisions=access.allowed?await Promise.all(urls.map(url=>require('../services/policy').evaluate(url))):[];
+  const sourceGate=req.app.locals.config.VPN_REQUIRED?'accepted':'disabled';
+  res.json({user:{id:req.user.sub,role:req.user.role,organizationId:req.user.organizationId},session:{id:session.id,expiresAt:session.expires_at,absoluteExpiresAt:session.absolute_expires_at},device:device?{id:device.id,name:device.name,trustState:device.trust_state,status:device.status,postureValidUntil:device.posture_valid_until}:null,access,decisions,sourceGate});
+}
+const statusLimit=require('express-rate-limit')({windowMs:60000,max:120,standardHeaders:true,legacyHeaders:false,
+  handler:(req,res)=>res.status(429).json({error:'Session status quota exceeded'})});
+router.route('/status').get(statusLimit,authenticateToken,wrap(sessionStatus)).post(statusLimit,authenticateToken,wrap(sessionStatus));
 async function ensureOrganization() {
   if (!(await query('SELECT id FROM organizations WHERE id=$1 AND is_active',[tenantId()])).rows.length) fail(401,'Invalid credentials');
 }

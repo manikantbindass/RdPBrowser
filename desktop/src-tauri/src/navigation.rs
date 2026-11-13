@@ -9,6 +9,10 @@ pub fn validate(raw: &str) -> Result<Url, String> {
         || url.host_str().is_none()
         || !url.username().is_empty()
         || url.password().is_some()
+        || matches!(
+            url.host_str(),
+            Some("tauri.localhost" | "asset.localhost" | "ipc.localhost")
+        )
     {
         return Err("Only HTTP(S) URLs without credentials are supported".into());
     }
@@ -26,6 +30,8 @@ mod tests {
             "data:text/html,x",
             "https://user:pass@example.com",
             "https://example.com\n",
+            "http://tauri.localhost/",
+            "https://asset.localhost/",
         ] {
             assert!(validate(value).is_err(), "{value}");
         }

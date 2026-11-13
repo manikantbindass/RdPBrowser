@@ -1,39 +1,35 @@
-# Phase 06 desktop stabilization — PARTIAL
+# Phase 06 desktop delivery
 
-Date: 2026-11-13. Branch codex/remoteshield-enterprise-completion; draft PR3 targets main. Existing Tauri2/Rust/React/TypeScript stack retained. No merge/deployment.
+**Status: PARTIAL.** The managed browser runs on Windows WebView2. Cross-platform GUI and signed installer acceptance, native enterprise SSO, and production WireGuard routing verification remain open.
 
-## Audit and changes
+## Delivered
 
-Inspected actual desktop native/frontend/navigation/auth configuration and established build/test baseline before functionality changes. Removed frontend allow-on-policy-error and native guest authorization bypass. Native HTTP(S) validation rejects credentials, control characters, unsupported schemes and oversized URLs; native policy requests have an eight-second timeout with generic errors. Token/navigation commands require the main window; capabilities now target main rather than every window. History transitions reauthorize. Browser unmount closes registered native content windows, including sign-out transitions. Added explicit native sign-out token clearing. Removed guest login and automatic health/VPN bypass presentation from App; login requires a real native IPC session. Added keyboard tab selection/labels and URL input label. VPN button now explains that OS integration is unavailable; status text distinguishes control-plane reachability from VPN proof. Existing backend interfaces and tab/history components are retained.
-
-Intentional compatibility tightening: guest navigation is no longer permitted through the enterprise policy path. Browser preview cannot create a native authenticated session. Password login remains; refresh/SSO handoff is not completed. The legacy check_vpn_status command still measures control-plane reachability, not OS tunnel state; it is not a security attestation. The old watchdog event is renamed control_plane_status so it no longer publishes a false VPN assertion. Existing working frontend builds and native configuration remain.
+- Rust now owns remote WebViews. The control plane authorizes addresses, redirects and top-level navigation. The shell applies a restrictive CSP and grants application capabilities only to its main window. Popups require an explicit open and automatic WebView downloads are canceled.
+- The React workspace supports address navigation, tabs, back and forward, bookmarks, history, explicit tab restoration, appearance, keyboard shortcuts and loading or policy errors. The organization and user scope saved browsing preferences. Passwords, tokens and private keys stay in memory.
+- Password authentication uses backend session checks, serialized refresh rotation and best-effort server logout. Policy changes, session revocation and control-plane outages close managed content. The Devices panel supports registration and P-256 possession challenges.
+- An optional local WireGuard peer-handshake check and the server's source-address gate inform the browser decision. Explicit downloads accept direct HTTPS UTF-8 plain text within a 5 MiB limit. The updater supports release notifications and explicitly approved, signature-verified installation when configured.
+- The backend adds a bounded authenticated status endpoint and documents it in OpenAPI. Existing route aliases and tenant scoping are preserved. Deploy the backend first.
 
 ## Verification
 
-Windows baseline: TypeScript/Vite PASS; Rust one test PASS. Updated Windows TypeScript/Vite, Rust tests, formatting and strict Clippy results are recorded with the delivery. Native URL regression covers unsafe schemes, embedded credentials, control characters and length bounds. Vite retains its existing large-chunk/deprecated-CJS warnings; no thresholds or tests are disabled. No visual/runtime acceptance or installer/signing test is claimed from compilation alone. macOS/Linux runtime tests were not performed locally; existing CI platform runners are separate evidence and must not be assumed passing.
+| Check | Result |
+| --- | --- |
+| Desktop TypeScript/Vite production build | Passed on Windows |
+| Desktop Node tests | 3 passed |
+| Rust formatting, tests and strict Clippy | Passed on Windows, 6 tests |
+| Native Windows debug build | Passed, using Tauri without installer bundling |
+| Windows WebView2 runtime and disposable PostgreSQL backend | Password login, top-level navigation, form POST body preservation, automatic download blocking, and content closure after session revocation or a URL-policy change verified. The popup test produced no additional WebView. The shell notification still needs manual confirmation. |
+| Backend ESLint and unit suite | Passed, 77 tests |
+| PostgreSQL integration and migration suite | 24 passed on PostgreSQL 15.19, including own-session status and URL policy checks |
+| Desktop npm audit | No production advisories after removing the unused shell plugin and updating Socket.IO transitives. The full audit still reports 9 build/development findings. Rust advisory audit was unavailable because cargo-audit is absent. |
+| OpenAPI | Generated and validated, 42 paths |
+| macOS and Linux | Three-platform source verification is configured in Desktop checks. Local GUI tests were Windows only. |
 
-Final local commands: `npm run build --prefix desktop` PASS; `cargo fmt --manifest-path desktop/src-tauri/Cargo.toml -- --check` PASS; `cargo test --locked --offline --manifest-path desktop/src-tauri/Cargo.toml` PASS2 tests; `cargo clippy --locked --offline --manifest-path desktop/src-tauri/Cargo.toml --all-targets -- -D warnings` PASS. Cargo reports a filesystem incremental-cache hard-link fallback warning, not a hidden Clippy diagnostic. `git diff --check` PASS after normalizing edited files to LF. Backend source/schema was not changed. No GUI dev server was started or screenshot fabricated.
+See [desktop operations](DESKTOP_OPERATIONS.md) for the Windows fixture, verification commands, package dependencies and updater configuration.
 
-## Critical remaining work
+## Remaining acceptance
 
-| Requested area | Status / limitation |
-|---|---|
-| Address/history policy | Explicit navigation fails closed; redirects, in-page links, popups and subresources still need native interception; not a complete managed browser |
-| Tabs/history/bookmarks/restoration | Existing tab/history behavior retained; bookmarks and robust versioned restoration remain incomplete |
-| Loading/error UI | Existing spinner/error presentation retained; real page-load lifecycle/error documents incomplete |
-| Downloads/file safety | No verified native download controller, quarantine/scanning or safe destination workflow; no safety guarantee |
-| Preferences | Existing localStorage search preference is not a secret store; validated native preferences/privacy lifecycle remain |
-| Authentication/device | Native token stays in memory and is cleared on explicit sign-out; refresh rotation, backend logout, SSO handoff, enrollment/key proof and expiry/revocation closure remain incomplete |
-| VPN | No OS tunnel/routing/DNS/kill-switch adapter; health/readiness cannot establish VPN state |
-| Policy refresh/revocation | Per-address/history requests only; continuous revocation and race-safe closure require implementation |
-| UI/accessibility | Narrow tab/address accessibility repairs; premium redesign, layout/contrast/keyboard/runtime QA incomplete |
-| Updates | No trusted updater key/feed/signing credentials provisioned; no auto-download or unsigned installation is introduced |
-| IPC/CSP/WebViews | Main-only capabilities and command caller checks added; broad existing CSP and JS-created content windows still require redesign and adversarial native acceptance |
-
-Native content WebViews may outlive an in-flight asynchronous creation even with unmount cleanup; this known race is not certified fixed. DevTools settings do not prevent OS inspection, screenshots, binary tampering or traffic bypass. No screenshot or simulated security state substitutes for verification.
-
-## Installer/runtime dependencies
-
-Configuration lists MSI/NSIS, deb/AppImage and DMG targets; successful artifacts are not established by this phase's source inspection. Windows requires WebView2 and the Rust/MSVC build toolchain; Linux WebKitGTK4.1/system GUI libraries; macOS its native WebKit/Xcode toolchain and platform signing/notarization. Native release control-plane origin must be configured HTTPS; frontend and Rust origins must match. There are no signed updater/installer acceptance results. Never run an unsigned update automatically or claim universal platform compatibility.
-
-Files: native navigation validator/tests and command/capability changes, App/login/browser/tab accessibility/lifecycle repairs, and Phase06 plan/report. Final commit identity and PR URL are supplied in delivery. Remaining work requires substantive native controllers and platform acceptance; this partial delivery does not satisfy complete Phase06 acceptance.
+- Verify WebView behavior and installed artifacts on Windows, macOS and Linux, including focus, mixed-DPI layout, redirects, ephemeral profiles and error handling. Moving or resizing the main window currently closes its content windows. History navigation opens the selected URL again. The browser does not replay prior form bodies when revisiting a history entry.
+- Validate a real WireGuard deployment's routes, DNS, IPv6 and fail-closed behavior with OS-level tests. The handshake probe verifies peer activity. WebView navigation callbacks cover top-level navigation and have a bounded synchronous policy deadline. Subresources, service workers, OS inspection, screenshots and bypass require independent controls.
+- Verify signed upgrades and failure scenarios with a provisioned release feed and signed artifacts. Installer and production update installation remain untested. The restricted download path excludes authenticated, executable and non-text downloads. Malware scanning and user-selected destinations remain open.
+- Add a native OIDC handoff and an OS-backed device key lifecycle. The current session-only key requires new enrollment after restart. Administrator posture approval remains independent. The new workspace supersedes the old desktop dashboard and its experimental SSH and Laila entry points.

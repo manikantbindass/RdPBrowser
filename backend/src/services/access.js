@@ -19,6 +19,7 @@ function resourceFor(req) {
   if (req.accessResource) return req.accessResource;
   const path=(req.baseUrl || '')+(req.path || '');
   if (/\/auth\/logout$/.test(path)) return 'session.terminate';
+  if (/\/auth\/status$/.test(path)) return 'device.enroll'; // Own-session bootstrap status, never a resource grant.
   if (/\/policies\/evaluate$/.test(path)) return 'browser.navigate';
   if (/\/(admin)(\/|$)/.test(path) || (req.method!=='GET' && /\/(users|policies)(\/|$)/.test(path))) return 'admin.manage';
   if (/\/devices(\/|$)/.test(path)) return req.method==='POST' ? 'device.enroll' : 'session.manage';

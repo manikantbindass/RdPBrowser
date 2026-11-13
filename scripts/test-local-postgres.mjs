@@ -25,16 +25,18 @@ try {
   const databaseUrl=new URL(url);databaseUrl.pathname='/remoteshield_phase05_test';
   const setup=new Pool({ connectionString:databaseUrl.toString() });
   await setup.query('CREATE EXTENSION "uuid-ossp" WITH SCHEMA public;CREATE EXTENSION pgcrypto WITH SCHEMA public');await setup.end();
-  const command=process.argv.includes('--protocol-only') ? 'node backend/integration/oidc-flow.cjs' : 'npm run test:integration --prefix backend';
+  const fixture=process.argv.includes('--desktop-fixture');
+  const command=fixture?'node backend/integration/desktop-fixture.cjs':process.argv.includes('--protocol-only') ? 'node backend/integration/oidc-flow.cjs' : 'npm run test:integration --prefix backend';
   const result=await new Promise(done => {
     const child=spawn(command,{ shell:true,windowsHide:true,env:{ ...process.env,INTEGRATION_DATABASE_URL:databaseUrl.toString() } });
-    let output='';const timer=setTimeout(() => { if(process.platform==='win32') execFileSync('taskkill',['/PID',String(child.pid),'/T','/F'],{ windowsHide:true,stdio:'ignore' }); else child.kill('SIGTERM'); },180000);
+    let output='';const timer=setTimeout(() => { if(process.platform==='win32') execFileSync('taskkill',['/PID',String(child.pid),'/T','/F'],{ windowsHide:true,stdio:'ignore' }); else child.kill('SIGTERM'); },fixture?1200000:180000);
     child.stdout.on('data',v => { output+=v; });child.stderr.on('data',v => { output+=v; });
     child.on('close',exitCode => { clearTimeout(timer);done({ exitCode,output:output.replace(/[A-Za-z0-9_-]{15,}\.[A-Za-z0-9_-]{15,}\.[A-Za-z0-9_-]{15,}/g,'[REDACTED_JWT]').replaceAll(password,'[REDACTED]') }); });
   });
   const report={ capturedAt:new Date().toISOString(),node:process.version,postgres:execFileSync(exe('postgres'),['--version'],{ encoding:'utf8',windowsHide:true }).trim(),
     scope:'Disposable password-authenticated loopback cluster; isolated schemas and restricted runtime roles',command,...result };
-  writeFileSync('docs/audit/phase05/local-postgres.json',JSON.stringify(report,null,2)+'\n');
+  const destination=process.env.VERIFICATION_OUTPUT || (fixture?'.local-tests/desktop-fixture-results.json':'docs/audit/phase05/local-postgres.json');
+  writeFileSync(destination,JSON.stringify(report,null,2)+'\n');
   console.log(result.output);process.exitCode=result.exitCode ?? 1;
 } finally {
   if (started) execFileSync(exe('pg_ctl'),['-D',data,'-m','fast','-w','-t','30','stop'],{ windowsHide:true,stdio:'ignore',timeout:40000 });

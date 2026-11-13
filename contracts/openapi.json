@@ -227,6 +227,89 @@
         }
       }
     },
+    "/auth/status": {
+      "get": {
+        "operationId": "get__auth_status",
+        "summary": "Own live session and device bootstrap status; does not grant content access",
+        "description": "Data access is scoped to the authenticated organization; ownership rules apply.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error; includes server-owned X-Request-ID correlation. 400 validation, 401 authentication, 403 authorization, 404 invisible resource, 409 conflict, 429 limit, 500 internal, 503 readiness/capacity.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "post__auth_status",
+        "summary": "Own session plus bounded URL re-evaluation for native policy monitor",
+        "description": "Data access is scoped to the authenticated organization; ownership rules apply.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error; includes server-owned X-Request-ID correlation. 400 validation, 401 authentication, 403 authorization, 404 invisible resource, 409 conflict, 429 limit, 500 internal, 503 readiness/capacity.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "urls": {
+                    "type": "array",
+                    "maxItems": 20,
+                    "items": {
+                      "type": "string",
+                      "format": "uri",
+                      "maxLength": 8192
+                    }
+                  }
+                },
+                "required": [
+                  "urls"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
     "/admin/access-policy": {
       "get": {
         "operationId": "get__admin_access_policy",

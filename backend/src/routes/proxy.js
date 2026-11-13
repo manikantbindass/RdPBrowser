@@ -4,10 +4,14 @@ const { query,transaction }=require('../db/db');
 const { evaluate }=require('../services/policy');
 const { Joi,validate,wrap,fail }=require('../services/validation');
 const geoip=require('geoip-lite');
-async function decision(req,res,navigate) {
-  const url=navigate ? req.body.url : validate(Joi.string().uri({ scheme:['http','https'] }).max(8192).required(),req.query.url);
+function navigationCountry(req) {
   const country=geoip.lookup(req.vpnClientIp || req.ip)?.country || 'XX';
   if (req.app.locals.config.GEO_RESTRICTION_ENABLED && !req.app.locals.config.ALLOWED_COUNTRIES.split(',').includes(country)) fail(403,'Country not allowed');
+  return country;
+}
+async function decision(req,res,navigate) {
+  const url=navigate ? req.body.url : validate(Joi.string().uri({ scheme:['http','https'] }).max(8192).required(),req.query.url);
+  const country=navigationCountry(req);
   const result=await evaluate(url);
   if (navigate) await transaction(async () => {
     // Do not persist URL credentials, query tokens or fragments in activity logs.
@@ -22,3 +26,4 @@ async function decision(req,res,navigate) {
 router.post('/navigate',require('../contracts').validateBody('navigateRequest'),wrap((req,res) => decision(req,res,true)));
 router.get('/check',wrap((req,res) => decision(req,res,false)));
 module.exports=router;
+module.exports.navigationCountry=navigationCountry;

@@ -70,6 +70,7 @@ test('runtime, legacy/versioned auth, SQL filtering and readiness use real Postg
     const login = await request(runtime.app).post(path).send({ username: 'phaseadmin', password: 'TestPassword1!' });
     expect(login.status).toBe(200);
     minted.push(login.body.accessToken);
+    for(let i=0;i<25;i++)expect((await request(runtime.app).get('/api/v1/auth/status').auth(login.body.accessToken,{type:'bearer'})).status).toBe(200);
     const stats = await request(runtime.app).get('/api/v1/admin/ip-logs?flagged=true').auth(login.body.accessToken, { type: 'bearer' });
     expect(stats.status).toBe(200); expect(stats.body.logs).toEqual([]);
   }

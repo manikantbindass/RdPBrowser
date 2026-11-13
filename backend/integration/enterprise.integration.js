@@ -266,3 +266,18 @@ test('identity/access storage remains tenant-bound and decision records are appe
   expect((await call('get','/devices',tokenA)).status).toBe(503);
   await pool.query('UPDATE access_policies SET configuration=$1',[defaults]);
 });
+test('desktop status validates owned session and current URL decisions without granting bootstrap content access',async()=>{
+  expect((await call('get','/auth/status')).status).toBe(401);
+  const status=await call('post','/auth/status',tokenA,{urls:['https://x.blocked.test/']});
+  expect(status.status).toBe(200);expect(status.body.user.id).toBe(userA);expect(status.body.decisions[0].allowed).toBe(false);
+  expect(status.body).not.toHaveProperty('accessToken');expect(status.body.session).not.toHaveProperty('refresh_hash');
+  expect(status.body.sourceGate).toBe('disabled');
+  expect((await call('post','/auth/status',tokenA,{urls:['file:///etc/passwd']})).status).toBe(400);
+  expect((await call('post','/auth/status',tokenA,{urls:Array(21).fill('https://safe.test')})).status).toBe(400);
+  await pool.query('UPDATE access_policies SET configuration=$1',[{...defaults,requireTrustedDevice:true}]);
+  // A real device was revoked earlier; fresh login has no possession proof.
+  const restricted=await call('post','/auth/status',tokenA,{urls:['https://safe.test']});
+  expect(restricted.status).toBe(200);expect(restricted.body.access.allowed).toBe(false);
+  expect(restricted.body.decisions).toEqual([]);
+  await pool.query('UPDATE access_policies SET configuration=$1',[defaults]);
+});
