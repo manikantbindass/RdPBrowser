@@ -138,6 +138,8 @@ const Browser: React.FC<Props> = ({ authToken }) => {
     return () => clearInterval(t);
   }, []);
 
+  useEffect(() => () => { void Promise.all([...tabWindows.keys()].map(closeTabWindow)); }, [authToken]);
+
   // ─── Theme ────────────────────────────────────────────────────
   useEffect(() => {
     document.body.classList.toggle('theme-dark', isDark);
@@ -192,13 +194,16 @@ const Browser: React.FC<Props> = ({ authToken }) => {
       url = 'https://' + url;
     }
 
+    try { const parsed = new URL(url); if (!['http:', 'https:'].includes(parsed.protocol) || parsed.username || parsed.password || url.length > 8192) throw new Error(); } catch { setError('Only valid HTTP(S) URLs without credentials are supported'); return; }
     setLoading(true);
     setError('');
 
     try {
-      // Guest bypass: no backend validation
-      if (isTauri() && authToken !== 'guest') {
-        const res = await invoke<{ allowed: boolean; url: string }>('request_navigate', { url }).catch(() => ({ allowed: true, url }));
+      await closeTabWindow(activeTabId);
+      // Enterprise policy failures never authorize navigation
+      if (!isTauri()) throw new Error('Native browsing unavailable');
+      if (isTauri()) {
+        const res = await invoke<{ allowed: boolean; url: string }>('request_navigate', { url });
         if (!res.allowed) { setError('URL blocked by RemoteShield policy'); setLoading(false); return; }
         url = res.url;
       }
@@ -274,6 +279,7 @@ const Browser: React.FC<Props> = ({ authToken }) => {
     if (!canBack) return;
     const idx = tabHistIdx - 1;
     const url = tabHistory[idx];
+    try { await invoke('request_navigate', { url }); } catch { setError('History navigation denied or unavailable'); return; }
     setHistoryIdx(hi => ({ ...hi, [activeTabId]: idx }));
     setTabs(ts => ts.map(t => t.id === activeTabId ? { ...t, url } : t));
     if (isTauri()) {
@@ -290,6 +296,7 @@ const Browser: React.FC<Props> = ({ authToken }) => {
     if (!canForward) return;
     const idx = tabHistIdx + 1;
     const url = tabHistory[idx];
+    try { await invoke('request_navigate', { url }); } catch { setError('History navigation denied or unavailable'); return; }
     setHistoryIdx(hi => ({ ...hi, [activeTabId]: idx }));
     setTabs(ts => ts.map(t => t.id === activeTabId ? { ...t, url } : t));
     if (isTauri()) {
@@ -311,7 +318,7 @@ const Browser: React.FC<Props> = ({ authToken }) => {
   const refresh = () => navigate(activeTab.url);
 
   const addTab = () => {
-    const id = Date.now().toString();
+    const id = crypto.randomUUID();
     setTabs(ts => [...ts, { id, url: HOME_URL, title: 'New Tab', favicon: '🌐' }]);
     setActiveTabId(id);
   };
@@ -367,7 +374,7 @@ const Browser: React.FC<Props> = ({ authToken }) => {
                 <hr className="settings-divider" />
                 <button className="settings-item"><Settings size={14}/> Settings</button>
                 <button className="settings-item" onClick={() => { setAllHistory([]); setHistoryIdx({}); setHistoryStack({}); setSettingsOpen(false); }}><Trash2 size={14}/> Clear Data</button>
-                <button className="settings-item" onClick={() => setVpnOn(!vpnOn)}><Shield size={14}/> Toggle VPN</button>
+                <button className="settings-item" onClick={() => setError('VPN control unavailable; verify OS routing separately.')}><Shield size={14}/> VPN unavailable</button>
               </div>
             )}
           </div>
@@ -384,10 +391,10 @@ const Browser: React.FC<Props> = ({ authToken }) => {
             <button id="rs-btn-home"    className="nav-btn" onClick={goHome}    title="Home">⌂</button>
 
             <div className="url-bar-container">
-              <div className={`vpn-dot ${vpnOn ? 'vpn-dot-on' : 'vpn-dot-off'}`} style={{ marginRight: 8 }} title={vpnOn ? 'VPN Connected' : 'VPN Off'} />
+              <div className={`vpn-dot ${vpnOn ? 'vpn-dot-on' : 'vpn-dot-off'}`} style={{ marginRight: 8 }} title={vpnOn ? 'Control plane reachable; VPN unverified' : 'Control plane unavailable'} />
               <span style={{ fontSize: 12, marginRight: 6, opacity: 0.7 }}>🔒</span>
               <input
-                id="rs-url-bar"
+                aria-label="Address or search" id="rs-url-bar"
                 className="url-bar"
                 type="text"
                 value={urlInput}

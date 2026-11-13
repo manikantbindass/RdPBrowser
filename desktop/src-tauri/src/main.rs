@@ -3,6 +3,7 @@
 
 mod config;
 mod integrity;
+mod navigation;
 mod platform;
 mod vpn;
 
@@ -25,26 +26,41 @@ async fn check_vpn_status(state: tauri::State<'_, AppState>) -> Result<bool, Str
 #[tauri::command]
 async fn request_navigate(
     url: String,
+    window: tauri::WebviewWindow,
     state: tauri::State<'_, AppState>,
 ) -> Result<serde_json::Value, String> {
+    if window.label() != "main" {
+        return Err("Untrusted IPC caller".into());
+    }
+    let url = navigation::validate(&url)?.to_string();
     let token = state.auth_token.lock().await;
     let token_ref = token.as_deref().ok_or("Not authenticated")?;
 
     if token_ref == "guest" {
-        return Ok(serde_json::json!({ "allowed": true, "url": url }));
+        return Err("Guest browsing cannot authorize enterprise navigation".into());
     }
 
-    let client = reqwest::Client::new();
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(8))
+        .build()
+        .map_err(|_| "HTTP client unavailable")?;
     let res = client
         .post(format!("{}/api/proxy/navigate", state.server_url))
         .bearer_auth(token_ref)
         .json(&serde_json::json!({ "url": url }))
         .send()
         .await
-        .map_err(|e| format!("Network error: {e}"))?;
+        .map_err(|_| "Policy service unavailable")?;
 
     if res.status().is_success() {
-        Ok(res.json().await.map_err(|e| e.to_string())?)
+        let decision: serde_json::Value =
+            res.json().await.map_err(|_| "Invalid policy response")?;
+        if decision["allowed"].as_bool() != Some(true)
+            || decision["url"].as_str() != Some(url.as_str())
+        {
+            return Err("Policy did not authorize the requested URL".into());
+        }
+        Ok(decision)
     } else {
         let err: serde_json::Value = res.json().await.unwrap_or_default();
         Err(err["error"].as_str().unwrap_or("URL blocked").to_string())
@@ -52,7 +68,17 @@ async fn request_navigate(
 }
 
 #[tauri::command]
-async fn set_auth_token(token: String, state: tauri::State<'_, AppState>) -> Result<(), String> {
+async fn set_auth_token(
+    token: String,
+    window: tauri::WebviewWindow,
+    state: tauri::State<'_, AppState>,
+) -> Result<(), String> {
+    if window.label() != "main" {
+        return Err("Untrusted IPC caller".into());
+    }
+    if token.len() > 8192 || token == "guest" {
+        return Err("Invalid access token".into());
+    }
     let mut t = state.auth_token.lock().await;
     *t = Some(token);
     Ok(())
@@ -117,21 +143,21 @@ fn main() {
                     let is_connected = vpn::check_vpn_connected(&server).await.unwrap_or(false);
 
                     if !is_connected && was_connected {
-                        warn!("VPN disconnected");
+                        warn!("Control plane unavailable");
                         let _ = app_handle.emit(
-                            "vpn_status",
+                            "control_plane_status",
                             serde_json::json!({
                                 "connected": false,
-                                "message": "VPN disconnected — browser blocked for security"
+                                "message": "Control plane unavailable; VPN unverified"
                             }),
                         );
                     } else if is_connected && !was_connected {
-                        info!("VPN reconnected");
+                        info!("Control plane reachable");
                         let _ = app_handle.emit(
-                            "vpn_status",
+                            "control_plane_status",
                             serde_json::json!({
                                 "connected": true,
-                                "message": "VPN connected"
+                                "message": "Control plane reachable; VPN unverified"
                             }),
                         );
                     }

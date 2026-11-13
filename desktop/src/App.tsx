@@ -1,103 +1,25 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { invoke } from '@tauri-apps/api/core';
-import { listen } from '@tauri-apps/api/event';
-import VpnGuard from './components/VpnGuard';
+import React, { useState } from 'react';
+import { invoke, isTauri } from '@tauri-apps/api/core';
 import LoginScreen from './components/LoginScreen';
 import Browser from './components/Browser';
 import './index.css';
 
-export type AppView = 'login' | 'browser';
-
-interface VpnEvent { connected: boolean; message: string; }
-
-const App: React.FC = () => {
-  const [view, setView] = useState<AppView>('login');
-  const [vpnConnected, setVpnConnected] = useState<boolean | null>(null);
-  const [authToken, setAuthToken] = useState<string | null>(null);
-  const [vpnMessage, setVpnMessage] = useState('Checking VPN...');
-
-  const [bypassVpn, setBypassVpn] = useState(false);
-
-  // ─── Initial VPN check ──────────────────────────────────────
-  const pollVpn = useCallback(async () => {
-    if (bypassVpn) return;
+export default function App() {
+  const [token, setToken] = useState<string | null>(null);
+  const [error, setError] = useState('');
+  const login = async (value: string) => {
     try {
-      const connected = await invoke<boolean>('check_vpn_status');
-      setVpnConnected(connected);
-      if (!connected) setVpnMessage('VPN disconnected — browser blocked for security');
-    } catch {
-      // Server unreachable (no backend / dev mode) — auto-bypass so app is usable
-      setBypassVpn(true);
-      setVpnConnected(true);
-    }
-  }, [bypassVpn]);
-
-  useEffect(() => {
-    pollVpn();
-    // Listen to Rust VPN watchdog events
-    const unlisten = listen<VpnEvent>('vpn_status', (e) => {
-      if (!bypassVpn) {
-        setVpnConnected(e.payload.connected);
-        setVpnMessage(e.payload.message);
-      }
-    });
-    return () => { unlisten.then((fn) => fn()); };
-  }, [pollVpn, bypassVpn]);
-
-  const handleLogin = async (token: string) => {
-    try {
-      // invoke only works inside native Tauri window, not in browser dev tabs
-      await invoke('set_auth_token', { token });
-    } catch {
-      // Gracefully degrade — token still stored in React state below
-    }
-    setAuthToken(token);
-    setView('browser');
+      if (value === 'guest') throw new Error('Enterprise browsing requires authentication.');
+      if (!isTauri()) throw new Error('Open the native application to start a browsing session.');
+      await invoke('set_auth_token', { token: value });
+      setError(''); setToken(value);
+    } catch (reason) { setError(reason instanceof Error ? reason.message : 'Native session unavailable'); }
   };
-
-  // ─── Guest Mode 1-Hour Timer ─────────────────────────────────
-  useEffect(() => {
-    if (authToken === 'guest') {
-      const timer = setTimeout(() => {
-        setAuthToken(null);
-        setView('login');
-        setVpnMessage('Your 1-hour guest session has expired. Please log in.');
-      }, 60 * 60 * 1000); // 1 hour
-      return () => clearTimeout(timer);
-    }
-  }, [authToken]);
-
-  // ─── Loading state ───────────────────────────────────────────
-  if (vpnConnected === null) {
-    return (
-      <div className="splash">
-        <div className="splash-logo">🛡️</div>
-        <p className="splash-text">Verifying secure connection...</p>
-        <div className="spinner" />
-      </div>
-    );
-  }
-
-  if (!vpnConnected && !bypassVpn) {
-    return (
-      <VpnGuard 
-        message={vpnMessage} 
-        onRetry={pollVpn} 
-        onBypass={() => {
-          setBypassVpn(true);
-          setVpnConnected(true);
-        }} 
-      />
-    );
-  }
-
-  // ─── Not authenticated ───────────────────────────────────────
-  if (view === 'login' || !authToken) {
-    return <LoginScreen onLogin={handleLogin} />;
-  }
-
-  // ─── Main browser view ───────────────────────────────────────
-  return <Browser authToken={authToken} />;
-};
-
-export default App;
+  const logout = async () => {
+    await invoke('set_auth_token', { token: '' }).catch(() => undefined);
+    setToken(null);
+  };
+  return <>{error && <div role="alert">{error}</div>}{token
+    ? <><button className="session-signout" onClick={logout}>Sign out</button><Browser authToken={token} /></>
+    : <LoginScreen onLogin={login} />}</>;
+}

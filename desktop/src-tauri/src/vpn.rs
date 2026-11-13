@@ -1,8 +1,8 @@
 use reqwest::Client;
 use std::time::Duration;
 
-/// Checks VPN connectivity by hitting the backend /health endpoint.
-/// If the server is unreachable or the IP doesn't match, returns false.
+/// Legacy command adapter: reports control-plane availability only.
+/// This does not inspect WireGuard, routes, DNS, or a kill switch.
 pub async fn check_vpn_connected(server_url: &str) -> Result<bool, String> {
     let client = Client::builder()
         .timeout(Duration::from_secs(4))

@@ -3,7 +3,7 @@
   "identifier": "default",
   "description": "Default capabilities for RemoteShield X",
   "windows": [
-    "*"
+    "main"
   ],
   "permissions": [
     "core:default",
