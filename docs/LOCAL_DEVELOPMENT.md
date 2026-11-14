@@ -4,7 +4,7 @@
 
 **Phase 04 upgrade:** existing settings require distinct restricted runtime credentials before starting the new backend. Follow [MIGRATION_PHASE04.md](MIGRATION_PHASE04.md); do not reuse the previous superuser URL as DATABASE_URL. Fresh setup-dev generates migration/runtime URLs and both Compose passwords. Compose public registration defaults false; set REGISTRATION_ENABLED=true only for deliberate local public signup. Registration/session/refresh defects described in the historical Phase 02 instructions below are repaired. Current API schemas are [OpenAPI](../contracts/openapi.json). Local real database checks: `node scripts/test-phase04.mjs` reads ignored owner settings and uses only unique schemas in the dedicated `_test` database. CI runs `npm run test:integration --prefix backend` with an explicit INTEGRATION_DATABASE_URL.
 
-Prerequisites: Node22 (matches CI/container), npm with lockfile support, Git, Docker Engine/Desktop in Linux-container mode and Compose>=2.24.4 (the local override uses !override). Rust/MSVC/WebView2 for Windows native builds; Linux/macOS need their respective Tauri toolchains. Flutter/Dart are required only for Android work, whose missing screens/native channels remain Phase 01 blockers.
+Prerequisites: Node22 (matches CI/container), npm with lockfile support, Git, Docker Engine/Desktop in Linux-container mode and Compose>=2.24.4 (the local override uses !override). Rust/MSVC/WebView2 for Windows native builds; Linux/macOS need their respective Tauri toolchains. For Android builds use the toolchain and commands in [ANDROID_OPERATIONS.md](ANDROID_OPERATIONS.md).
 
 Run from the repository root. Windows with Docker Desktop: use `$env:DOCKER_CONTEXT='desktop-linux'` in this shell, or prefix Docker commands with `docker --context desktop-linux`. The agent did not change your global Docker context. Linux/macOS can use their normal context.
 
@@ -71,7 +71,7 @@ The new Architecture baseline workflow executes unit/contract and real PostgreSQ
 
 ## Android and production limits
 
-Android uses a public SERVER_URL Dart define through lib/config.dart. Emulator host access uses10.0.2.2, physical devices require an explicit reachable test endpoint; loopback8180 is not remotely exposed. Supply `flutter run --dart-define=SERVER_URL=https://your-test-endpoint` after repairing the existing missing screens/native implementation. Phase 02 does not claim an Android build passes.
+Android uses a public SERVER_URL Dart define through lib/config.dart. Emulator host access uses10.0.2.2, physical devices require an explicit reachable test endpoint; loopback8180 is not remotely exposed. Supply `flutter run --dart-define=SERVER_URL=https://your-test-endpoint` with an administrator-provisioned VPN profile. Phase 02 does not claim an Android build passes.
 
 Production uses docker/docker-compose.yml without compose.dev.yml, a reviewed docker/.env based on .env.example, real certs at docker/certs/tls.crt and tls.key, strong secrets and VPN source policy. Run config:check with deployment settings, verify TLS and actual ingress/source addresses, and follow MIGRATION_PHASE02 before upgrading existing data. Do not run the privileged VPN setup script as a local-development step.
 

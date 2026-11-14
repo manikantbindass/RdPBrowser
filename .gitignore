@@ -1,4 +1,4 @@
-# ─── Node / Backend ───────────────────────────────────────────
+# â”€â”€â”€ Node / Backend â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 node_modules/
 dist/
 build/
@@ -17,16 +17,17 @@ yarn-error.log*
 # Keep package-lock.json tracked (required for CI reproducibility)
 # !package-lock.json  <-- intentionally NOT ignored
 
-# ─── Rust / Tauri ─────────────────────────────────────────────
+# â”€â”€â”€ Rust / Tauri â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 target/
 desktop/src-tauri/target/
 Cargo.lock
 # Desktop is an application: retain the audited dependency resolution.
 !desktop/src-tauri/Cargo.lock
 
-# ─── Flutter / Dart ───────────────────────────────────────────
+# â”€â”€â”€ Flutter / Dart â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 android/.gradle/
 android/android/.gradle/
+android/android/.kotlin/
 android/.dart_tool/
 android/.flutter-plugins
 android/.flutter-plugins-dependencies
@@ -36,12 +37,13 @@ android/build/
 android/android/app/build/
 android/**/*.class
 android/**/*.jar
+!android/android/gradle/wrapper/gradle-wrapper.jar
 
-# ─── Docker ───────────────────────────────────────────────────
+# â”€â”€â”€ Docker â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 docker/volumes/
 docker/data/
 
-# ─── VPN / Secrets ────────────────────────────────────────────
+# â”€â”€â”€ VPN / Secrets â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 vpn-server/wireguard/wg0-actual.conf
 vpn-server/client-configs/*-actual.conf
 *.key
@@ -50,7 +52,7 @@ vpn-server/client-configs/*-actual.conf
 *.p12
 ssl/
 
-# ─── OS / Editor ──────────────────────────────────────────────
+# â”€â”€â”€ OS / Editor â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 .DS_Store
 Thumbs.db
 .vscode/settings.json
@@ -59,7 +61,10 @@ Thumbs.db
 *.swo
 *~
 
-# ─── Test artifacts ───────────────────────────────────────────
+# â”€â”€â”€ Test artifacts â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 coverage/
 .nyc_output/
 .local-tests/
+
+android/android/local.properties
+android/android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java

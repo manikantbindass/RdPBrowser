@@ -1,9 +1,28 @@
-// Public control-plane configuration. Flutter remains independent of npm/Rust.
-const serverUrl = String.fromEnvironment('SERVER_URL', defaultValue: 'http://127.0.0.1:3001');
-Uri controlPlaneUri(String path) {
-  final base = Uri.parse(serverUrl);
-  if (!['http', 'https'].contains(base.scheme) || base.host.isEmpty || base.userInfo.isNotEmpty || (base.path.isNotEmpty && base.path != '/') || base.hasQuery || base.hasFragment) {
-    throw const FormatException('SERVER_URL must be an HTTP(S) origin without credentials or a path');
+import 'package:flutter/foundation.dart';
+
+const serverUrl = String.fromEnvironment(
+  'SERVER_URL',
+  defaultValue: kDebugMode ? 'http://10.0.2.2:3001' : '',
+);
+const requireVpn =
+    !kDebugMode || bool.fromEnvironment('REQUIRE_VPN', defaultValue: true);
+
+Uri controlPlaneUri(String path) => parseOrigin(serverUrl).resolve(path);
+
+Uri parseOrigin(String raw, {bool allowLocalHttp = kDebugMode}) {
+  final uri = Uri.tryParse(raw);
+  final local =
+      uri != null &&
+      const {'10.0.2.2', '127.0.0.1', 'localhost', '::1'}.contains(uri.host);
+  if (uri == null ||
+      (uri.scheme != 'https' &&
+          !(allowLocalHttp && local && uri.scheme == 'http')) ||
+      uri.host.isEmpty ||
+      uri.authority.contains('@') ||
+      (uri.path.isNotEmpty && uri.path != '/') ||
+      uri.hasQuery ||
+      uri.hasFragment) {
+    throw const FormatException('Configure SERVER_URL as an HTTPS origin.');
   }
-  return base.resolve(path);
+  return uri;
 }

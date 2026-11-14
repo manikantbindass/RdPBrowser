@@ -34,10 +34,10 @@ The repository is being improved incrementally. Existing API clients retain `/ap
 | Desktop frontend and Windows native debug build | TypeScript/Vite, Rust test, formatting and Clippy | Build verified; runtime security unverified |
 | Admin REST controls and realtime authentication | Tenant roles, live sessions, per-delivery revocation checks | Backend implemented; full admin UI acceptance pending |
 | URL policy | Shared literal wildcard evaluator, revisioned storage, deny/allow parity | Backend implemented; client enforcement incomplete |
-| Android application | Flutter source; missing screens, native channels and wrapper | Blocked |
+| Android application | Flutter browser, session and device enrollment, native VPN guard; signed ARM64 verification build | Implemented; managed device acceptance pending |
 | Device registry and organization isolation | Tenant persistence, RLS/composite ownership, self-enrollment/revocation | Implemented; device attestation absent |
 | VPN, DNS and kill-switch enforcement | WireGuard templates; native failure/bypass gaps | Unverified/incomplete |
-| Refresh rotation | Persisted single-use refresh, session revocation and race tests | Implemented; client secure storage remains |
+| Refresh rotation | Persisted single-use refresh, session revocation and race tests; Android secure credential storage | Implemented; live Android session acceptance pending |
 | Enterprise identity and access policy | OIDC/PKCE/signature checks, provider MFA assurance, refresh-family reuse detection, device key proof and live resource decisions | Backend implemented; live IdP/native handoff/attestation acceptance pending |
 | Device trust and signed releases | Open defects and missing acceptance evidence | Incomplete |
 | RDP, media/AI modules, offline audit sync | Placeholder UI or no implementation found | Not implemented |
@@ -68,7 +68,7 @@ Captured from the running, unmodified admin frontend in a clean browser profile.
 
 ### Android and management capture gaps
 
-See the [capture ledger](assets/readme/SCREENSHOTS.md) for actual captures and blockers. Unavailable views are not replaced with fabricated dashboards. The admin frontend can display a real login view, but authenticated metrics/policy capture requires a working database and authorized admin session. Android cannot currently build/run from this checkout. A device-management screen is not implemented.
+See the [capture ledger](assets/readme/SCREENSHOTS.md) for actual captures and blockers. The admin frontend can display a real login view, but authenticated metrics and policy capture require a working database and an authorized admin session. A managed Android browser capture requires a provisioned test environment. An administrative device-management screen is not implemented.
 
 ## Security architecture
 
@@ -93,7 +93,7 @@ Development mode deliberately permits direct control-plane access. Experimental 
 | Windows desktop | Local native debug build and real UI capture | No signed installer or enforcement certification |
 | Linux desktop | Tauri/WebKitGTK target; prior build workflow evidence | Current runtime/distro acceptance not established |
 | macOS desktop | Universal target configured | Current signing/notarization/runtime acceptance not established |
-| Android | minSdk26, target/compile35; ARM64/x86_64 Gradle declarations | Missing imports/native integration/wrapper; no Android14–17 guarantee |
+| Android | Minimum API 26; target and compile API 36; signed ARM64 verification APK; Android 16 emulator smoke test passed | Physical device matrix, production signing and provisioned VPN acceptance pending |
 | Backend | Local Node24 checks; Node22 architecture CI/container | Original dependency findings remain open |
 | PostgreSQL/Nginx/Docker | Real integration and earlier healthy local stack | Final local rerun blocked by Docker Desktop availability; production TLS not certified |
 
@@ -120,7 +120,7 @@ On Windows Docker Desktop, select the Linux context for this shell:
 $env:DOCKER_CONTEXT='desktop-linux'
 ```
 
-Follow [Local development](docs/LOCAL_DEVELOPMENT.md) for host-side hot reload, native builds, test-database setup and endpoint configuration. Generated credentials remain ignored; do not commit `.env` files. No default administrator account is provided.
+Follow [Local development](docs/LOCAL_DEVELOPMENT.md) for host-side hot reload, native builds, test-database setup and endpoint configuration. [Android operations](docs/ANDROID_OPERATIONS.md) covers the Flutter toolchain, WireGuard setup and signing. Generated credentials remain ignored; do not commit `.env` files. No default administrator account is provided.
 
 ## Docker and VPN setup
 
@@ -174,7 +174,7 @@ python scripts/validate_readme.py
 
 ## Roadmap
 
-1. Restore complete Android sources/toolchain and enforce reliable release gates.
+1. Verify Android deployment with a provisioned backend, WireGuard lockdown and production signing on physical devices.
 2. Review remaining dependencies, production role provisioning and authentication operations.
 3. Verify managed native navigation, tunnel failure, DNS and IPv6 behavior per platform.
 4. Complete device attestation, client policy enforcement and safe administration UI flows.

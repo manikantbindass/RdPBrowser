@@ -1,5 +1,10 @@
 # Phase 01 verified feature inventory
 
+## Phase 07 Android update
+
+The Android browser, native activity/channel, session lifecycle, Keystore device proof and restricted download interfaces have been implemented. Deployment uses an operator-managed WireGuard provider with Android network checks and backend source gating. Release and real-device acceptance remain governed by [PHASE07_REPORT.md](PHASE07_REPORT.md). Historical audit entries below describe the earlier baseline.
+
+
 ## Phase 05 update (2026-11-12)
 
 Backend identity now includes confidential OIDC code/PKCE flow with signed-token checks, explicit issuer/subject links, provider-assurance MFA, refresh-family reuse revocation, absolute/idle lifetimes, live resource policy decisions, device key-possession/expiring admin trust and server-owned access logs. Verification and incomplete production/native/provider acceptance are in [PHASE05_REPORT.md](PHASE05_REPORT.md); flows/config/limitations are in [IDENTITY_AND_ACCESS.md](IDENTITY_AND_ACCESS.md). No native SSO UI, hardware attestation or live Okta/Entra acceptance is claimed. Historical tables below are superseded only to this stated extent.

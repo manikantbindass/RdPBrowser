@@ -1,95 +1,57 @@
-import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
-enum VpnState { disconnected, connecting, connected, error }
+enum VpnState { unavailable, disconnected, incomplete, fullRouteCandidate }
 
-class VpnService extends ChangeNotifier {
-  static const _channel = MethodChannel('com.remoteshieldx/vpn');
-  static const _eventChannel = EventChannel('com.remoteshieldx/vpn_events');
+class PlatformSecurity {
+  static const _channel = MethodChannel('com.remoteshieldx/security');
+  static const _events = EventChannel('com.remoteshieldx/network');
 
-  VpnState _state = VpnState.disconnected;
-  String _serverIp = '';
-  int _bytesIn = 0;
-  int _bytesOut = 0;
-  StreamSubscription? _eventSub;
+  Stream<void> get networkChanges =>
+      _events.receiveBroadcastStream().map((_) {});
 
-  VpnState get state => _state;
-  bool get isConnected => _state == VpnState.connected;
-  String get serverIp => _serverIp;
-  int get bytesIn => _bytesIn;
-  int get bytesOut => _bytesOut;
-
-  VpnService() {
-    _listenToVpnEvents();
-    _checkInitialState();
-  }
-
-  Future<void> _checkInitialState() async {
+  Future<VpnState> vpnState() async {
     try {
-      final connected = await _channel.invokeMethod<bool>('isVpnConnected') ?? false;
-      _state = connected ? VpnState.connected : VpnState.disconnected;
-      notifyListeners();
-    } catch (_) {}
-  }
-
-  void _listenToVpnEvents() {
-    _eventSub = _eventChannel.receiveBroadcastStream().listen(
-      (event) {
-        if (event is Map) {
-          final status = event['status'] as String? ?? '';
-          _serverIp = event['serverIp'] as String? ?? '';
-          _bytesIn = event['bytesIn'] as int? ?? 0;
-          _bytesOut = event['bytesOut'] as int? ?? 0;
-
-          switch (status) {
-            case 'CONNECTED':
-              _state = VpnState.connected;
-            case 'DISCONNECTED':
-              _state = VpnState.disconnected;
-            case 'CONNECTING':
-              _state = VpnState.connecting;
-            default:
-              _state = VpnState.error;
-          }
-          notifyListeners();
-        }
-      },
-      onError: (_) {
-        _state = VpnState.error;
-        notifyListeners();
-      },
-    );
-  }
-
-  Future<bool> connect() async {
-    try {
-      _state = VpnState.connecting;
-      notifyListeners();
-      final result = await _channel.invokeMethod<bool>('startVpn') ?? false;
-      if (!result) {
-        _state = VpnState.error;
-        notifyListeners();
-      }
-      return result;
-    } on PlatformException catch (_) {
-      _state = VpnState.error;
-      notifyListeners();
-      return false;
+      final result = await _channel.invokeMethod<String>('vpnState');
+      return VpnState.values.byName(result ?? 'unavailable');
+    } on Exception {
+      return VpnState.unavailable;
     }
   }
 
-  Future<void> disconnect() async {
+  Future<void> openVpnSettings() =>
+      _channel.invokeMethod<void>('openVpnSettings');
+
+  Future<List<String>> risks() async {
     try {
-      await _channel.invokeMethod('stopVpn');
-      _state = VpnState.disconnected;
-      notifyListeners();
-    } catch (_) {}
+      return await _channel.invokeListMethod<String>('risks') ??
+          const ['Local signals unavailable'];
+    } on Exception {
+      return const ['Local signals unavailable'];
+    }
   }
 
-  @override
-  void dispose() {
-    _eventSub?.cancel();
-    super.dispose();
+  Future<void> clearWebData() => _channel.invokeMethod<void>('clearWebData');
+
+  Future<void> protectScreen(bool enabled) =>
+      _channel.invokeMethod<void>('protectScreen', enabled);
+
+  Future<Map<String, String>> deviceKey(String alias) async {
+    final key = await _channel.invokeMapMethod<String, String>(
+      'deviceKey',
+      alias,
+    );
+    if (key == null) throw const FormatException('Device key unavailable.');
+    return key;
+  }
+
+  Future<String> sign(String alias, String message) async {
+    final signature = await _channel.invokeMethod<String>('sign', {
+      'alias': alias,
+      'message': message,
+    });
+    if (signature == null) {
+      throw const FormatException('Signature unavailable.');
+    }
+    return signature;
   }
 }
