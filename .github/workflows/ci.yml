@@ -15,8 +15,7 @@ permissions:
 
 env:
   NODE_VERSION: '22'
-  # Flutter 3.24.5 — stable channel, full Android 14/15/16 (API 34/35/36) support
-  FLUTTER_VERSION: '3.24.5'
+  FLUTTER_VERSION: '3.38.9'
 
 # ═══════════════════════════════════════════════════════════════════
 # JOB 1 — Backend: Lint + Test
@@ -239,49 +238,60 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Verify Android Gradle Files
+      - uses: gradle/actions/wrapper-validation@v4
+
+      - name: Install Android SDK
+        run: sdkmanager "platforms;android-36" "platforms;android-35" "build-tools;36.0.0" "build-tools;35.0.0" "ndk;28.2.13676358" "cmake;3.22.1"
+
+      - name: Analyze and test Android
+        working-directory: android
         run: |
-          test -f android/build.gradle   || { echo "ERROR: android/build.gradle missing"; exit 1; }
-          test -f android/app/build.gradle || { echo "ERROR: android/app/build.gradle missing"; exit 1; }
-          test -f android/settings.gradle || { echo "ERROR: android/settings.gradle missing"; exit 1; }
-          echo "✅ All Android Gradle files present"
-          grep -q "compileSdk 35" android/app/build.gradle && echo "✅ compileSdk 35 confirmed"
-          grep -q "targetSdk 35"  android/app/build.gradle && echo "✅ targetSdk 35 confirmed"
-          grep -q "minSdk 26"     android/app/build.gradle && echo "✅ minSdk 26 (Android 8.0+) confirmed"
-          # Verify Android 14 foreground service type is declared
-          grep -q "foregroundServiceType" android/app/src/main/AndroidManifest.xml && \
-            echo "✅ Android 14+ foregroundServiceType declared" || \
-            { echo "❌ Missing foregroundServiceType — will crash on Android 14+"; exit 1; }
-          # Verify FOREGROUND_SERVICE_CONNECTED_DEVICE permission
-          grep -q "FOREGROUND_SERVICE_CONNECTED_DEVICE" android/app/src/main/AndroidManifest.xml && \
-            echo "✅ FOREGROUND_SERVICE_CONNECTED_DEVICE permission present" || \
-            { echo "❌ Missing FOREGROUND_SERVICE_CONNECTED_DEVICE permission"; exit 1; }
-        working-directory: android
+          flutter pub get --enforce-lockfile
+          flutter analyze --no-pub
+          flutter test --no-pub
 
-      - name: Get Flutter packages
-        run: flutter pub get
+      - name: Build and verify Android release-mode APKs
         working-directory: android
-
-      - name: Flutter analyze
-        run: flutter analyze --no-fatal-infos
-        working-directory: android
-        continue-on-error: true
-
-      - name: Build release APK (split per ABI — arm64, armeabi-v7a, x86_64)
+        env:
+          RELEASE_BUILD: ${{ startsWith(github.ref, 'refs/tags/v') }}
+          SERVER_URL: ${{ vars.ANDROID_SERVER_URL }}
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
         run: |
-          flutter build apk \
-            --release \
-            --obfuscate \
-            --split-debug-info=build/debug-info \
-            --split-per-abi
-        working-directory: android
+          set -euo pipefail
+          export KEYSTORE_PATH="$RUNNER_TEMP/remoteshield-android.jks"
+          trap 'rm -f -- "$KEYSTORE_PATH"' EXIT
+          if [[ "$RELEASE_BUILD" == true ]]; then
+            : "${KEYSTORE_BASE64:?Missing Android signing keystore}"
+            : "${KEY_ALIAS:?Missing Android signing alias}"
+            : "${KEY_PASSWORD:?Missing Android signing key password}"
+            : "${STORE_PASSWORD:?Missing Android signing store password}"
+            printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_PATH"
+            "$FLUTTER_ROOT/bin/dart" run scripts/validate_release_origin.dart "$SERVER_URL"
+          else
+            SERVER_URL=https://android-ci.example.invalid
+            export KEY_ALIAS=ci STORE_PASSWORD=ci-build-only KEY_PASSWORD=ci-build-only
+            keytool -genkeypair -keystore "$KEYSTORE_PATH" -storepass "$STORE_PASSWORD" \
+              -keypass "$KEY_PASSWORD" -alias "$KEY_ALIAS" -keyalg RSA -keysize 2048 \
+              -validity 2 -dname "CN=RemoteShield CI verification"
+          fi
+          flutter build apk --release --split-per-abi \
+            --dart-define="SERVER_URL=$SERVER_URL"
+          TOOLS="$ANDROID_HOME/build-tools/36.0.0"
+          for ABI in arm64-v8a armeabi-v7a x86_64; do
+            APK="build/app/outputs/flutter-apk/app-$ABI-release.apk"
+            "$TOOLS/apksigner" verify "$APK"
+            "$TOOLS/zipalign" -c -P 16 -v 4 "$APK"
+          done
 
       - name: Upload Android APKs
         uses: actions/upload-artifact@v4
         with:
           name: RemoteShield-Android
-          path: android/build/app/outputs/flutter-apk/*.apk
-          if-no-files-found: warn
+          path: android/build/app/outputs/flutter-apk/*-release.apk
+          if-no-files-found: error
 
 # ═══════════════════════════════════════════════════════════════════
 # JOB 6 — Security Scan
@@ -451,7 +461,7 @@ jobs:
             - **Linux Arch**: `yay -S webkit2gtk-4.1` then extract the `.tar.gz` or run the `.AppImage`
             - **Linux (AppImage)**: `chmod +x *.AppImage && ./RemoteShield*.AppImage`
             - **macOS**: macOS 10.15 Catalina or later (Intel + Apple Silicon)
-            - **Android**: Android 8.0+ (API 26+), **fully supports Android 14/15/16** (API 34/35/36)
+            - **Android**: minimum API 26, targets API 36. See Android operations for runtime verification.
 
             ### 🔒 Security
             All traffic routes through WireGuard VPN — configure your VPS endpoint in settings after first launch.

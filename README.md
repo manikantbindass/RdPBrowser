@@ -1,354 +1,196 @@
-<div align="center">
+<picture>
+  <source media="(prefers-reduced-motion: reduce)" srcset="assets/readme/remoteshield-hero.webp">
+  <img src="assets/readme/remoteshield-hero.gif" alt="RemoteShield X — Remote access. Explicit control. Conceptual shield, desktop and Android network artwork." width="1280">
+</picture>
 
-# 🛡️ RemoteShield X Browser
+# RemoteShield X
 
-<img src="./assets/logo.png" width="200" alt="RemoteShield X Logo" style="border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); margin-bottom: 20px;" />
+**Remote access. Explicit control.**
 
-**Enterprise-Grade Secure Remote Work Browser Platform**
+An open-source managed-browser and remote-access platform in development, with an explicit control plane and separate native/network enforcement boundaries.
 
-[![CI/CD](https://github.com/manikantbindass/RdPBrowser/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/manikantbindass/RdPBrowser/actions/workflows/ci.yml)
-[![Latest Release](https://img.shields.io/github/v/release/manikantbindass/RdPBrowser?label=Release&color=brightgreen)](https://github.com/manikantbindass/RdPBrowser/releases/latest)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS%20%7C%20Android-brightgreen)](https://github.com/manikantbindass/RdPBrowser/releases)
-[![Security](https://img.shields.io/badge/Security-Enterprise%20Grade-red)](https://github.com/manikantbindass/RdPBrowser)
-[![Docker](https://img.shields.io/badge/Docker-ghcr.io-blue)](https://github.com/manikantbindass/RdPBrowser/pkgs/container/remoteshield-backend)
+[![Architecture baseline](https://github.com/manikantbindass/RdPBrowser/actions/workflows/architecture.yml/badge.svg?branch=codex%2Fremoteshield-enterprise-completion)](https://github.com/manikantbindass/RdPBrowser/actions/workflows/architecture.yml)
+[![Experimental status](assets/readme/badge-status.svg)](docs/IMPLEMENTATION_STATUS.md)
+[![Technology stack](assets/readme/badge-stack.svg)](docs/ARCHITECTURE.md)
+[![API compatibility](assets/readme/badge-contracts.svg)](contracts/API.md)
 
-*All traffic routes through a central VPS with a static IP — tamper-resistant, cross-platform, deployable immediately.*
+[Static edition — no animation](docs/README_STATIC.md) · [Local development](docs/LOCAL_DEVELOPMENT.md) · [Architecture](docs/ARCHITECTURE.md) · [Defect register](docs/BUG_REGISTER.md) · [Security policy](SECURITY.md)
 
-</div>
+> **Engineering status:** experimental, with verified architecture tests and incomplete platform/security features. This is not a production-ready security product. Artwork illustrates design intent; it does not demonstrate protection. The CI badge tracks the development branch, not a certification or release guarantee.
 
----
+## Overview
 
-## 📌 Table of Contents
+RemoteShield X combines Tauri 2, Rust, React and TypeScript on desktop; Flutter/Dart on Android; and a Node.js/Express control plane backed by PostgreSQL. Socket.io carries realtime control events. WireGuard, OS networking and native browser adapters are separate enforcement concerns. Nginx and Docker package the control plane.
 
-- [Architecture](#architecture)
-- [Features](#features)
-- [Tech Stack](#tech-stack)
-- [Project Structure](#project-structure)
-- [Quick Start](#quick-start)
-- [VPN Server Setup](#vpn-server-setup)
-- [Desktop Browser (Win/Linux/macOS)](#desktop-browser)
-- [Android App](#android-app)
-- [Admin Dashboard](#admin-dashboard)
-- [Docker Deployment](#docker-deployment)
-- [CI/CD](#cicd)
-- [Security Model](#security-model)
-- [Contributing](#contributing)
+The repository is being improved incrementally. Existing API clients retain `/api` compatibility aliases alongside `/api/v1`. Configuration validation, request contracts, structured errors, migration history and readiness checks are implemented. Missing features and verification gaps are tracked openly.
 
----
+## Feature status
 
-## 🌐 Architecture
+| Capability | Current evidence | Status |
+|---|---|---|
+| Modular backend and validated configuration | Phase 04 unit/OpenAPI/PostgreSQL verification; architecture CI | Implemented |
+| API v1, legacy aliases, structured errors | Shared JSON Schemas and compatibility tests | Implemented |
+| PostgreSQL migration tracking and isolation | Adoption, concurrency, rollback/checksums, restricted-role RLS and cross-tenant tests | Implemented; production recovery drill pending |
+| Desktop frontend and Windows native debug build | TypeScript/Vite, Rust test, formatting and Clippy | Build verified; runtime security unverified |
+| Admin REST controls and realtime authentication | Tenant roles, live sessions, per-delivery revocation checks | Backend implemented; full admin UI acceptance pending |
+| URL policy | Shared literal wildcard evaluator, revisioned storage, deny/allow parity | Backend implemented; client enforcement incomplete |
+| Android application | Flutter browser, session and device enrollment, native VPN guard; signed ARM64 verification build | Implemented; managed device acceptance pending |
+| Device registry and organization isolation | Tenant persistence, RLS/composite ownership, self-enrollment/revocation | Implemented; device attestation absent |
+| VPN, DNS and kill-switch enforcement | WireGuard templates; native failure/bypass gaps | Unverified/incomplete |
+| Refresh rotation | Persisted single-use refresh, session revocation and race tests; Android secure credential storage | Implemented; live Android session acceptance pending |
+| Enterprise identity and access policy | OIDC/PKCE/signature checks, provider MFA assurance, refresh-family reuse detection, device key proof and live resource decisions | Backend implemented; live IdP/native handoff/attestation acceptance pending |
+| Device trust and signed releases | Open defects and missing acceptance evidence | Incomplete |
+| RDP, media/AI modules, offline audit sync | Placeholder UI or no implementation found | Not implemented |
 
-```
-┌──────────────────────────────────────────────────────────────────┐
-│                        USER DEVICES                              │
-│  ┌────────────────┐  ┌──────────────────┐  ┌─────────────────┐  │
-│  │ Windows Desktop│  │  Linux Desktop   │  │  macOS Desktop  │  │
-│  │  (Tauri App)   │  │   (Tauri App)    │  │   (Tauri App)   │  │
-│  └───────┬────────┘  └────────┬─────────┘  └────────┬────────┘  │
-│          │                   │                       │           │
-│          └───────────────────┼───────────────────────┘           │
-│                              │ WireGuard Encrypted Tunnel        │
-│  ┌───────────────────────────┼───────────────────────────────┐   │
-│  │          Android Device   │                               │   │
-│  │          (Flutter App)    │                               │   │
-│  └───────────────────────────┘                               │   │
-└──────────────────────────────┬───────────────────────────────────┘
-                               │
-                    ┌──────────▼──────────────┐
-                    │   VPS (Static IP)        │
-                    │  ┌────────────────────┐  │
-                    │  │   WireGuard VPN    │  │
-                    │  │   Kill-Switch ON   │  │
-                    │  └────────┬───────────┘  │
-                    │           │              │
-                    │  ┌────────▼───────────┐  │
-                    │  │   Nginx (SSL/TLS)  │  │
-                    │  └────────┬───────────┘  │
-                    │           │              │
-                    │  ┌────────▼───────────┐  │
-                    │  │  Node.js Backend   │  │
-                    │  │  Express + JWT     │  │
-                    │  │  Socket.io         │  │
-                    │  └────────┬───────────┘  │
-                    │           │              │
-                    │  ┌────────▼───────────┐  │
-                    │  │    PostgreSQL DB    │  │
-                    │  └────────────────────┘  │
-                    └──────────┬───────────────┘
-                               │
-                    ┌──────────▼──────────────┐
-                    │       INTERNET           │
-                    └─────────────────────────┘
-```
+See the [verified inventory](docs/IMPLEMENTATION_STATUS.md), [audit](docs/PROJECT_AUDIT.md) and [Phase 04 evidence](docs/PHASE04_REPORT.md). No all-traffic, screenshot-prevention, tamper-resistance, AI-detection or universal Android-compatibility guarantee is made.
 
----
+## Architecture
 
-## ✅ Features
+![Control plane versus native and network enforcement](assets/readme/architecture.svg)
 
-### 🔒 Security
-- All traffic forced through WireGuard VPN tunnel
-- Kill-switch: browser auto-blocks if VPN drops
-- DevTools disabled (desktop)
-- URL whitelist / blacklist
-- JWT authentication with device binding
-- Root & debug detection (Android)
-- App integrity hash verification (all platforms)
-- Screenshot prevention (Android `FLAG_SECURE`)
-- AI-based anomaly detection
+The API authorizes and records control decisions. Browser content does not pass through `/api/proxy/navigate`; WebViews fetch it themselves. A health response or UI VPN indicator cannot establish tunnel routing or DNS isolation.
 
-### 🌍 Pre-Compiled Releases & OS Benefits
+[Module ownership, dependency diagrams and data flows](docs/ARCHITECTURE.md) · [Architecture decisions](docs/adr/0001-modular-monolith.md) · [Enterprise extension boundaries](docs/INTEGRATIONS.md)
 
-RemoteShield X is distributed as pre-compiled, production-ready binaries for every major operating system. All artifacts can be downloaded directly from the **GitHub Releases** page of this repository.
+## Real application screenshots
 
-| Operating System | Installer Format | Setup Instructions | Benefits & Capabilities |
-|------------------|------------------|---------------------|------------------------|
-| **Windows** | `.msi`, `.exe` | Download the `.msi` and run the installer. It automatically provisions the WebView2 runtime. | Deep integration with Windows Defender, native OS window rendering, and rapid Edge/WebView engine hardware acceleration. |
-| **macOS** | Universal `.dmg` | Mount the `.dmg` and drag `RemoteShield X.app` into your Applications folder. | Universally compiled for both Apple Silicon (M1/M2/M3) and Intel Macs. Sandboxed natively by Gatekeeper with fluid WebKit integration. |
-| **Linux** | `.deb`, `.AppImage` | **Ubuntu/Debian**: `sudo dpkg -i app.deb`.<br>**Arch/Fedora**: Run the `.AppImage`. | Unmatched privacy via direct WebKit2GTK compilation. AppImages provide a portable, zero-install secure browsing environment. |
-| **Android** | `.apk` (ARM64/ARMv7) | Download to your device. **Fully supports Android 14, 15, 16, and 17**. | Advanced Mobile Security: Natively enforces `FLAG_SECURE` entirely blocking screenshot/screen-recording capabilities globally on all modern APIs. |
+### Windows desktop — existing native application
 
-### 📊 Admin Dashboard
-- Real-time session monitoring
-- IP log verification (must match server IP)
-- Force logout any session
-- Remote URL blocking
-- Geo-restriction enforcement
-- Offline log sync
+![Actual RemoteShield X Windows native desktop browser in development mode](assets/readme/desktop-browser.png)
 
----
+Captured from the running Tauri debug executable, not an AI mockup. This is the current development UI, not the new README design. Its placeholder IP/VPS data and status labels are not verified infrastructure or security signals.
 
-## 🛠 Tech Stack
+### Admin frontend — real login view
 
-| Layer | Technology |
-|-------|-----------|
-| Desktop Browser | Tauri 2 + React + TypeScript |
-| Android App | Flutter + Dart |
-| Backend Gateway | Node.js + Express |
-| Realtime | Socket.io |
-| Auth | JWT |
-| Database | PostgreSQL |
-| VPN | WireGuard |
-| Reverse Proxy | Nginx |
-| Containerization | Docker + Docker Compose |
-| CI/CD | GitHub Actions |
+![Actual admin frontend login page, with backend disconnected](assets/readme/admin-dashboard.png)
 
----
+Captured from the running, unmodified admin frontend in a clean browser profile. This is the login gate; no authenticated dashboard data or policy enforcement is demonstrated.
 
-## 📁 Project Structure
+### Android and management capture gaps
 
-```
-RdPBrowser/
-├── desktop/                    # Tauri cross-platform browser (Win/Linux/macOS)
-│   ├── src/                    # React + TypeScript UI
-│   ├── src-tauri/              # Rust backend + window management
-│   └── package.json
-│
-├── android/                    # Flutter Android app
-│   ├── lib/
-│   │   ├── main.dart
-│   │   ├── screens/
-│   │   ├── services/
-│   │   └── security/
-│   └── pubspec.yaml
-│
-├── backend/                    # Node.js Express API Gateway
-│   ├── src/
-│   │   ├── routes/
-│   │   ├── middleware/
-│   │   └── db/
-│   ├── .env.example
-│   └── package.json
-│
-├── vpn-server/                 # WireGuard VPN configs + setup
-│   ├── setup.sh
-│   ├── wireguard/
-│   └── client-configs/
-│
-├── nginx/                      # Nginx reverse proxy
-│   └── nginx.conf
-│
-├── admin-dashboard/            # Admin control panel (HTML/JS)
-│   ├── index.html
-│   ├── app.js
-│   └── styles.css
-│
-├── security/                   # Security modules
-│   ├── integrity-checker/
-│   └── anomaly-detector/
-│
-├── docker/                     # Docker containers
-│   ├── docker-compose.yml
-│   ├── Dockerfile.backend
-│   └── Dockerfile.nginx
-│
-└── .github/workflows/          # CI/CD pipelines
-    └── ci.yml
-```
+See the [capture ledger](assets/readme/SCREENSHOTS.md) for actual captures and blockers. The admin frontend can display a real login view, but authenticated metrics and policy capture require a working database and an authorized admin session. A managed Android browser capture requires a provisioned test environment. An administrative device-management screen is not implemented.
 
----
+## Security architecture
 
-## 🚀 Quick Start
+![Configuration, session and policy checks with a separate native enforcement boundary](assets/readme/security-workflow.svg)
 
-### Prerequisites
-- Node.js ≥ 18
-- Rust (for Tauri desktop)
-- Flutter ≥ 3.0 (for Android)
-- Docker + Docker Compose
-- A VPS with Ubuntu 22.04 and a **static IP**
+- Configuration rejects invalid production settings and ambiguous database TLS options.
+- Protected REST and realtime paths verify active sessions; admin operations have role gates.
+- Exact CORS origins and explicit trusted proxies replace loose origin/header trust.
+- Errors carry server-owned request IDs; structured logs omit request bodies and redact credential fields.
+- Explicit migrations precede startup. `/health` is liveness; `/ready` checks database/schema availability.
+- Tenant-scoped database/service access and single-use refresh rotation have real PostgreSQL negative/race tests.
+- Native enforcement, device attestation, external audit retention and remaining dependency findings require further work.
 
-### 1. Clone & Configure
+Development mode deliberately permits direct control-plane access. Experimental SSH is default-off and forbidden by production configuration. Read the [security policy](SECURITY.md) and [cutover requirements](docs/MIGRATION_PHASE04.md) before relying on any deployment.
 
-```bash
+[Identity flows and enterprise policy configuration](docs/IDENTITY_AND_ACCESS.md) · [Phase 05 verification and limitations](docs/PHASE05_REPORT.md). MFA/trusted-device requirements are explicitly configurable; the default legacy compatibility profile does not enforce them. Device key possession is distinct from hardware attestation and per-request token binding.
+
+## Platform compatibility
+
+| Target | Verified or configured | Limits |
+|---|---|---|
+| Windows desktop | Local native debug build and real UI capture | No signed installer or enforcement certification |
+| Linux desktop | Tauri/WebKitGTK target; prior build workflow evidence | Current runtime/distro acceptance not established |
+| macOS desktop | Universal target configured | Current signing/notarization/runtime acceptance not established |
+| Android | Minimum API 26; target and compile API 36; signed ARM64 verification APK; Android 16 emulator smoke test passed | Physical device matrix, production signing and provisioned VPN acceptance pending |
+| Backend | Local Node24 checks; Node22 architecture CI/container | Original dependency findings remain open |
+| PostgreSQL/Nginx/Docker | Real integration and earlier healthy local stack | Final local rerun blocked by Docker Desktop availability; production TLS not certified |
+
+[Dependency and toolchain matrix](docs/DEPENDENCY_MATRIX.md) · [Releases](https://github.com/manikantbindass/RdPBrowser/releases) — release existence does not prove signing, security or compatibility.
+
+## Installation and local development
+
+Prerequisites: Node22, Git, Docker in Linux-container mode and Compose>=2.24.4. Native desktop builds additionally need the appropriate Rust/Tauri OS toolchain. Existing configuration is never overwritten automatically.
+
+```powershell
 git clone https://github.com/manikantbindass/RdPBrowser.git
 cd RdPBrowser
-
-# Copy and fill environment variables
-cp backend/.env.example backend/.env
-# Edit backend/.env with your PostgreSQL credentials, JWT secret, server IP
+# Until this development branch is merged:
+git switch codex/remoteshield-enterprise-completion
+node scripts/setup-dev.mjs
+npm ci --prefix backend
+npm ci --prefix desktop
+npm run config:check --prefix backend
 ```
 
-### 2. Start Backend (Local Dev)
+On Windows Docker Desktop, select the Linux context for this shell:
 
-```bash
-cd backend
-npm install
-npm run dev
+```powershell
+$env:DOCKER_CONTEXT='desktop-linux'
 ```
 
-### 3. Start Desktop Browser
+Follow [Local development](docs/LOCAL_DEVELOPMENT.md) for host-side hot reload, native builds, test-database setup and endpoint configuration. [Android operations](docs/ANDROID_OPERATIONS.md) covers the Flutter toolchain, WireGuard setup and signing. Generated credentials remain ignored; do not commit `.env` files. No default administrator account is provided.
 
-```bash
-cd desktop
-npm install
-npm run tauri dev
+## Docker and VPN setup
+
+```powershell
+docker compose --env-file docker/.env -f docker/docker-compose.yml -f docker/compose.dev.yml config --quiet
+docker compose --env-file docker/.env -f docker/docker-compose.yml -f docker/compose.dev.yml up -d --build --wait
 ```
 
-### 4. Build Android APK
+The local stack sequences PostgreSQL, migrations, backend readiness and Nginx. Development ports bind loopback: backend 3001, admin 8180 and PostgreSQL 5432. The profile explicitly disables the API VPN source filter; it is not a production security setup.
 
-```bash
-cd android
-flutter pub get
-flutter build apk --release
+Production uses the base Compose file with reviewed secrets, a deliberate DB trust model, actual TLS certificates and verified ingress addresses. Read the [migration/recovery guide](docs/MIGRATION_PHASE02.md) before mapping existing data volumes. Never delete volumes as routine recovery.
+
+WireGuard templates live in [vpn-server/](vpn-server/). The privileged [setup script](vpn-server/setup.sh) changes packages, keys, firewall and routing; it is not idempotent and should not be run blindly on a working VPS. [Audit findings B41–B43](docs/BUG_REGISTER.md) describe the provisioning and DNS/IPv6/failure gaps. A configured tunnel is not proof of a working kill switch.
+
+## API and administration
+
+New clients use `/api/v1`; existing `/api` aliases remain. Login and navigation requests share language-neutral JSON Schemas. Errors retain `error` and add `code` and `requestId`. Socket.io clients supply `auth.token`.
+
+| Entry point | Purpose |
+|---|---|
+| `/api/v1/meta` | Public API metadata; enforcement reported as external |
+| `/api/v1/auth/*` | Persisted registration/login sessions and single-use refresh rotation |
+| `/api/v1/admin/*` | Role-gated sessions, rules, users and audit views |
+| `/api/v1/proxy/navigate` | Policy approval, not content proxying |
+| `/api/v1/devices`, `/sessions`, `/policies`, `/events` | Tenant-aware backend registry, lifecycle, decisions and event intake |
+| `/health`, `/ready` | Independent process/dependency observations |
+| `/admin/` | Existing web administration frontend |
+
+[API inventory](contracts/API.md) · [OpenAPI specification](contracts/openapi.json) · [Domain contracts](contracts/README.md) · [Admin source](admin-dashboard/) · [Integration ports](docs/INTEGRATIONS.md)
+
+## Testing
+
+```powershell
+npm run lint --prefix backend
+npm test --prefix backend -- --runInBand --detectOpenHandles
+npm run build --prefix desktop
+cargo fmt --manifest-path desktop/src-tauri/Cargo.toml -- --check
+cargo test --locked --offline --manifest-path desktop/src-tauri/Cargo.toml
+cargo clippy --locked --offline --manifest-path desktop/src-tauri/Cargo.toml --all-targets -- -D warnings
 ```
 
----
+A fresh Rust cache needs `cargo fetch --locked` before offline checks. Real integration tests require an explicit disposable PostgreSQL database ending in `_test`; see the [test instructions](docs/LOCAL_DEVELOPMENT.md). The [architecture workflow](.github/workflows/architecture.yml) runs blocking unit/contract and PostgreSQL tests. Older release workflows still contain ignored failures; a green job alone is not a security assessment.
 
-## 🔧 VPN Server Setup
+Visual assets can be rebuilt and checked without production services:
 
-### 1. Provision VPS
-
-Recommended: **DigitalOcean Droplet** or **AWS EC2**
-- Ubuntu 22.04 LTS
-- Static/Elastic IP assigned
-- Open ports: `51820/UDP` (WireGuard), `443/TCP` (Nginx), `22/TCP` (SSH)
-
-### 2. Run Setup Script
-
-```bash
-# SSH into your VPS
-ssh root@YOUR_SERVER_IP
-
-# Upload and run setup script
-scp vpn-server/setup.sh root@YOUR_SERVER_IP:/root/
-ssh root@YOUR_SERVER_IP "chmod +x /root/setup.sh && /root/setup.sh"
+```powershell
+python -m pip install -r scripts/requirements-readme.txt
+python scripts/build_readme_assets.py
+python scripts/validate_readme.py
 ```
 
-### 3. Configure Clients
+## Roadmap
 
-Copy `vpn-server/client-configs/windows.conf` (or `linux.conf` / `macos.conf` / `android.conf`) to the respective device and import into WireGuard.
+1. Verify Android deployment with a provisioned backend, WireGuard lockdown and production signing on physical devices.
+2. Review remaining dependencies, production role provisioning and authentication operations.
+3. Verify managed native navigation, tunnel failure, DNS and IPv6 behavior per platform.
+4. Complete device attestation, client policy enforcement and safe administration UI flows.
+5. Establish signing, performance, audit retention and tested recovery targets.
 
----
+[Prioritized roadmap](docs/ROADMAP.md) · [Defect register](docs/BUG_REGISTER.md) · [Current phase reports](docs/)
 
-## 🖥 Desktop Browser
+## Contributing and security policy
 
-### Windows
-```bash
-cd desktop && npm run tauri build
-# Output: desktop/src-tauri/target/release/bundle/msi/
-```
+Use focused changes, preserve existing clients, add meaningful regressions and document platform limits. Never bypass analyzers or replace enforcement with a UI signal. See [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md).
 
-### Linux
-```bash
-cd desktop && npm run tauri build
-# Output: desktop/src-tauri/target/release/bundle/deb/ or .AppImage
-```
+Package metadata declares MIT, but the repository does not currently contain a standalone license text. Do not treat a badge as a substitute for that missing document; the owner must resolve the licensing record.
 
-### macOS
-```bash
-cd desktop && npm run tauri build
-# Output: desktop/src-tauri/target/release/bundle/dmg/
-```
+[Brand/media provenance and reproduction](assets/readme/README.md) · [Repository description and topic recommendations](docs/REPOSITORY_METADATA.md)
 
----
-
-## 📱 Android App
-
-```bash
-cd android
-flutter pub get
-flutter build apk --release --obfuscate --split-debug-info=build/debug-info
-# APK: android/build/app/outputs/flutter-apk/app-release.apk
-```
-
----
-
-## 📊 Admin Dashboard
-
-1. Navigate to `https://YOUR_SERVER_IP/admin`
-2. Login with admin credentials
-3. Monitor live sessions, IP logs, force logout users, block URLs remotely
-
----
-
-## 🐳 Docker Deployment
-
-```bash
-cd docker
-# Edit docker-compose.yml: replace YOUR_SERVER_IP and credentials
-docker-compose up -d
-```
-
-Services started:
-- `backend` — Node.js API on port 3000
-- `postgres` — PostgreSQL DB on port 5432
-- `nginx` — Reverse proxy on port 80/443
-
----
-
-## 🔁 CI/CD
-
-GitHub Actions runs on every push to `main`:
-1. Lint backend code
-2. Run backend unit tests
-3. Build Tauri desktop app
-4. Build Flutter APK (Android)
-5. Build & push Docker images
-
----
-
-## 🔐 Security Model
-
-| Threat | Mitigation |
-|--------|-----------|
-| Traffic leakage | WireGuard kill-switch (PostDown rules) |
-| VPN bypass | Backend VPN-IP middleware blocks non-VPN requests |
-| Rooted device | Root detection kills app (Android) |
-| Debugging attempt | Anti-debug detection + app hash verification |
-| Screenshot leak | Android FLAG_SECURE on all windows |
-| Replay attacks | JWT with short expiry + device binding |
-| Anomalous behavior | AI anomaly detector flags unusual patterns |
-| Tampered binary | File hash check on startup |
-| Unauthorized URLs | Server-side URL whitelist/blacklist |
-
----
-
-## 📜 License
-
-MIT © RemoteShield X
-
----
-
-## ⚠️ Legal Notice
-
-This platform is designed for **enterprise remote work environments**. Usage must comply with local privacy laws and employee consent regulations. The developers are not responsible for misuse.
+<picture>
+  <source media="(prefers-reduced-motion: reduce)" srcset="assets/readme/remoteshield-footer.webp">
+  <img src="assets/readme/remoteshield-footer.gif" alt="Built in the open. Conceptual network traffic converges on a shield and lock." width="1280">
+</picture>

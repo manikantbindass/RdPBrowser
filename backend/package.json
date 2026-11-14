@@ -8,7 +8,9 @@
     "dev": "nodemon src/index.js",
     "lint": "eslint src/ --ext .js --max-warnings 0",
     "test": "jest --coverage --testEnvironment node",
-    "migrate": "node src/db/migrate.js"
+    "migrate": "node src/db/migrate.js",
+    "config:check": "node src/validate-config.js",
+    "test:integration": "jest --runInBand --testPathIgnorePatterns=/__tests__/ --testMatch=**/integration/*.integration.js --coverage=false"
   },
   "publishConfig": {
     "registry": "https://npm.pkg.github.com",
@@ -34,6 +36,8 @@
   "author": "manikantbindass",
   "license": "MIT",
   "dependencies": {
+    "ajv": "8.20.0",
+    "ajv-formats": "3.0.1",
     "axios": "^1.15.0",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
@@ -42,22 +46,22 @@
     "express-rate-limit": "^7.1.5",
     "geoip-lite": "^1.4.10",
     "helmet": "^7.1.0",
-    "http-proxy-middleware": "^2.0.6",
     "ip-range-check": "^0.2.0",
     "joi": "^17.11.0",
     "jsonwebtoken": "^9.0.2",
-    "morgan": "^1.10.0",
-    "node-cron": "^3.0.3",
+    "openid-client": "6.8.9",
     "pg": "^8.11.3",
+    "proxy-addr": "2.0.8",
     "socket.io": "^4.8.3",
     "ssh2": "^1.17.0",
-    "uuid": "^9.0.0",
     "winston": "^3.11.0"
   },
   "devDependencies": {
+    "@apidevtools/swagger-parser": "13.1.0",
     "eslint": "^8.55.0",
     "jest": "^29.7.0",
     "nodemon": "^3.0.2",
+    "socket.io-client": "4.8.3",
     "supertest": "^6.3.3"
   },
   "jest": {
@@ -71,5 +75,8 @@
       "**/__tests__/**/*.test.js"
     ],
     "testTimeout": 30000
+  },
+  "overrides": {
+    "qs": "6.16.2"
   }
 }

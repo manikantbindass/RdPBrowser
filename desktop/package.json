@@ -1,7 +1,7 @@
 {
   "name": "remoteshield-x-desktop",
   "version": "2.2.4",
-  "description": "RemoteShield X — Secure Browser Desktop App (Windows/Linux/macOS)",
+  "description": "RemoteShield X — organization browser for Windows, Linux and macOS",
   "private": true,
   "scripts": {
     "dev": "vite",
@@ -10,14 +10,14 @@
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build",
-    "tauri:build:debug": "tauri build --debug"
+    "tauri:build:debug": "tauri build --debug",
+    "test": "node --experimental-strip-types --test tests/state.test.mjs"
   },
   "dependencies": {
     "@react-three/fiber": "^8.18.0",
     "@tauri-apps/api": "^2.10.1",
     "@tauri-apps/plugin-http": "2.0.0",
     "@tauri-apps/plugin-notification": "2.0.0",
-    "@tauri-apps/plugin-shell": "2.0.0",
     "@tauri-apps/plugin-store": "2.0.0",
     "lucide-react": "^1.8.0",
     "react": "^18.2.0",

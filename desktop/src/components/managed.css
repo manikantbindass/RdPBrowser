@@ -1,0 +1,220 @@
+.managed {
+  --surface: #101d32;
+  --base: #080f1e;
+  --ink: #e8f1ff;
+  --muted: #a4b7d0;
+  --line: #2a3d58;
+  --accent: #64dcf1;
+  background: var(--base);
+  color: var(--ink);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  font:
+    14px system-ui,
+    sans-serif;
+}
+.managed.light {
+  --surface: #fff;
+  --base: #edf3fa;
+  --ink: #10243c;
+  --muted: #425c77;
+  --line: #afc1d4;
+  --accent: #006b85;
+}
+.managed button,
+.managed input {
+  font: inherit;
+  color: inherit;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 9px 12px;
+}
+.managed button {
+  cursor: pointer;
+}
+.managed button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.managed :focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+.managed header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--line);
+}
+.managed strong {
+  font-size: 21px;
+  letter-spacing: -0.5px;
+}
+.managed strong span,
+.managed .eyebrow {
+  color: var(--accent);
+}
+.managed small {
+  display: block;
+  color: var(--muted);
+  margin-top: 4px;
+}
+.managed .actions,
+.managed .address,
+.managed .tools,
+.managed .tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.managed .tabs {
+  padding: 12px 20px 0;
+  overflow: auto;
+  min-height: 48px;
+}
+.managed .tabs > div {
+  display: flex;
+  white-space: nowrap;
+}
+.managed .tabs .selected {
+  border-bottom: 3px solid var(--accent);
+}
+.managed .tabs button {
+  border: 0;
+  background: transparent;
+}
+.managed .address {
+  padding: 12px 20px;
+}
+.managed input {
+  flex: 1;
+  min-width: 100px;
+}
+.managed .tools {
+  padding: 0 20px 12px;
+  border-bottom: 1px solid var(--line);
+  flex-wrap: wrap;
+}
+.managed .tools span {
+  margin-left: auto;
+  color: var(--muted);
+}
+.managed main {
+  flex: 1;
+  min-height: 100px;
+  position: relative;
+  overflow: auto;
+}
+.managed section {
+  max-width: 800px;
+  margin: 7vh auto;
+  padding: 32px;
+}
+.managed h1 {
+  font-size: clamp(26px, 3vw, 44px);
+  letter-spacing: -1px;
+  line-height: 1.15;
+  margin: 14px 0 24px;
+}
+.managed p {
+  line-height: 1.7;
+}
+.managed .muted,
+.managed .load-status {
+  color: var(--muted);
+}
+.managed .eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-size: 12px;
+}
+.managed .entry {
+  display: block;
+  margin: 10px 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  text-align: left;
+}
+.managed footer {
+  padding: 10px 20px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.managed .load-status {
+  text-align: center;
+}
+@media (max-width: 1000px) {
+  .managed header {
+    padding: 12px;
+  }
+  .managed .actions {
+    gap: 4px;
+  }
+  .managed button {
+    padding: 8px;
+  }
+  .managed .tools span {
+    width: 100%;
+    margin: 0;
+  }
+  .managed footer {
+    flex-wrap: wrap;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .managed * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* Phase 06 shared identity surface */
+.login-screen {
+  background: #080f1e !important;
+  color: #e8f1ff !important;
+}
+.login-card {
+  background: #101d32 !important;
+  border: 1px solid #2a3d58 !important;
+  border-radius: 18px !important;
+  box-shadow: 0 24px 90px #0005 !important;
+  max-width: 460px !important;
+}
+.login-title {
+  font-family: system-ui, sans-serif !important;
+  letter-spacing: -0.8px !important;
+  color: #e8f1ff !important;
+}
+.login-sub,
+.login-label {
+  color: #a4b7d0 !important;
+}
+.login-card .input {
+  background: #080f1e !important;
+  color: #e8f1ff !important;
+  border: 1px solid #425a76 !important;
+  border-radius: 8px !important;
+}
+.login-card .btn-primary {
+  background: #64dcf1 !important;
+  color: #071321 !important;
+  font-weight: 650 !important;
+  border: 0 !important;
+}
+.login-card :focus-visible {
+  outline: 3px solid #64dcf1;
+  outline-offset: 3px;
+}
+.login-error {
+  color: #ffc6d6 !important;
+}
+.login-logo {
+  filter: none !important;
+}

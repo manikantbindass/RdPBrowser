@@ -1,7 +1,7 @@
 'use strict';
 
 // ─── Config ────────────────────────────────────────────────────────────────
-const SERVER_URL = window.REMOTESHIELD_SERVER || 'https://YOUR_SERVER_STATIC_IP';
+const SERVER_URL = window.REMOTESHIELD_SERVER || window.location.origin;
 let authToken = null;
 let socket = null;
 let activeTab = 'overview';
@@ -167,7 +167,7 @@ async function loadSessions() {
         <td style="font-size:12px;color:var(--muted)">${new Date(s.started_at).toLocaleString()}</td>
         <td style="font-size:12px;color:var(--muted)">${new Date(s.last_activity).toLocaleTimeString()}</td>
         <td>
-          <button class="btn-sm" onclick="forceLogout('${s.user_id}','${s.id}')">Force Logout</button>
+          <button class="btn-sm" data-action="logout" data-user="${s.user_id}" data-session="${s.id}">Force Logout</button>
         </td>
       </tr>
     `).join('');
@@ -251,7 +251,7 @@ async function loadBlockedUrls() {
         <td><code style="font-family:var(--mono);font-size:12px">${u.pattern}</code></td>
         <td style="color:var(--muted);font-size:12px">${u.reason || '—'}</td>
         <td style="font-size:11px;color:var(--muted);font-family:var(--mono)">${new Date(u.created_at).toLocaleDateString()}</td>
-        <td><button class="btn-sm" onclick="unblockUrl('${u.id}')">Unblock</button></td>
+        <td><button class="btn-sm" data-action="unblock" data-id="${u.id}">Unblock</button></td>
       </tr>
     `).join('');
   } catch(e) {
@@ -287,7 +287,7 @@ async function loadAnomalies() {
         <div class="anomaly-meta">User: ${a.username || a.user_id || '—'} · ${new Date(a.created_at).toLocaleString()}</div>
         ${a.details ? `<pre style="font-size:11px;margin-top:8px;color:var(--muted);overflow:auto">${JSON.stringify(JSON.parse(a.details), null, 2)}</pre>` : ''}
         <div style="margin-top:10px">
-          <button class="btn-sm" onclick="resolveAlert('${a.id}')">Mark Resolved</button>
+          <button class="btn-sm" data-action="resolve" data-id="${a.id}">Mark Resolved</button>
         </div>
       </div>
     `).join('');
@@ -319,7 +319,7 @@ async function loadUsers() {
         <td style="font-size:11px;color:var(--muted)">${u.last_login ? new Date(u.last_login).toLocaleString() : 'Never'}</td>
         <td>${u.is_locked ? '<span class="badge badge-danger">Locked</span>' : u.is_active ? '<span class="badge badge-success">Active</span>' : '<span class="badge badge-warning">Inactive</span>'}</td>
         <td>
-          <button class="btn-sm" onclick="toggleLock('${u.id}', ${!u.is_locked})">${u.is_locked ? '🔓 Unlock' : '🔒 Lock'}</button>
+          <button class="btn-sm" data-action="lock" data-id="${u.id}" data-locked="${!u.is_locked}">${u.is_locked ? '🔓 Unlock' : '🔒 Lock'}</button>
         </td>
       </tr>
     `).join('');
@@ -340,3 +340,13 @@ window.toggleLock = toggleLock;
 
 // Auto-refresh overview every 30s
 setInterval(() => { if (activeTab === 'overview') loadOverview(); }, 30000);
+
+document.addEventListener('click', event => {
+ const button = event.target.closest('button[data-action]');
+ if (!button) return;
+ const d = button.dataset;
+ if(d.action === 'logout') forceLogout(d.user, d.session);
+ if(d.action === 'unblock') unblockUrl(d.id);
+ if(d.action === 'resolve') resolveAlert(d.id);
+ if(d.action === 'lock') toggleLock(d.id, d.locked === 'true');
+});

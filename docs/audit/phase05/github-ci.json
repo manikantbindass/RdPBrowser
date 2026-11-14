@@ -1,0 +1,25 @@
+{
+  "verifiedDate": "2026-11-12",
+  "implementationCommit": "1a8666a07e03bb1e600f065aa31f205e34237b1a",
+  "finalCodeCommit": "8459103c1b0f244b5a9a47fb0210b2fcb11f57d3",
+  "workflow": "Architecture baseline",
+  "runId": 43212014411,
+  "jobId": 131161754440,
+  "url": "https://github.com/manikantbindass/RdPBrowser/actions/runs/43212014411",
+  "conclusion": "success",
+  "checks": {
+    "install": "success",
+    "lint": "success",
+    "openapiGenerationAndDrift": "success",
+    "unit": {
+      "suites": 11,
+      "passed": 77
+    },
+    "postgresIntegration": {
+      "suites": 3,
+      "passed": 23
+    }
+  },
+  "scope": "Configured Node22/PostgreSQL15 GitHub runner; actual job steps and logs read",
+  "remaining": "Live provider/native handoff/attestation acceptance and existing production dependency findings remain open"
+}

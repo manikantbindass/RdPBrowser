@@ -1,102 +1,99 @@
-version: '3.9'
-
-# ─── Networks ─────────────────────────────────────────────────────────────────
-networks:
-  remoteshield:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.20.0.0/24
-
-# ─── Volumes ──────────────────────────────────────────────────────────────────
-volumes:
-  postgres_data:
-  nginx_logs:
-
-# ─── Services ─────────────────────────────────────────────────────────────────
+name: remoteshield
 services:
-
-  # ── PostgreSQL Database ──────────────────────────────────────────────────────
   postgres:
-    image: postgres:15-alpine
-    container_name: remoteshield-db
+    image: postgres:15-alpine@sha256:aae6554de426ae1990f1a939ff183a0299146cf7142a6f4c379c3357af9cc2d8
     restart: unless-stopped
     environment:
-      POSTGRES_DB:       remoteshield_db
-      POSTGRES_USER:     remoteshield
-      POSTGRES_PASSWORD: ${DB_PASS:-CHANGE_ME_IN_ENV}
+      POSTGRES_DB: remoteshield_db
+      POSTGRES_USER: remoteshield
+      POSTGRES_PASSWORD: ${DB_PASS:?Run setup-dev.mjs or configure docker/.env}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./backend/src/db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
-    networks:
-      - remoteshield
+    networks: [database]
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U remoteshield -d remoteshield_db"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    ports:
-      # Do NOT expose to public — only internal
-      - "127.0.0.1:5432:5432"
-
-  # ── Backend API ──────────────────────────────────────────────────────────────
-  backend:
+      test: [CMD-SHELL, 'pg_isready -U remoteshield -d remoteshield_db']
+      interval: 3s
+      timeout: 3s
+      retries: 20
+  migrate:
+    image: remoteshield-backend:local
     build:
       context: ..
       dockerfile: docker/Dockerfile.backend
-    container_name: remoteshield-backend
-    restart: unless-stopped
+    command: [node, src/db/migrate.js]
+    restart: 'no'
     depends_on:
       postgres:
         condition: service_healthy
+    environment: &backend-environment
+      NODE_ENV: ${NODE_ENV:-production}
+      HOST: 0.0.0.0
+      PORT: '3000'
+      DATABASE_URL: postgresql://remoteshield:${DB_PASS:?DB_PASS required}@postgres:5432/remoteshield_db
+      DB_RUNTIME_PASSWORD: ${DB_RUNTIME_PASS:?Set a distinct random runtime DB password; see MIGRATION_PHASE04}
+      DB_SSL_MODE: ${DB_SSL_MODE:-disable}
+      DB_NETWORK_TRUSTED: ${DB_NETWORK_TRUSTED:-false}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET required}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?JWT_REFRESH_SECRET required}
+      VPN_REQUIRED: ${VPN_REQUIRED:-true}
+      VPN_SUBNET: 10.8.0.0/24
+      SERVER_PUBLIC_IP: ${SERVER_PUBLIC_IP:-127.0.0.1}
+      TRUST_PROXY_CIDRS: 172.20.0.10/32
+      CORS_ORIGINS: ${CORS_ORIGINS:?CORS_ORIGINS required}
+      DEVICE_BINDING_ENABLED: ${DEVICE_BINDING_ENABLED:-true}
+      SSH_ENABLED: ${SSH_ENABLED:-false}
+      ANOMALY_DETECTION_ENABLED: ${ANOMALY_DETECTION_ENABLED:-false}
+      LOG_LEVEL: info
+      REGISTRATION_ENABLED: ${REGISTRATION_ENABLED:-false}
+      AUTH_RATE_LIMIT_MAX: ${AUTH_RATE_LIMIT_MAX:-20}
+      OIDC_STATE_KEY: ''
+      OIDC_PROVIDERS_FILE: ''
+      ANOMALY_ORGANIZATION_IDS: ${ANOMALY_ORGANIZATION_IDS:-00000000-0000-4000-8000-000000000001}
+    networks: [database]
+  backend:
+    image: remoteshield-backend:local
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.backend
+    restart: unless-stopped
+    stop_grace_period: 30s
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
     environment:
-      NODE_ENV:                production
-      PORT:                    3000
-      HOST:                    0.0.0.0
-      DATABASE_URL:            postgresql://remoteshield:${DB_PASS:-CHANGE_ME_IN_ENV}@postgres:5432/remoteshield_db
-      JWT_SECRET:              ${JWT_SECRET:-CHANGE_ME_64_CHAR_RANDOM_STRING}
-      JWT_EXPIRES_IN:          8h
-      JWT_REFRESH_SECRET:      ${JWT_REFRESH_SECRET:-CHANGE_ME_REFRESH_SECRET}
-      JWT_REFRESH_EXPIRES_IN:  7d
-      VPN_SUBNET:              10.8.0.0/24
-      SERVER_PUBLIC_IP:        ${SERVER_PUBLIC_IP:-YOUR_SERVER_STATIC_IP}
-      SERVER_VPN_IP:           10.8.0.1
-      DEVICE_BINDING_ENABLED:  "true"
-      MAX_SESSIONS_PER_USER:   1
-      ANOMALY_DETECTION_ENABLED: "true"
-      GEO_RESTRICTION_ENABLED: "false"
-      LOG_LEVEL:               info
-      DASHBOARD_ORIGIN:        https://${DOMAIN:-localhost}/admin
-    networks:
-      - remoteshield
-    expose:
-      - "3000"
-    volumes:
-      - ../backend/logs:/app/logs
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
-      interval: 15s
-      timeout: 5s
-      retries: 3
-
-  # ── Nginx Reverse Proxy ──────────────────────────────────────────────────────
+      <<: *backend-environment
+      DATABASE_URL: postgresql://remoteshield_app:${DB_RUNTIME_PASS:?Runtime DB password required}@postgres:5432/remoteshield_db
+      DB_RUNTIME_PASSWORD: ''
+      OIDC_STATE_KEY: ${OIDC_STATE_KEY:-}
+      OIDC_PROVIDERS_FILE: ${OIDC_PROVIDERS_FILE:-}
+    networks: [control, database]
+    expose: ['3000']
+    init: true
+    security_opt: ['no-new-privileges:true']
+    cap_drop: [ALL]
   nginx:
     build:
       context: ..
       dockerfile: docker/Dockerfile.nginx
-    container_name: remoteshield-nginx
     restart: unless-stopped
     depends_on:
       backend:
         condition: service_healthy
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - nginx_logs:/var/log/nginx
-      - /etc/letsencrypt:/etc/letsencrypt:ro
-      - ../admin-dashboard:/var/www/remoteshield/admin-dashboard:ro
-    networks:
-      - remoteshield
+    ports: ['80:80', '443:443']
     environment:
-      DOMAIN: ${DOMAIN:-localhost}
+      DOMAIN: ${DOMAIN:?DOMAIN required}
+      NGINX_ENVSUBST_FILTER: DOMAIN
+    volumes:
+      - ./certs:/etc/nginx/certs:ro
+    networks:
+      control:
+        ipv4_address: 172.20.0.10
+volumes:
+  postgres_data:
+networks:
+  database:
+    internal: true
+  control:
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24

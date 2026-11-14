@@ -1,3 +1,4 @@
+import { SERVER_URL } from '../config';
 import React, { useEffect, useRef, useState } from 'react';
 import { Terminal as XTerm } from 'xterm';
 import { FitAddon } from 'xterm-addon-fit';
@@ -5,10 +6,11 @@ import { io, Socket } from 'socket.io-client';
 import 'xterm/css/xterm.css';
 
 interface Props {
+  authToken: string;
   url: string; // expects ssh://username@host:port or similar
 }
 
-const Terminal: React.FC<Props> = ({ url }) => {
+const Terminal: React.FC<Props> = ({ url, authToken }) => {
   const terminalRef = useRef<HTMLDivElement>(null);
   const xtermRef = useRef<XTerm | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
@@ -42,8 +44,8 @@ const Terminal: React.FC<Props> = ({ url }) => {
     const hostLine = url.replace('ssh://', '');
     term.writeln(`Initiating secure tunnel to: \x1b[1;32m${hostLine}\x1b[0m...\r\n`);
 
-    const serverUrl = 'http://localhost:3001'; // Defaulting for now, could be dynamic
-    const socket: Socket = io(serverUrl);
+    const serverUrl = SERVER_URL; // Defaulting for now, could be dynamic
+    const socket: Socket = io(serverUrl, { auth: { token: authToken } });
 
     socket.on('connect', () => {
       // Very basic host parsing: ssh://user@host:port
@@ -80,7 +82,7 @@ const Terminal: React.FC<Props> = ({ url }) => {
       socket.disconnect();
       term.dispose();
     };
-  }, [url]);
+  }, [url, authToken]);
 
   return (
     <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', background: '#0a0a1a' }}>

@@ -1,24 +1,21 @@
 #[allow(unused_imports)]
-use sha2::{Sha256, Digest};
+use sha2::{Digest, Sha256};
 #[allow(unused_imports)]
 use std::fs;
-
 
 /// In production, we hash the main binary and compare to a known-good hash.
 /// In debug/dev mode, this is skipped.
 pub fn verify_app_integrity() -> Result<bool, String> {
     #[cfg(debug_assertions)]
     {
-        return Err("Dev mode — integrity check skipped".to_string());
+        Err("Dev mode — integrity check skipped".to_string())
     }
 
     #[cfg(not(debug_assertions))]
     {
-        let exe_path = std::env::current_exe()
-            .map_err(|e| format!("Cannot locate exe: {e}"))?;
+        let exe_path = std::env::current_exe().map_err(|e| format!("Cannot locate exe: {e}"))?;
 
-        let bytes = fs::read(&exe_path)
-            .map_err(|e| format!("Cannot read exe: {e}"))?;
+        let bytes = fs::read(&exe_path).map_err(|e| format!("Cannot read exe: {e}"))?;
 
         let mut hasher = Sha256::new();
         hasher.update(&bytes);

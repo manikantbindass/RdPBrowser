@@ -14,6 +14,7 @@
  */
 
 const { query } = require('../../backend/src/db/db');
+const { withTenant } = require('../../backend/src/db/tenant');
 
 const RULES = {
   HIGH_FREQUENCY_THRESHOLD: 50,   // requests per minute
@@ -110,15 +111,22 @@ async function raiseAlert(userId, sessionId, alertType, severity, details) {
     [userId, sessionId || null, alertType, severity, JSON.stringify(details)]
   );
 
-  console.warn(`[ANOMALY] ${severity.toUpperCase()} | ${alertType} | user: ${userId}`);
 }
 
 /**
  * Start the anomaly detector — pass the Socket.io instance to emit real-time alerts
  */
-function startAnomalyDetector(io, logger) {
+function startAnomalyDetector(io, logger, config) {
+  let running=false;
+  let stopped=false;
+  let pending;
   const run = async () => {
+    if (running) return;
+    running=true;
     try {
+      for (const organizationId of config.ANOMALY_ORGANIZATION_IDS.split(',')) {
+      if (stopped) break;
+      await withTenant(organizationId,async () => {
       await Promise.all([
         detectHighFrequency(),
         detectGeoMismatch(),
@@ -128,15 +136,19 @@ function startAnomalyDetector(io, logger) {
 
       // Emit unresolved alerts count to admin dashboard
       const count = await query('SELECT COUNT(*) FROM anomaly_alerts WHERE resolved=FALSE');
-      if (io) io.to('admin_room').emit('anomaly_count', parseInt(count.rows[0].count));
+      if (io) await io.emitToAdmins(organizationId,'anomaly_count',parseInt(count.rows[0].count));
+      });
+      }
     } catch (err) {
-      logger?.error('[AnomalyDetector] Error:', err.message);
-    }
+      logger?.error({ event:'anomaly.scan_failed' });
+    } finally { running=false; }
   };
 
-  run();
-  setInterval(run, RULES.CHECK_INTERVAL_MS);
+  const schedule=() => { if (!pending && !stopped) pending=run().finally(() => { pending=undefined; }); };
+  schedule();
+  const timer = setInterval(schedule, RULES.CHECK_INTERVAL_MS);
   logger?.info('🔍 Anomaly detector active (30s interval)');
+  return async () => { stopped=true; clearInterval(timer); await pending; };
 }
 
 module.exports = { startAnomalyDetector };

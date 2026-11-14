@@ -1,0 +1,13 @@
+[
+  {
+    "id": "enterprise",
+    "organizationId": "00000000-0000-4000-8000-000000000001",
+    "issuer": "https://your-idp.example.com",
+    "clientId": "REPLACE_WITH_REGISTERED_CLIENT_ID",
+    "clientSecretEnv": "REMOTESHIELD_ENTERPRISE_CLIENT_SECRET",
+    "redirectUri": "https://your-server.example.com/api/v1/auth/oidc/enterprise/callback",
+    "mfaAcrValues": [],
+    "mfaAmrValues": [],
+    "maxAuthenticationAgeSeconds": 3600
+  }
+]

@@ -12,18 +12,16 @@ const ipRangeCheck = require('ip-range-check');
  * In development mode (NODE_ENV=development) this check is bypassed.
  */
 function vpnCheck(req, res, next) {
-  if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test' || process.env.VPN_REQUIRED === 'false') {
+  const config = req.app.locals.config;
+  if (!config.VPN_REQUIRED) {
     req.vpnClientIp = req.ip;
     return next();
   }
 
-  const vpnSubnet = process.env.VPN_SUBNET || '10.8.0.0/24';
+  const vpnSubnet = config.VPN_SUBNET;
 
   // Support X-Forwarded-For when behind Nginx (but only trust internal forwarding)
-  const forwardedFor = req.headers['x-forwarded-for'];
-  const clientIp = forwardedFor
-    ? forwardedFor.split(',')[0].trim()
-    : req.socket.remoteAddress;
+  const clientIp = req.ip;
 
   // Strip IPv6 prefix if needed (::ffff:10.8.0.x)
   const normalizedIp = clientIp.replace(/^::ffff:/, '');
@@ -31,16 +29,16 @@ function vpnCheck(req, res, next) {
   try {
     const inVpn = ipRangeCheck(normalizedIp, vpnSubnet);
     if (!inVpn) {
-      console.warn(`[VPN BLOCK] Non-VPN request from ${normalizedIp} to ${req.path}`);
+      req.app.get('logger').warn({ event: 'api.source_denied', requestId: req.requestId });
       return res.status(403).json({
-        error: 'Access denied: All traffic must route through the RemoteShield VPN tunnel.',
+        error: 'Access denied: API source address is outside the configured VPN subnet.',
         code: 'VPN_REQUIRED',
       });
     }
     req.vpnClientIp = normalizedIp;
     next();
   } catch (err) {
-    console.error('[VPN CHECK ERROR]', err);
+    req.app.get('logger').error({ event: 'api.source_check_failed', requestId: req.requestId });
     return res.status(500).json({ error: 'VPN verification failed' });
   }
 }

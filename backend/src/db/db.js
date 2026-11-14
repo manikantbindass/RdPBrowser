@@ -1,57 +1,58 @@
 'use strict';
-
 const { Pool } = require('pg');
 const fs = require('fs');
-const path = require('path');
-
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-  max: 20,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
-});
-
-pool.on('error', (err) => {
-  console.error('Unexpected PostgreSQL client error:', err);
-});
-
-/**
- * Initialize DB — run schema.sql on first boot
- */
-async function initDB() {
-  const schemaPath = path.join(__dirname, 'schema.sql');
-  const schema = fs.readFileSync(schemaPath, 'utf8');
+const { verifyMigrations } = require('./migrations');
+const { AsyncLocalStorage } = require('async_hooks');
+const { tenantId } = require('./tenant');
+const transactions = new AsyncLocalStorage();
+let config;
+let logger;
+let pool;
+let closed=false;
+function configure(nextConfig, nextLogger) {
+  if (pool && config !== nextConfig) throw new Error('Database already initialized');
+  config = nextConfig; logger = nextLogger; closed=false;
+}
+function getPool() {
+  if (closed) throw new Error('Database is closed');
+  if (!config) throw new Error('Database is not configured');
+  if (!pool) {
+    pool = new Pool({ connectionString: config.DATABASE_URL,
+      ssl: config.DB_SSL_MODE === 'verify-full' ? { rejectUnauthorized: true, ...(config.DB_SSL_CA_FILE ? { ca: fs.readFileSync(config.DB_SSL_CA_FILE, 'utf8') } : {}) } : false,
+      max: 20, idleTimeoutMillis: 30000, connectionTimeoutMillis: 2000, statement_timeout: 15000 });
+    pool.on('error', () => logger?.error({ event: 'database.pool_error' }));
+  }
+  return pool;
+}
+async function transaction(fn) {
+  const organizationId = tenantId();
+  const existing = transactions.getStore();
+  if (existing) {
+    if (existing.organizationId !== organizationId) throw new Error('Transaction tenant cannot change');
+    return fn(existing.client);
+  }
+  const client = await getPool().connect();
   try {
-    const client = await pool.connect();
-    try {
-      await client.query(schema);
-    } finally {
-      client.release();
-    }
-  } catch (error) {
-    console.warn("Postgres DB connection failed locally. Proceeding in degraded mode without DB state.", error.message);
-  }
+    await client.query('BEGIN');
+    await client.query("SELECT set_config('app.organization_id',$1,true)", [organizationId]);
+    const result = await transactions.run({ client, organizationId }, () => fn(client));
+    await client.query('COMMIT');
+    return result;
+  } catch (err) { await client.query('ROLLBACK'); throw err; }
+  finally { client.release(); }
 }
-
-/**
- * Execute a parameterised query
- */
-async function query(text, params) {
-  const start = Date.now();
-  const res = await pool.query(text, params);
-  const duration = Date.now() - start;
-  if (duration > 1000) {
-    console.warn(`Slow query (${duration}ms): ${text}`);
-  }
-  return res;
+async function query(text, params) { return transaction(client => client.query(text, params)); }
+async function getClient() { return getPool().connect(); }
+async function assertRuntimeRole(pool) {
+  const { rows } = await pool.query('SELECT rolsuper,rolbypassrls,rolcreaterole,rolcreatedb FROM pg_roles WHERE rolname=current_user');
+  if (rows[0]?.rolsuper || rows[0]?.rolbypassrls) throw new Error('Runtime database role must not bypass row-level security');
+  if (rows[0]?.rolcreaterole || rows[0]?.rolcreatedb) throw new Error('Runtime role must not administer roles/databases');
+  const memberships=await pool.query('SELECT 1 FROM pg_auth_members WHERE member=(SELECT oid FROM pg_roles WHERE rolname=current_user) LIMIT 1');
+  if (memberships.rows.length) throw new Error('Runtime role must not assume other roles');
+  const owned=await pool.query("SELECT 1 FROM pg_tables WHERE schemaname=current_schema() AND tableowner=current_user LIMIT 1");
+  if (owned.rows.length) throw new Error('Runtime role must not own application tables');
 }
-
-/**
- * Get a client for transactions
- */
-async function getClient() {
-  return pool.connect();
-}
-
-module.exports = { query, getClient, initDB, pool };
+async function checkReady() { const pool=getPool(); await assertRuntimeRole(pool); await verifyMigrations(pool); }
+async function initDB() { await checkReady(); }
+async function close() { closed=true; if (pool) { const previous = pool; pool = undefined; await previous.end(); } }
+module.exports = { query, transaction, getClient, initDB, checkReady, assertRuntimeRole, configure, getPool, close };

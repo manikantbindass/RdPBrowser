@@ -25,7 +25,7 @@ permissions:
   actions: read
 
 env:
-  FLUTTER_VERSION: '3.24.5'
+  FLUTTER_VERSION: '3.38.9'
   JAVA_VERSION: '17'
   WORKING_DIR: android
 
@@ -37,7 +37,6 @@ jobs:
 
     outputs:
       version: ${{ steps.version.outputs.version }}
-      apk_universal: ${{ steps.find_apks.outputs.apk_universal }}
 
     steps:
       - name: Checkout repository
@@ -47,14 +46,12 @@ jobs:
 
       - name: Resolve version
         id: version
+        env:
+          REQUESTED_VERSION: ${{ inputs.version }}
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            VERSION="${{ github.event.inputs.version }}"
-          else
-            VERSION="${GITHUB_REF#refs/tags/}"
-          fi
-          echo "version=${VERSION}" >> $GITHUB_OUTPUT
-          echo "Version resolved: ${VERSION}"
+          VERSION="${REQUESTED_VERSION:-${GITHUB_REF#refs/tags/}}"
+          [[ "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Set up Java ${{ env.JAVA_VERSION }}
         uses: actions/setup-java@v4
@@ -74,108 +71,55 @@ jobs:
           flutter --version
           dart --version
 
-      - name: Flutter pub get
-        working-directory: ${{ env.WORKING_DIR }}
-        run: flutter pub get
+      - uses: gradle/actions/wrapper-validation@v4
 
-      - name: Dart analyze
-        working-directory: ${{ env.WORKING_DIR }}
-        run: flutter analyze --no-fatal-infos
-        continue-on-error: true
+      - name: Install Android SDK
+        run: sdkmanager "platforms;android-36" "platforms;android-35" "build-tools;36.0.0" "build-tools;35.0.0" "ndk;28.2.13676358" "cmake;3.22.1"
 
-      - name: Run unit tests
+      - name: Analyze and test Android
         working-directory: ${{ env.WORKING_DIR }}
-        run: flutter test --coverage
-        continue-on-error: true
-
-      - name: Decode keystore
         run: |
-          if [ -n "${{ secrets.KEYSTORE_BASE64 }}" ]; then
-            mkdir -p android/android/keystore
-            echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/android/keystore/remoteshieldx-release.jks
-            echo "Keystore decoded successfully"
-          else
-            echo "WARNING: KEYSTORE_BASE64 secret not set. Build will use debug signing."
-          fi
+          flutter pub get --enforce-lockfile
+          flutter analyze --no-pub
+          flutter test --no-pub
 
-      - name: Write key.properties
-        run: |
-          if [ -n "${{ secrets.KEYSTORE_BASE64 }}" ]; then
-            cat > android/android/key.properties << EOF
-          storePassword=${{ secrets.STORE_PASSWORD }}
-          keyPassword=${{ secrets.KEY_PASSWORD }}
-          keyAlias=${{ secrets.KEY_ALIAS }}
-          storeFile=../keystore/remoteshieldx-release.jks
-          EOF
-            echo "key.properties written"
-          else
-            echo "Skipping key.properties (no keystore secret)"
-          fi
-
-      - name: Make gradlew executable
-        working-directory: ${{ env.WORKING_DIR }}/android
-        run: chmod +x gradlew
-
-      - name: Build release APKs (split per ABI)
+      - name: Build and verify signed APKs
         working-directory: ${{ env.WORKING_DIR }}
         env:
+          VERSION: ${{ steps.version.outputs.version }}
+          SERVER_URL: ${{ vars.ANDROID_SERVER_URL }}
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
           STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
-          KEYSTORE_PATH: ../keystore/remoteshieldx-release.jks
         run: |
-          flutter build apk --release \
-            --obfuscate \
-            --split-debug-info=build/debug-info \
-            --split-per-abi \
-            --dart-define=FLUTTER_ENV=production
-
-      - name: Build universal APK
-        working-directory: ${{ env.WORKING_DIR }}
-        env:
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-          STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
-          KEYSTORE_PATH: ../keystore/remoteshieldx-release.jks
-        run: |
-          flutter build apk --release \
-            --obfuscate \
-            --split-debug-info=build/debug-info-universal \
-            --dart-define=FLUTTER_ENV=production
-
-      - name: List APK artifacts
-        id: find_apks
-        working-directory: ${{ env.WORKING_DIR }}
-        run: |
-          echo "=== APK output directory ==="
-          find build/app/outputs/apk -name '*.apk' -type f
-          UNIVERSAL=$(find build/app/outputs/apk/release -name 'app-release.apk' | head -1)
-          echo "apk_universal=${UNIVERSAL}" >> $GITHUB_OUTPUT
-
-      - name: Rename APKs
-        working-directory: ${{ env.WORKING_DIR }}
-        run: |
-          VERSION="${{ steps.version.outputs.version }}"
-          APK_DIR="build/app/outputs/apk/release"
+          set -euo pipefail
+          : "${KEYSTORE_BASE64:?Missing Android signing keystore}"
+          : "${KEY_ALIAS:?Missing Android signing alias}"
+          : "${KEY_PASSWORD:?Missing Android signing key password}"
+          : "${STORE_PASSWORD:?Missing Android signing store password}"
+          dart run scripts/validate_release_origin.dart "$SERVER_URL"
+          export KEYSTORE_PATH="$RUNNER_TEMP/remoteshield-android.jks"
+          trap 'rm -f -- "$KEYSTORE_PATH"' EXIT
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_PATH"
           mkdir -p release-artifacts
-
-          if [ -f "${APK_DIR}/app-release.apk" ]; then
-            cp "${APK_DIR}/app-release.apk" \
-               "release-artifacts/RemoteShieldX-${VERSION}-universal.apk"
-          fi
-
-          if [ -f "${APK_DIR}/app-arm64-v8a-release.apk" ]; then
-            cp "${APK_DIR}/app-arm64-v8a-release.apk" \
-               "release-artifacts/RemoteShieldX-${VERSION}-arm64-v8a.apk"
-          fi
-
-          if [ -f "${APK_DIR}/app-x86_64-release.apk" ]; then
-            cp "${APK_DIR}/app-x86_64-release.apk" \
-               "release-artifacts/RemoteShieldX-${VERSION}-x86_64.apk"
-          fi
-
-          echo "=== Release artifacts ==="
-          ls -lah release-artifacts/
+          TOOLS="$ANDROID_HOME/build-tools/36.0.0"
+          flutter build apk --release --build-name "${VERSION#v}" --split-per-abi \
+            --obfuscate --split-debug-info=build/debug-info \
+            --dart-define="SERVER_URL=$SERVER_URL"
+          for ABI in arm64-v8a armeabi-v7a x86_64; do
+            cp "build/app/outputs/flutter-apk/app-$ABI-release.apk" \
+              "release-artifacts/RemoteShieldX-$VERSION-$ABI.apk"
+          done
+          flutter build apk --release --build-name "${VERSION#v}" \
+            --obfuscate --split-debug-info=build/debug-info-universal \
+            --dart-define="SERVER_URL=$SERVER_URL"
+          cp build/app/outputs/flutter-apk/app-release.apk \
+            "release-artifacts/RemoteShieldX-$VERSION-universal.apk"
+          for APK in release-artifacts/*.apk; do
+            "$TOOLS/apksigner" verify "$APK"
+            "$TOOLS/zipalign" -c -P 16 -v 4 "$APK"
+          done
 
       - name: Generate checksums
         working-directory: ${{ env.WORKING_DIR }}/release-artifacts
@@ -207,32 +151,15 @@ jobs:
       - name: List release artifacts
         run: ls -lah release-artifacts/
 
-      - name: Set release notes
+      - name: Set release metadata
         id: release_notes
+        env:
+          NOTES: ${{ inputs.release_notes }}
         run: |
-          VERSION="${{ needs.build-android.outputs.version }}"
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && \
-             [ -n "${{ github.event.inputs.release_notes }}" ]; then
-            NOTES="${{ github.event.inputs.release_notes }}"
+          if [[ -n "$NOTES" ]]; then
+            printf '%s\n' "$NOTES" > release-notes.md
           else
-            NOTES="## RemoteShield X ${VERSION} - Android Release\n\n### What's New\n- Full Android 14/15/16 (API 34/35/36) support\n- ProGuard obfuscation + resource shrinking\n- ABI-split APKs (arm64-v8a, x86_64) + universal APK\n- Security hardened build\n\n### Installation\n1. Download the APK for your device\n2. Enable 'Install from unknown sources' in Settings\n3. Install and launch RemoteShield X\n\n### Requirements\n- Android 8.0+ (API 26+)\n- Optimised for Android 14+ (API 34+)"
-          fi
-          echo "notes<<EOF" >> $GITHUB_OUTPUT
-          echo "$NOTES" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-
-      - name: Set pre-release flag
-        id: prerelease
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "is_prerelease=${{ github.event.inputs.prerelease }}" >> $GITHUB_OUTPUT
-          else
-            VERSION="${{ needs.build-android.outputs.version }}"
-            if echo "$VERSION" | grep -qE '(alpha|beta|rc)'; then
-              echo "is_prerelease=true" >> $GITHUB_OUTPUT
-            else
-              echo "is_prerelease=false" >> $GITHUB_OUTPUT
-            fi
+            printf '%s\n' 'RemoteShield X Android build. Minimum API 26, target API 36. See the Android operations guide for setup and verified runtime coverage.' > release-notes.md
           fi
 
       - name: Create GitHub Release
@@ -240,8 +167,8 @@ jobs:
         with:
           tag_name: ${{ needs.build-android.outputs.version }}
           name: RemoteShieldX ${{ needs.build-android.outputs.version }} - Android
-          body: ${{ steps.release_notes.outputs.notes }}
-          prerelease: ${{ steps.prerelease.outputs.is_prerelease }}
+          body_path: release-notes.md
+          prerelease: ${{ inputs.prerelease == 'true' }}
           draft: false
           make_latest: true
           files: |

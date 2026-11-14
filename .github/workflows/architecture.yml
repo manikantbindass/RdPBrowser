@@ -1,0 +1,41 @@
+name: Architecture baseline
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [codex/remoteshield-enterprise-completion]
+permissions:
+  contents: read
+jobs:
+  contracts-and-postgres:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: remoteshield
+          POSTGRES_PASSWORD: ci_database_only
+          POSTGRES_DB: remoteshield_phase02_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd="pg_isready -U remoteshield -d remoteshield_phase02_test"
+          --health-interval=3s --health-timeout=3s --health-retries=20
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: node ../scripts/build-openapi.cjs
+      - run: git diff --exit-code -- ../contracts/openapi.json
+      - run: npm test -- --runInBand --detectOpenHandles
+      - run: npm run test:integration
+        env:
+          INTEGRATION_DATABASE_URL: postgresql://remoteshield:ci_database_only@127.0.0.1:5432/remoteshield_phase02_test

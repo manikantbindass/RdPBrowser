@@ -1,0 +1,16 @@
+# Local loopback-only override. Never use this override on a public server.
+services:
+  postgres:
+    ports: ['127.0.0.1:5432:5432']
+  backend:
+    ports: ['127.0.0.1:3001:3000']
+  nginx:
+    ports: !override ['127.0.0.1:${DEV_ADMIN_PORT:-8180}:80']
+    volumes:
+      - ../nginx/dev.conf:/etc/nginx/conf.d/default.conf:ro
+    entrypoint: [nginx, '-g', 'daemon off;']
+networks:
+  database:
+    # Docker's internal network suppresses host publication on this engine.
+    # Development needs loopback PostgreSQL for host-side migrations/tests.
+    internal: false

@@ -1,146 +1,132 @@
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
+import 'dart:async';
 
-import 'security/tamper_check.dart';
-import 'services/vpn_service.dart';
+import 'package:flutter/material.dart';
+
 import 'screens/browser_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/vpn_guard_screen.dart';
+import 'services/control_plane.dart';
+import 'services/session.dart';
+import 'services/vpn_service.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+void main() => runApp(const RemoteShieldApp());
 
-  // ─── Prevent screenshots and screen recording ──────────────────────────────
-  await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-  // FLAG_SECURE — prevents screenshots and screen recording on Android
-  await const MethodChannel('com.remoteshieldx/security').invokeMethod('setFlagSecure');
+class RemoteShieldApp extends StatefulWidget {
+  const RemoteShieldApp({super.key, this.session});
+  final Session? session;
 
-  // ─── Force portrait mode ───────────────────────────────────────────────────
-  await SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.landscapeLeft,
-    DeviceOrientation.landscapeRight,
-  ]);
-
-  // ─── Tamper / Root Detection ───────────────────────────────────────────────
-  final tamperResult = await TamperCheck.runAllChecks();
-  if (tamperResult.isCompromised) {
-    runApp(TamperDetectedApp(reason: tamperResult.reason));
-    return;
-  }
-
-  runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => VpnService()),
-      ],
-      child: const RemoteShieldApp(),
-    ),
-  );
+  @override
+  State<RemoteShieldApp> createState() => _RemoteShieldAppState();
 }
 
-class RemoteShieldApp extends StatelessWidget {
-  const RemoteShieldApp({super.key});
+class _RemoteShieldAppState extends State<RemoteShieldApp>
+    with WidgetsBindingObserver {
+  late final Session _session =
+      widget.session ?? Session(ControlPlane(), PlatformSecurity());
+  Timer? _poll;
+  StreamSubscription<void>? _network;
+  final _navigator = GlobalKey<NavigatorState>();
+  bool? _secure;
+  int? _browserEpoch;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _session.addListener(_changed);
+    _changed();
+    _network = _session.platform.networkChanges.listen(
+      (_) {
+        if (_session.foreground) unawaited(_session.check(invalidate: true));
+      },
+      onError: (Object _) {
+        if (_session.foreground) unawaited(_session.check(invalidate: true));
+      },
+    );
+    _poll = Timer.periodic(const Duration(seconds: 15), (_) {
+      if (_session.foreground) unawaited(_session.check());
+    });
+    unawaited(_session.check());
+  }
+
+  void _changed() {
+    if (_browserEpoch != _session.browserEpoch || !_session.foreground) {
+      _browserEpoch = _session.browserEpoch;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _navigator.currentState?.popUntil((route) => route.isFirst);
+        }
+      });
+    }
+    final secure =
+        !_session.ready ||
+        !_session.foreground ||
+        !_session.networkReady ||
+        !_session.signedIn ||
+        _session.authorized;
+    if (_secure == secure) return;
+    _secure = secure;
+    unawaited(
+      _session.platform.protectScreen(secure).catchError((Object _) {}),
+    );
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _session.resume();
+    } else {
+      _session.suspend();
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _poll?.cancel();
+    unawaited(_network?.cancel());
+    _session.removeListener(_changed);
+    if (widget.session == null) _session.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: _navigator,
       title: 'RemoteShield X',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: const ColorScheme.dark(
-          primary:   Color(0xFF6366F1),
-          secondary: Color(0xFF818CF8),
-          surface:   Color(0xFF111827),
-          error:     Color(0xFFEF4444),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF00687B),
+          brightness: Brightness.light,
         ),
-        useMaterial3: true,
-        scaffoldBackgroundColor: const Color(0xFF0A0D14),
-        fontFamily: 'Inter',
       ),
-      home: const AppRouter(),
-    );
-  }
-}
-
-class AppRouter extends StatefulWidget {
-  const AppRouter({super.key});
-  @override
-  State<AppRouter> createState() => _AppRouterState();
-}
-
-class _AppRouterState extends State<AppRouter> {
-  bool _authenticated = false;
-  String? _authToken;
-  bool _vpnBypassed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final vpn = context.watch<VpnService>();
-
-    // VPN must be connected before anything else, unless bypassed
-    if (!vpn.isConnected && !_vpnBypassed) {
-      return VpnGuardScreen(
-        onRetry: () => vpn.connect(),
-        onBypass: () => setState(() => _vpnBypassed = true),
-      );
-    }
-
-    // Authentication gate
-    if (!_authenticated || _authToken == null) {
-      return LoginScreen(
-        onLogin: (token) => setState(() {
-          _authenticated = true;
-          _authToken = token;
-        }),
-      );
-    }
-
-    return BrowserScreen(authToken: _authToken!);
-  }
-}
-
-// ─── Tamper Detected Fallback ──────────────────────────────────────────────────
-class TamperDetectedApp extends StatelessWidget {
-  final String reason;
-  const TamperDetectedApp({super.key, required this.reason});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: Scaffold(
-        backgroundColor: const Color(0xFF0A0D14),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(32),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text('🚨', style: TextStyle(fontSize: 72)),
-                const SizedBox(height: 24),
-                const Text(
-                  'Security Violation Detected',
-                  style: TextStyle(color: Color(0xFFEF4444), fontSize: 22, fontWeight: FontWeight.bold),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  reason,
-                  style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 24),
-                const Text(
-                  'This incident has been logged and reported.\nContact your administrator.',
-                  style: TextStyle(color: Color(0xFF64748B), fontSize: 12),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-          ),
+      darkTheme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF64DCF1),
+          brightness: Brightness.dark,
         ),
+      ),
+      home: ListenableBuilder(
+        listenable: _session,
+        builder: (context, _) {
+          if (!_session.ready || !_session.foreground) {
+            return const Scaffold(
+              body: Center(
+                child: CircularProgressIndicator(
+                  semanticsLabel: 'Checking session',
+                ),
+              ),
+            );
+          }
+          if (!_session.networkReady) return VpnGuardScreen(session: _session);
+          if (!_session.signedIn) return LoginScreen(session: _session);
+          return BrowserScreen(
+            key: ValueKey('${_session.owner}.${_session.browserEpoch}'),
+            session: _session,
+          );
+        },
       ),
     );
   }
