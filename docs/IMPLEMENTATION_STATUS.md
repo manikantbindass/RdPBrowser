@@ -2,7 +2,7 @@
 
 ## Phase 08 network update
 
-The Linux gateway provisions and revokes per-device WireGuard peers and applies scoped dual-stack forwarding and DNS policy. The independent Linux client firewall remains active after tunnel teardown. The backend verifies the source of each protected request in tunnel-subnet or dedicated-egress mode. See [network operations](NETWORK_PROTECTION.md) and the [Phase 08 report](PHASE08_REPORT.md) for tested scope.
+The Linux gateway provisions and revokes per-device WireGuard peers and applies scoped dual-stack forwarding and DNS policy. The independent Linux client firewall remains active after tunnel teardown. The backend verifies the source of each protected request in tunnel-subnet or dedicated-egress mode. The production Compose files passed isolated TLS, DNS, source address and peer recovery checks. See [network operations](NETWORK_PROTECTION.md) and the [Phase 08 report](PHASE08_REPORT.md) for tested scope.
 
 ## Phase 07 Android update
 

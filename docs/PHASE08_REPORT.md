@@ -1,6 +1,6 @@
 # Phase 08 network protection
 
-**PARTIAL.** The Linux reference topology has a reproducible packet lab. Deployment acceptance still requires production edge and resolver checks and packet tests on the supported endpoint platforms.
+**PARTIAL.** The Linux packet lab and the production Compose files passed in isolated environments. Organization-specific TLS and recursive DNS, cold-boot enforcement and non-Linux endpoint packet tests remain open.
 
 Phase 08 replaced the legacy VPS installer, which reused platform identities, generated private keys on the server, logged a database password, and changed package and firewall state. The new operator tooling stores a durable registry, assigns a unique IPv4 /32 and IPv6 /128 to each device, distributes public templates, and reconciles enrollments, rotations and revocations without restarting unrelated peers. Endpoint private keys stay on the device. The application device registry and WireGuard registry have separate revocation operations.
 
@@ -14,7 +14,9 @@ Windows, Android and macOS platform kill switches require separate packet accept
 
 - The private namespace lab passed on Alpine Linux in a dedicated WSL 2 guest. It covered both NAT egress addresses, TLS ingress and forwarding-header replacement, UDP/TCP tunnel DNS, blocking an available external resolver, DNS outage, remote loss while the client interface stayed up, local interface teardown and reconnect, an unauthorized peer, rotation and live revocation.
 - Two passes captured 129 and 130 WireGuard UDP packets on the client underlay, with zero unexpected IP packets. The capture evaluates IPv4 and IPv6 IP traffic. It excludes ICMPv6 control traffic and precisely matched gateway ICMP port-unreachable replies quoting WireGuard during the failure simulation.
-- ShellCheck, Bash and Python syntax checks, Unbound and Nginx validation and both Compose config renders passed. Compose was validated statically. The Linux Docker daemon was unavailable on the developer host during this work.
+- ShellCheck, Bash and Python syntax checks, Unbound and Nginx validation and both Compose config renders passed.
 - Backend ESLint, 81 unit and contract tests, 24 real PostgreSQL 15.19 integration tests and the regenerated 43-path OpenAPI specification passed. Source checks covered malformed, absent and spoofed forwarding, exact IPv4/IPv6 egress addresses and HTTP/socket policy parity.
+- The [Ubuntu packet workflow](https://github.com/manikantbindass/RdPBrowser/actions/runs/43684207210) captured 136 WireGuard UDP packets and zero unexpected IP packets under the same capture rules.
+- The follow-up deployment lab built the pinned images and ran the production Compose stack inside another network namespace. PostgreSQL migrations and readiness, Unbound name resolution to the WireGuard address, TLS, peer source checks and the Socket.IO polling handshake passed. The edge denied off-tunnel and direct container access. Recreating the gateway interface restored the enrolled peer and preserved revocation after the next recreation. The lab instantiated the service scripts directly and used a temporary client resolver file. Host boot ordering, OS resolver integration and real certificate and DNS infrastructure remain separate acceptance checks.
 
-[Packet evidence](audit/phase08/packet-lab.txt)
+[Packet evidence](audit/phase08/packet-lab.txt) · [Compose deployment evidence](audit/phase08/compose-lab.txt)

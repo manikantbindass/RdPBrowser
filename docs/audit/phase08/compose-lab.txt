@@ -1,0 +1,20 @@
+Phase 08 Compose deployment lab, 2026-11-16 (Asia/Calcutta)
+Command: sudo bash vpn-server/tests/compose-lab.sh PREBUILT_IMAGE_ARCHIVE
+Image source: production Dockerfiles and pinned PostgreSQL manifest from cb34e0d.
+Environment: Alpine Linux 3.24.4, WSL 2, private network and mount namespaces.
+Docker Engine 29.9.3 with containerd store, Docker Compose 5.6.1.
+Exit code: 0
+
+PostgreSQL, backend and Nginx reported healthy. The migration job completed.
+PASS actual Compose TLS edge preserves WireGuard source and overwrites spoofed forwarding
+PASS control hostname resolves and reaches the Compose edge through tunnel DNS
+PASS migrated PostgreSQL readiness and Socket.IO handshake through Compose
+PASS off-tunnel and direct container access denied
+PASS recreated gateway reloads its peer registry and existing Compose edge reconnects
+PASS revoked peer cannot reach the running Compose edge after gateway recreation
+
+The lab used a disposable CA trust input, DNS zone, database and device keys.
+Docker's offline importer retained the pinned PostgreSQL manifest as a local
+image ID. The lab verified that ID and used a temporary tag for the import.
+Systemd cold boot and the Windows, macOS and Android VPN configurations
+were outside this run.
