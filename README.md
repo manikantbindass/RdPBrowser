@@ -36,7 +36,7 @@ The repository is being improved incrementally. Existing API clients retain `/ap
 | URL policy | Shared literal wildcard evaluator, revisioned storage, deny/allow parity | Backend implemented; client enforcement incomplete |
 | Android application | Flutter browser, session and device enrollment, native VPN guard; signed ARM64 verification build | Implemented; managed device acceptance pending |
 | Device registry and organization isolation | Tenant persistence, RLS/composite ownership, self-enrollment/revocation | Implemented; device attestation absent |
-| VPN, DNS and kill-switch enforcement | WireGuard templates; native failure/bypass gaps | Unverified/incomplete |
+| VPN, DNS and kill-switch enforcement | Per-device WireGuard keys, dual-stack Linux gateway, independent Linux client firewall and isolated packet tests | Linux lab verified. Deployed and other OS profiles require acceptance. |
 | Refresh rotation | Persisted single-use refresh, session revocation and race tests; Android secure credential storage | Implemented; live Android session acceptance pending |
 | Enterprise identity and access policy | OIDC/PKCE/signature checks, provider MFA assurance, refresh-family reuse detection, device key proof and live resource decisions | Backend implemented; live IdP/native handoff/attestation acceptance pending |
 | Device trust and signed releases | Open defects and missing acceptance evidence | Incomplete |
@@ -133,7 +133,7 @@ The local stack sequences PostgreSQL, migrations, backend readiness and Nginx. D
 
 Production uses the base Compose file with reviewed secrets, a deliberate DB trust model, actual TLS certificates and verified ingress addresses. Read the [migration/recovery guide](docs/MIGRATION_PHASE02.md) before mapping existing data volumes. Never delete volumes as routine recovery.
 
-WireGuard templates live in [vpn-server/](vpn-server/). The privileged [setup script](vpn-server/setup.sh) changes packages, keys, firewall and routing; it is not idempotent and should not be run blindly on a working VPS. [Audit findings B41–B43](docs/BUG_REGISTER.md) describe the provisioning and DNS/IPv6/failure gaps. A configured tunnel is not proof of a working kill switch.
+Production Compose publishes HTTPS at the WireGuard IPv4 address. Provision the Linux gateway first, then enroll each device with its own key. The network guide covers the dedicated Linux firewall, DNS and IPv6 policies, platform requirements and recovery. [Network protection](docs/NETWORK_PROTECTION.md)
 
 ## API and administration
 
@@ -142,6 +142,7 @@ New clients use `/api/v1`; existing `/api` aliases remain. Login and navigation 
 | Entry point | Purpose |
 |---|---|
 | `/api/v1/meta` | Public API metadata; enforcement reported as external |
+| `/api/v1/network/status` | Server-observed address and source-gate decision for this request |
 | `/api/v1/auth/*` | Persisted registration/login sessions and single-use refresh rotation |
 | `/api/v1/admin/*` | Role-gated sessions, rules, users and audit views |
 | `/api/v1/proxy/navigate` | Policy approval, not content proxying |

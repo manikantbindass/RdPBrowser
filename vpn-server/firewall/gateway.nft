@@ -1,0 +1,45 @@
+add table inet rsx_gateway
+delete table inet rsx_gateway
+table inet rsx_gateway {
+    set private4 {
+        type ipv4_addr
+        flags interval
+        elements = { 0.0.0.0/8, 10.0.0.0/8, 100.64.0.0/10, 127.0.0.0/8,
+                     169.254.0.0/16, 172.16.0.0/12, 192.168.0.0/16, 224.0.0.0/3 }
+    }
+    set private6 {
+        type ipv6_addr
+        flags interval
+        elements = { ::/128, ::1/128, ::ffff:0:0/96, fc00::/7, fe80::/10, ff00::/8 }
+    }
+    chain tunnel_input {
+        type filter hook input priority -5; policy accept;
+        iifname != "wg0" ip daddr 10.8.0.1 counter drop
+        iifname != "wg0" ip6 daddr fd42:5253:5800::1 counter drop
+        iifname "wg0" ct state invalid counter drop
+        iifname "wg0" ip saddr 10.8.0.0/24 ip daddr 10.8.0.1 meta l4proto { tcp, udp } th dport 53 accept
+        iifname "wg0" ip6 saddr fd42:5253:5800::/64 ip6 daddr fd42:5253:5800::1 meta l4proto { tcp, udp } th dport 53 accept
+        iifname "wg0" ip saddr 10.8.0.0/24 ip daddr 10.8.0.1 tcp dport 443 accept
+        iifname "wg0" ip6 saddr fd42:5253:5800::/64 ip6 daddr fd42:5253:5800::1 tcp dport 443 accept
+        iifname "wg0" counter drop
+    }
+    chain tunnel_forward {
+        type filter hook forward priority -5; policy accept;
+        iifname != "wg0" ct direction original ct status dnat ct original ip daddr 10.8.0.1 counter drop
+        iifname "wg0" ct state invalid counter drop
+        iifname "wg0" oifname "br-rsx-control" ip saddr 10.8.0.0/24 ct status dnat ct original ip daddr 10.8.0.1 tcp dport 443 accept
+        iifname "wg0" oifname "wg0" counter drop
+        iifname "wg0" ip daddr @private4 counter drop
+        iifname "wg0" ip6 daddr @private6 counter drop
+        iifname "wg0" oifname $uplink ip saddr 10.8.0.0/24 tcp dport { 80, 443 } accept
+        iifname "wg0" oifname $uplink ip6 saddr fd42:5253:5800::/64 tcp dport { 80, 443 } accept
+        iifname "wg0" counter drop
+        oifname "wg0" iifname { $uplink, "br-rsx-control" } ct state { established, related } accept
+        oifname "wg0" counter drop
+    }
+    chain tunnel_nat {
+        type nat hook postrouting priority srcnat; policy accept;
+        iifname "wg0" oifname $uplink ip saddr 10.8.0.0/24 masquerade
+        iifname "wg0" oifname $uplink ip6 saddr fd42:5253:5800::/64 masquerade
+    }
+}

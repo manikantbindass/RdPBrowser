@@ -1,5 +1,9 @@
 # Phase 01 verified feature inventory
 
+## Phase 08 network update
+
+The Linux gateway provisions and revokes per-device WireGuard peers and applies scoped dual-stack forwarding and DNS policy. The independent Linux client firewall remains active after tunnel teardown. The backend verifies the source of each protected request in tunnel-subnet or dedicated-egress mode. See [network operations](NETWORK_PROTECTION.md) and the [Phase 08 report](PHASE08_REPORT.md) for tested scope.
+
 ## Phase 07 Android update
 
 The Android browser, native activity/channel, session lifecycle, Keystore device proof and restricted download interfaces have been implemented. Deployment uses an operator-managed WireGuard provider with Android network checks and backend source gating. Release and real-device acceptance remain governed by [PHASE07_REPORT.md](PHASE07_REPORT.md). Historical audit entries below describe the earlier baseline.

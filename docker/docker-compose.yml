@@ -36,7 +36,10 @@ services:
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET required}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?JWT_REFRESH_SECRET required}
       VPN_REQUIRED: ${VPN_REQUIRED:-true}
-      VPN_SUBNET: 10.8.0.0/24
+      VPN_SUBNET: ${VPN_SUBNET:-10.8.0.0/24}
+      VPN_SUBNETS: ${VPN_SUBNETS:-}
+      VPN_SOURCE_MODE: ${VPN_SOURCE_MODE:-tunnel}
+      VPN_EGRESS_IPS: ${VPN_EGRESS_IPS:-}
       SERVER_PUBLIC_IP: ${SERVER_PUBLIC_IP:-127.0.0.1}
       TRUST_PROXY_CIDRS: 172.20.0.10/32
       CORS_ORIGINS: ${CORS_ORIGINS:?CORS_ORIGINS required}
@@ -79,7 +82,7 @@ services:
     depends_on:
       backend:
         condition: service_healthy
-    ports: ['80:80', '443:443']
+    ports: ['${CONTROL_BIND_IPV4:-10.8.0.1}:443:443']
     environment:
       DOMAIN: ${DOMAIN:?DOMAIN required}
       NGINX_ENVSUBST_FILTER: DOMAIN
@@ -94,6 +97,8 @@ networks:
   database:
     internal: true
   control:
+    driver_opts:
+      com.docker.network.bridge.name: br-rsx-control
     ipam:
       config:
         - subnet: 172.20.0.0/24

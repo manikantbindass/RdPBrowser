@@ -1,0 +1,15 @@
+add table inet rsx_client
+delete table inet rsx_client
+table inet rsx_client {
+    chain egress {
+        type filter hook output priority filter; policy drop;
+        oifname "lo" accept
+        oifname "wg0" accept
+        meta mark 0x525358 ip daddr $endpoint udp dport 51820 accept
+        counter drop
+    }
+    chain no_forward {
+        type filter hook forward priority filter; policy drop;
+        counter drop
+    }
+}

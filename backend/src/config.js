@@ -3,6 +3,7 @@
 const Joi = require('joi');
 const fs = require('fs');
 const path = require('path');
+const { normalizeAddress } = require('./services/network-source');
 
 const definitions = {
   NODE_ENV: Joi.string().valid('development', 'test', 'production').default('development'),
@@ -18,6 +19,9 @@ const definitions = {
   JWT_REFRESH_EXPIRES_IN: Joi.string().pattern(/^[1-9]\d*[smhd]$/).default('7d'),
   VPN_REQUIRED: Joi.boolean().default(true),
   VPN_SUBNET: Joi.string().ip({ cidr: 'required' }).default('10.8.0.0/24'),
+  VPN_SUBNETS: Joi.string().max(2048).allow('').default(''),
+  VPN_SOURCE_MODE: Joi.string().valid('tunnel', 'egress').default('tunnel'),
+  VPN_EGRESS_IPS: Joi.string().max(2048).allow('').default(''),
   SERVER_PUBLIC_IP: Joi.string().ip().default('127.0.0.1'),
   SERVER_VPN_IP: Joi.string().ip().default('10.8.0.1'),
   TRUST_PROXY_CIDRS: Joi.string().allow('').default(''),
@@ -44,6 +48,13 @@ function loadConfig(env = process.env) {
   if (error) throw new Error(`Invalid configuration keys: ${[...new Set(error.details.map(d => d.path[0]))].join(', ')}`);
   const config = Object.fromEntries(Object.keys(definitions).map(key => [key, value[key]]));
   const invalid = [];
+  const vpnSubnets = (config.VPN_SUBNETS || config.VPN_SUBNET).split(',').map(value => value.trim());
+  const vpnEgressIps = config.VPN_EGRESS_IPS ? config.VPN_EGRESS_IPS.split(',').map(value => normalizeAddress(value.trim())) : [];
+  if (vpnSubnets.length > 32 || vpnSubnets.some(value => {
+    const [address, prefix] = value.split('/');
+    return Joi.string().ip({ cidr: 'required' }).validate(value).error || !normalizeAddress(address) || Number(prefix) === 0;
+  })) invalid.push('VPN_SUBNETS');
+  if (vpnEgressIps.length > 32 || vpnEgressIps.includes(null) || (config.VPN_SOURCE_MODE === 'egress' && !vpnEgressIps.length)) invalid.push('VPN_EGRESS_IPS');
   if (Joi.array().max(100).items(Joi.string().guid()).validate(config.ANOMALY_ORGANIZATION_IDS.split(',')).error) invalid.push('ANOMALY_ORGANIZATION_IDS');
   if (['sslmode', 'sslcert', 'sslkey', 'sslrootcert'].some(key => new URL(config.DATABASE_URL).searchParams.has(key))) invalid.push('DATABASE_URL (set TLS using DB_SSL_MODE/DB_SSL_CA_FILE)');
   if (config.JWT_SECRET === config.JWT_REFRESH_SECRET) invalid.push('JWT_REFRESH_SECRET');
@@ -58,8 +69,9 @@ function loadConfig(env = process.env) {
       if (config.NODE_ENV === 'production' && url.protocol === 'http:' && origin !== 'http://tauri.localhost') invalid.push('CORS_ORIGINS');
     } catch { invalid.push('CORS_ORIGINS'); }
   }
-  const proxies = config.TRUST_PROXY_CIDRS.split(',').filter(Boolean);
-  if (Joi.array().items(Joi.string().ip({ cidr: 'optional' })).validate(proxies).error) invalid.push('TRUST_PROXY_CIDRS');
+  const proxies = config.TRUST_PROXY_CIDRS.split(',').map(value => value.trim()).filter(Boolean);
+  if (Joi.array().max(32).items(Joi.string().ip({ cidr: 'optional' })).validate(proxies).error ||
+      proxies.some(value => value.includes('%') || value.split('/')[1] === '0')) invalid.push('TRUST_PROXY_CIDRS');
   if (config.NODE_ENV === 'production') {
     if (!config.VPN_REQUIRED) invalid.push('VPN_REQUIRED');
     if (config.DB_SSL_MODE === 'disable' && !config.DB_NETWORK_TRUSTED) invalid.push('DB_SSL_MODE/DB_NETWORK_TRUSTED');
@@ -71,7 +83,7 @@ function loadConfig(env = process.env) {
   const oidcProviders=require('./services/oidc-config').loadProviders(config.OIDC_PROVIDERS_FILE,env);
   if (oidcProviders.length && (!/^[0-9a-f]{64}$/i.test(config.OIDC_STATE_KEY) || config.OIDC_STATE_KEY===config.JWT_SECRET || config.OIDC_STATE_KEY===config.JWT_REFRESH_SECRET)) throw new Error('Invalid configuration keys: OIDC_STATE_KEY');
   if (env.REGISTRATION_ENABLED === undefined && config.NODE_ENV !== 'production') config.REGISTRATION_ENABLED = true;
-  return Object.freeze({ ...config,oidcProviders:Object.freeze(oidcProviders), origins: Object.freeze(origins), trustedProxies: Object.freeze(proxies) });
+  return Object.freeze({ ...config,oidcProviders:Object.freeze(oidcProviders), origins: Object.freeze(origins), trustedProxies: Object.freeze(proxies), vpnSubnets: Object.freeze(vpnSubnets), vpnEgressIps: Object.freeze(vpnEgressIps) });
 }
 
 function loadEnvironment() {

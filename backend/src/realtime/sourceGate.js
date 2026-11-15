@@ -1,15 +1,14 @@
 'use strict';
-const proxyAddress=require('proxy-addr');
-const inRange=require('ip-range-check');
+const { createNetworkSource }=require('../services/network-source');
 function createSourceGate(config) {
-  const trust=config.trustedProxies.length ? proxyAddress.compile(config.trustedProxies) : () => false;
+  const observe=createNetworkSource(config);
   const clients=new Map();
   return (req,callback) => {
     try {
       const origin=req.headers.origin;
       if (origin && !config.origins.includes(origin)) return callback('Origin denied',false);
-      const address=proxyAddress(req,trust).replace(/^::ffff:/,'');
-      if (config.VPN_REQUIRED && !inRange(address,config.VPN_SUBNET)) return callback('Source denied',false);
+      const { state,address }=observe(req);
+      if (state==='denied') return callback('Source denied',false);
       const now=Date.now();
       if (clients.size>=10000) for (const [key,item] of clients) if (item.until<=now) clients.delete(key);
       const previous=clients.get(address);

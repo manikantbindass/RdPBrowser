@@ -1,0 +1,26 @@
+Phase 08 packet lab, 2026-11-15 (Asia/Calcutta)
+Command: sudo bash vpn-server/tests/lab.sh
+Environment: Alpine Linux 3.24.4 in a dedicated WSL 2 guest
+Guest archive SHA-256: cdaa38cb8de3537967ee5b6c9b6cd00cc962da2b018e6eea48696bb274923012
+Kernel: 5.15.153.1-microsoft-standard-WSL2
+WireGuard tools: 1.0.20260223
+nftables: 1.1.6
+Unbound: 1.25.2
+Nginx: 1.30.6
+Exit code: 0
+
+PASS gateway, IPv4 and IPv6 NAT egress
+PASS TLS edge overwrites forwarding, preserves peer IP and denies off-tunnel access
+PASS tunnel DNS over UDP and TCP, external DNS and unapproved port blocked
+PASS DNS outage with no direct fallback
+PASS remote tunnel loss and recovery with client interface still up
+PASS tunnel removal, IPv4/IPv6 kill switch and reconnect
+PASS unauthorized peer, key rotation, status and immediate revocation
+PASS underlay packet capture: 129 WireGuard UDP packets, zero unexpected IP packets (ICMPv6 and WireGuard port-unreachable replies excluded)
+
+A repeat with the final source also passed every scenario. Its capture counted
+130 WireGuard UDP packets and zero unexpected IP packets.
+
+Output above preserves the lab result lines. Harness setup output was omitted.
+Addresses and keys belonged to disposable network namespaces. The Nginx TLS
+test used an isolated DNAT rule modeled on the Compose publication.

@@ -1,0 +1,15 @@
+[Unit]
+Description=RemoteShield X WireGuard gateway
+Wants=network-online.target
+After=network-online.target nftables.service
+Before=unbound.service docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+EnvironmentFile=/etc/remoteshield/gateway.env
+ExecStart=/bin/bash /opt/remoteshield/vpn-server/setup.sh up ${UPLINK}
+ExecStop=/usr/sbin/ip link delete wg0
+
+[Install]
+WantedBy=multi-user.target

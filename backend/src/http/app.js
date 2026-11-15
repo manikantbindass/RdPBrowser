@@ -8,7 +8,7 @@ const authRoutes = require('../routes/auth');
 const adminRoutes = require('../routes/admin');
 const proxyRoutes = require('../routes/proxy');
 const lailaRoutes = require('../routes/laila');
-const { vpnCheck } = require('../middleware/vpnCheck');
+const { createVpnCheck } = require('../middleware/vpnCheck');
 const { authenticateToken } = require('../middleware/auth');
 const { requestContext, errorHandler } = require('./errors');
 
@@ -16,7 +16,10 @@ function createApp({ config, logger, database }) {
   const app = express();
   app.locals.config = config;
   app.set('logger', logger);
-  app.set('trust proxy', config.trustedProxies.length ? config.trustedProxies : false);
+  if (config.trustedProxies.length) {
+    const trust = require('proxy-addr').compile(config.trustedProxies);
+    app.set('trust proxy', (address, hop) => hop === 0 && trust(address));
+  }
   app.use(requestContext);
   app.use((req, res, next) => {
     const start = process.hrtime.bigint();
@@ -57,7 +60,12 @@ function createApp({ config, logger, database }) {
   });
   const api = express.Router();
   api.use('/laila', lailaRoutes); // Preserve existing explicitly public search route.
-  api.use(vpnCheck);
+  api.use(createVpnCheck(config));
+  api.get('/network/status', (req, res) => {
+    res.set('Cache-Control', 'no-store');
+    res.json({ sourceGate: req.networkSource.state, observedAddress: req.networkSource.address,
+      sourceMode: config.VPN_SOURCE_MODE, trafficEnforcement: 'external' });
+  });
   api.use('/auth', rateLimit({ windowMs:config.RATE_LIMIT_WINDOW_MS, max:config.AUTH_RATE_LIMIT_MAX,
     skip:req=>req.path==='/status',
     standardHeaders:true,legacyHeaders:false, handler:(req,res) => res.status(429).json({ error:'Too many authentication requests' }) }));

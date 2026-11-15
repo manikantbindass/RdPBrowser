@@ -14,7 +14,6 @@ server {
     ssl_certificate_key /etc/nginx/certs/tls.key;
     ssl_protocols TLSv1.2 TLSv1.3;
     allow 10.8.0.0/24;
-    allow 127.0.0.1;
     deny all;
     client_max_body_size 10k;
     add_header Strict-Transport-Security "max-age=31536000" always;

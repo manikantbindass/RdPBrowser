@@ -17,7 +17,7 @@ async function sessionStatus(req,res){
   const urls=req.method==='POST'?validate(Joi.object({urls:Joi.array().items(Joi.string().uri({scheme:['http','https']}).max(8192)).max(20).required()}),req.body).urls:[];
   if (req.method==='POST') require('./proxy').navigationCountry(req);
   const decisions=access.allowed?await Promise.all(urls.map(url=>require('../services/policy').evaluate(url))):[];
-  const sourceGate=req.app.locals.config.VPN_REQUIRED?'accepted':'disabled';
+  const sourceGate=req.networkSource.state;
   res.json({user:{id:req.user.sub,role:req.user.role,organizationId:req.user.organizationId},session:{id:session.id,expiresAt:session.expires_at,absoluteExpiresAt:session.absolute_expires_at},device:device?{id:device.id,name:device.name,trustState:device.trust_state,status:device.status,postureValidUntil:device.posture_valid_until}:null,access,decisions,sourceGate});
 }
 const statusLimit=require('express-rate-limit')({windowMs:60000,max:120,standardHeaders:true,legacyHeaders:false,

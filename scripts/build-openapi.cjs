@@ -40,6 +40,11 @@ function operation(method,route,summary,{ input,output,status=200,publicRoute=fa
   (doc.paths[route] ||= {})[method]=op;
 }
 operation('get','/meta','API metadata',{ publicRoute:true });
+operation('get','/network/status','Report the server-observed connection source',{ publicRoute:true,output:object({
+  sourceGate:{enum:['accepted','disabled']},observedAddress:{type:'string',description:'IPv4 or IPv6 address observed at the control-plane boundary'},
+  sourceMode:{enum:['tunnel','egress']},trafficEnforcement:{const:'external'},
+}) });
+doc.paths['/network/status'].get.description='Subject to the source gate. An accepted result applies to this request and does not verify device-wide routes or DNS.';
 operation('post','/auth/register','Register in the default organization (deployment flag)',{ input:'Registration',output:ref('SessionResult'),status:201,publicRoute:true });
 operation('post','/auth/login','Login (organizationId optional for legacy organization)',{ input:'Login',output:ref('SessionResult'),publicRoute:true });
 operation('post','/auth/refresh','Rotate a stored single-use refresh credential',{ input:'Refresh',output:ref('SessionResult'),publicRoute:true });

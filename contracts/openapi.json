@@ -47,6 +47,64 @@
         "security": []
       }
     },
+    "/network/status": {
+      "get": {
+        "operationId": "get__network_status",
+        "summary": "Report the server-observed connection source",
+        "description": "Subject to the source gate. An accepted result applies to this request and does not verify device-wide routes or DNS.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "sourceGate": {
+                      "enum": [
+                        "accepted",
+                        "disabled"
+                      ]
+                    },
+                    "observedAddress": {
+                      "type": "string",
+                      "description": "IPv4 or IPv6 address observed at the control-plane boundary"
+                    },
+                    "sourceMode": {
+                      "enum": [
+                        "tunnel",
+                        "egress"
+                      ]
+                    },
+                    "trafficEnforcement": {
+                      "const": "external"
+                    }
+                  },
+                  "required": [
+                    "sourceGate",
+                    "observedAddress",
+                    "sourceMode",
+                    "trafficEnforcement"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error; includes server-owned X-Request-ID correlation. 400 validation, 401 authentication, 403 authorization, 404 invisible resource, 409 conflict, 429 limit, 500 internal, 503 readiness/capacity.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
     "/auth/register": {
       "post": {
         "operationId": "post__auth_register",
