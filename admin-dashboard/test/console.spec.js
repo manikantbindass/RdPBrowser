@@ -8,6 +8,7 @@ test.afterAll(async () => { if (fixture) await fixture.close(); });
 
 async function login(page, username = 'operator') {
   await page.goto(fixture.origin + '/admin/');
+  if (username === 'operator') expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
   await page.getByLabel('Username').fill(username);
   await page.getByLabel('Password', { exact: true }).fill(fixture.password);
   await page.getByRole('button', { name: 'Sign in' }).click();
@@ -58,7 +59,7 @@ test('creates an assigned URL policy and reads persisted history', async ({ page
   await dialog.getByLabel('Assignment', { exact: true }).selectOption('users');
   await dialog.getByLabel('memberone').check();
   await dialog.getByRole('button', { name: 'Create policy' }).click();
-  await expect(page.getByText('1 assigned users')).toBeVisible();
+  await expect(page.getByText('1 assigned user', { exact: true })).toBeVisible();
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
   await page.getByRole('button', { name: 'Edit', exact: true }).click();
   await dialog.getByLabel('Policy name').fill('Revised browser policy');
@@ -87,7 +88,7 @@ test('keeps device labels inert and audits revocation from the console', async (
 test('ordinary accounts cannot open the console', async ({ page }) => {
   await login(page, 'memberone');
   await expect(page.getByRole('alert')).toContainText('Administrator access is required.');
-  await expect(page.getByRole('main')).toBeHidden();
+  await expect(page.locator('#main')).toBeHidden();
 });
 
 test('creates a user and applies a role change through the console', async ({ page }) => {
@@ -112,7 +113,7 @@ test('all navigation views load and session termination takes effect', async ({ 
   for (const [link, heading] of [['Security events', 'Reported security events'], ['Risk & alerts', 'Unresolved anomalies'],
     ['Account settings', 'Administrator profile'], ['Sessions', 'Active sessions']]) {
     await page.getByRole('link', { name: link, exact: true }).click();
-    await expect(page.getByRole('heading', { name: heading, exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: heading, exact: true, level: 2 })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Unable to load this view' })).toHaveCount(0);
   }
   const current = page.getByRole('row').filter({ hasText: 'operator@console.test' }).first();

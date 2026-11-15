@@ -4,7 +4,7 @@
   "databaseTests": 27,
   "consoleUnitTests": 3,
   "browserTests": 6,
-  "axe": "Zero violations in the tested overview and policy views",
+  "axe": "Zero violations in the tested sign-in, overview and policy views",
   "openApiPaths": 52,
   "consoleDependencyAudit": "Zero npm advisory findings",
   "limitations": [

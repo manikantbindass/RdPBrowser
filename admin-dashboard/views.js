@@ -302,7 +302,7 @@ export function createViews({ api, getAccount, showDialog, confirm, refresh, nav
       panel('Versioned URL policies', 'Manage explicit organization or user assignments.', node('div', {},
         table('URL policies', ['Policy', 'Assignment', 'Revision', 'Status', 'Actions'], data.rows.map(row => [
           person(row.name, row.rules.deny.length + ' deny · ' + row.rules.allow.length + ' allow'),
-          row.assignment.scope === 'users' ? chip(row.assignment.userIds.length + ' assigned users', 'blue') : 'Entire organization',
+          row.assignment.scope === 'users' ? chip(row.assignment.userIds.length + (row.assignment.userIds.length === 1 ? ' assigned user' : ' assigned users'), 'blue') : 'Entire organization',
           'v' + row.revision, yes(row.is_active, 'Active', 'Disabled'),
           actions(button('Edit', policyEditor(row), 'subtle'), button('History', policyHistory(row), 'subtle')),
         ])), controls('policies', data)), button('Create policy', policyEditor(), 'primary', 'plus')),
