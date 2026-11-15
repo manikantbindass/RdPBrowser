@@ -25,6 +25,10 @@ cleanup() {
 }
 trap cleanup EXIT
 mount -t tmpfs -o mode=0755 tmpfs /run
+# Distribution AppArmor profiles allow resolver configuration in /etc/unbound.
+# Mount a private directory there so the real system configuration stays intact.
+[[ -d /etc/unbound ]]
+mount -t tmpfs -o mode=0755 tmpfs /etc/unbound
 for ns in gateway client outsider edge; do
     ip netns add "$ns"
     ip -n "$ns" link set lo up
@@ -126,24 +130,27 @@ EOF
 run edge nginx -t -e stderr -p "$work" -c "$work/nginx.conf"
 start edge nginx -e stderr -p "$work" -c "$work/nginx.conf" -g 'daemon off;'
 start gateway python3 "$base/tests/observer.py" 10.8.0.1 443
-cat > "$work/dns.conf" <<EOF
-include: "$base/wireguard/unbound.conf"
+cp "$base/wireguard/unbound.conf" /etc/unbound/rsx-gateway.conf
+cat > /etc/unbound/rsx-lab.conf <<'EOF'
+include: "/etc/unbound/rsx-gateway.conf"
 server:
     username: ""
     chroot: ""
-    directory: "$work"
-    pidfile: "$work/unbound.pid"
+    directory: "/etc/unbound"
+    pidfile: ""
+    use-syslog: no
     local-zone: "phase08.test." static
     local-data: "gateway.phase08.test. 60 IN A 198.51.100.2"
 EOF
-start gateway unbound -d -c "$work/dns.conf"
+start gateway unbound -d -c /etc/unbound/rsx-lab.conf
 resolver=$last_pid
-cat > "$work/edge-dns.conf" <<EOF
+cat > /etc/unbound/rsx-edge.conf <<'EOF'
 server:
     username: ""
     chroot: ""
-    directory: "$work"
-    pidfile: "$work/edge-unbound.pid"
+    directory: "/etc/unbound"
+    pidfile: ""
+    use-syslog: no
     interface: 198.51.100.2
     interface: 2001:db8:1::2
     access-control: 0.0.0.0/0 allow
@@ -151,18 +158,25 @@ server:
     local-zone: "phase08.test." static
     local-data: "gateway.phase08.test. 60 IN A 198.51.100.2"
 EOF
-start edge unbound -d -c "$work/edge-dns.conf"
+start edge unbound -d -c /etc/unbound/rsx-edge.conf
 start gateway tcpdump -U -n -i access0 -w "$work/underlay.pcap" 'ip or ip6'
 capture=$last_pid
+ready=false
 for _ in {1..30}; do
     if run gateway ss -ltnH 'sport = :443' | grep -q 443 &&
+        run gateway ss -ltnH 'sport = :53' | grep -q '10.8.0.1' &&
         run edge ss -ltnH 'sport = :80' | grep -q '2001:db8:1::2' &&
         run edge ss -ltnH 'sport = :53' | grep -q '2001:db8:1::2' &&
         run edge ss -ltnH 'sport = :443' | grep -q '172.20.0.10:443' &&
-        run edge ss -ltnH 'sport = :3000' | grep -q 3000; then break; fi
+        run edge ss -ltnH 'sport = :3000' | grep -q 3000; then
+        ready=true
+        break
+    fi
     sleep 0.2
 done
-kill -0 "$resolver" "$capture"
+[[ "$ready" == true ]]
+kill -0 "$resolver"
+kill -0 "$capture"
 curl_lab() { run "$1" curl --silent --fail --noproxy '*' --max-time 3 "$2"; }
 expect_failure() {
     if "$@" >/dev/null 2>&1; then echo "Unexpected success: $*" >&2; exit 1; fi

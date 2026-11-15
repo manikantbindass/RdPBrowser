@@ -18,8 +18,11 @@ PASS tunnel removal, IPv4/IPv6 kill switch and reconnect
 PASS unauthorized peer, key rotation, status and immediate revocation
 PASS underlay packet capture: 129 WireGuard UDP packets, zero unexpected IP packets (ICMPv6 and WireGuard port-unreachable replies excluded)
 
-A repeat with the final source also passed every scenario. Its capture counted
-130 WireGuard UDP packets and zero unexpected IP packets.
+A repeat captured 130 WireGuard UDP packets and zero unexpected IP packets.
+The first Ubuntu CI run failed when AppArmor denied the Unbound test config
+outside /etc/unbound. The lab now overlays that path in its private mount
+namespace. A local rerun passed all scenarios with 129 WireGuard packets
+and zero unexpected IP packets.
 
 Output above preserves the lab result lines. Harness setup output was omitted.
 Addresses and keys belonged to disposable network namespaces. The Nginx TLS
