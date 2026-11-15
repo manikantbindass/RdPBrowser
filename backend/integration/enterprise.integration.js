@@ -193,14 +193,17 @@ test('realtime cannot switch tenant identity or deliver to a revoked admin subsc
   // A separate admin keeps the primary test session alive for further checks.
   const hash=await bcrypt.hash('TestPassword1!',4);
   const user=(await pool.query("INSERT INTO users(organization_id,username,email,password_hash,role) VALUES($1,'socketadmin','socket@test.example.com',$2,'admin') RETURNING id",[orgA,hash])).rows[0];
+  await pool.query("INSERT INTO users(organization_id,username,email,password_hash,role) VALUES($1,'socketsupervisor','socket-supervisor@test.example.com',$2,'superadmin')",[orgA,hash]);
   const session=await login('socketadmin');
+  const supervisor=await login('socketsupervisor');
   const socket=connectSocket(`http://127.0.0.1:${runtime.server.address().port}`,{ auth:{ token:session.accessToken },reconnection:false });
   try {
     await new Promise((resolve,reject) => { socket.once('connect_error',reject); socket.once('connect',() => socket.emit('join_admin',session.accessToken)); socket.once('sessions_snapshot',resolve); });
     let received=false; socket.on('sensitive_test',() => { received=true; });
     await runtime.io.emitToAdmins(orgB,'sensitive_test',{ organizationId:orgB });
     expect(received).toBe(false);
-    await call('patch',`/admin/users/${user.id}/lock`,tokenA,{ locked:true });
+    expect((await call('patch',`/admin/users/${user.id}/lock`,tokenA,{ locked:true })).status).toBe(403);
+    expect((await call('patch',`/admin/users/${user.id}/lock`,supervisor.accessToken,{ locked:true })).status).toBe(200);
     const disconnected=new Promise(resolve => socket.once('disconnect',resolve));
     await runtime.io.emitToAdmins(orgA,'sensitive_test',{ organizationId:orgA });
     await disconnected;
@@ -280,4 +283,71 @@ test('desktop status validates owned session and current URL decisions without g
   expect(restricted.status).toBe(200);expect(restricted.body.access.allowed).toBe(false);
   expect(restricted.body.decisions).toEqual([]);
   await pool.query('UPDATE access_policies SET configuration=$1',[defaults]);
+});
+
+test('console reads and actions require an administrator in the same tenant', async () => {
+  const member=await call('post','/users',tokenA,{ username:'consolemember',email:'console-member@test.example.com',password:'TestPassword1!' });
+  expect(member.status).toBe(201);
+  const memberToken=(await login('consolemember')).accessToken;
+  for (const path of ['/admin/account','/admin/security-summary','/admin/devices','/admin/network-health','/admin/audit-log','/admin/policies']) {
+    expect((await call('get',path,undefined)).status).toBe(401);
+    expect((await call('get',path,memberToken)).status).toBe(403);
+    expect((await call('get',path,tokenA)).status).toBe(200);
+  }
+  expect((await call('get','/admin/devices',tokenA)).body.devices.some(device => device.id===deviceB)).toBe(false);
+  expect((await call('get','/admin/policies/'+policyB.id+'/versions',tokenA)).status).toBe(404);
+  expect((await call('patch','/admin/users/'+member.body.user.id+'/role',tokenA,{role:'admin'})).status).toBe(403);
+  expect((await call('get','/admin/security-summary',tokenA)).body.days).toHaveLength(7);
+});
+
+test('user policy assignments use authenticated identity and store immutable snapshots', async () => {
+  const member=await call('post','/users',tokenA,{ username:'assignedmember',email:'assigned@test.example.com',password:'TestPassword1!' });
+  const userId=member.body.user.id;
+  const memberToken=(await login('assignedmember')).accessToken;
+  const value={ name:'Assigned policy', rules:{ deny:['assigned.test'],allow:[] },assignment:{scope:'users',userIds:[userId]} };
+  const rejected=await call('post','/policies',tokenA,{...value,assignment:{scope:'users',userIds:[userB]}});
+  expect(rejected.status).toBe(400);
+  const created=await call('post','/policies',tokenA,value);
+  expect(created.status).toBe(201);
+  const policyId=created.body.policy.id;
+  expect((await call('post','/policies/evaluate',memberToken,{url:'https://assigned.test/'})).body.allowed).toBe(false);
+  expect((await call('post','/policies/evaluate',tokenA,{url:'https://assigned.test/'})).body.allowed).toBe(true);
+  expect((await call('put','/policies/'+policyId,tokenA,{name:'Legacy edit',revision:1,rules:value.rules})).body.policy.assignment).toEqual(value.assignment);
+  const history=await call('get','/admin/policies/'+policyId+'/versions',tokenA);
+  expect(history.body.versions.map(row=>row.revision)).toEqual([2,1]);
+  expect(history.body.versions.every(row=>row.assignment.userIds[0]===userId)).toBe(true);
+  await pool.query(`CREATE FUNCTION console_reject_audit() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN
+    IF NEW.action='policy.update' THEN RAISE EXCEPTION 'fixture audit outage'; END IF; RETURN NEW; END $$;
+    CREATE TRIGGER console_reject_audit BEFORE INSERT ON audit_log FOR EACH ROW EXECUTE FUNCTION console_reject_audit()`);
+  try {
+    expect((await call('put','/policies/'+policyId,tokenA,{name:'Uncommitted',revision:2,rules:value.rules})).status).toBe(500);
+    expect((await call('get','/admin/policies/'+policyId+'/versions',tokenA)).body.versions).toHaveLength(2);
+    expect((await pool.query('SELECT revision,name FROM policies WHERE id=$1',[policyId])).rows[0]).toEqual({revision:2,name:'Legacy edit'});
+  } finally {
+    await pool.query('DROP TRIGGER console_reject_audit ON audit_log; DROP FUNCTION console_reject_audit()');
+  }
+  await withTenant(orgA,() => expect(database.query('DELETE FROM policy_versions')).rejects.toMatchObject({code:'42501'}));
+  await withTenant(orgB,async () => {
+    expect((await database.query('SELECT revision FROM policy_versions WHERE policy_id=$1',[policyId])).rows).toEqual([]);
+  });
+});
+
+test('superadmin changes subordinate roles and password changes revoke the current session', async () => {
+  const hash=await bcrypt.hash('TestPassword1!',4);
+  const operator=(await pool.query("INSERT INTO users(organization_id,username,email,password_hash,role) VALUES($1,'rootconsole','root-console@test.example.com',$2,'superadmin') RETURNING id",[orgA,hash])).rows[0];
+  const credentials=await login('rootconsole');
+  const token=credentials.accessToken;
+  expect((await call('patch','/admin/users/'+operator.id+'/role',token,{role:'admin'})).status).toBe(403);
+  expect((await call('patch','/admin/users/'+operator.id+'/lock',tokenA,{locked:true})).status).toBe(403);
+  expect((await call('patch','/admin/users/'+userB+'/role',token,{role:'admin'})).status).toBe(404);
+  const created=await call('post','/users',token,{username:'rolefixture',email:'role@test.example.com',password:'TestPassword1!'});
+  const member=await login('rolefixture');
+  expect((await call('patch','/admin/users/'+created.body.user.id+'/role',token,{role:'admin'})).status).toBe(200);
+  expect((await call('get','/auth/status',member.accessToken)).status).toBe(401);
+  expect((await call('put','/admin/account/password',token,{currentPassword:'wrong-password',newPassword:'ChangedPassword1!'})).status).toBe(403);
+  expect((await call('put','/admin/account/password',token,{currentPassword:'TestPassword1!',newPassword:'ChangedPassword1!'})).status).toBe(200);
+  expect((await call('get','/admin/account',token)).status).toBe(401);
+  expect((await call('post','/auth/refresh',null,{refreshToken:credentials.refreshToken})).status).toBe(401);
+  expect((await call('get','/admin/audit-log?action=account.password_change',tokenA)).body.entries).toEqual(
+    [expect.objectContaining({actor:'rootconsole',target:operator.id})]);
 });

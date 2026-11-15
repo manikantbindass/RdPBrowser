@@ -8,6 +8,7 @@ const { policySchema,loadPolicy,resources,decide,recordDecision }=require('../se
 const { authenticateToken }=require('../middleware/auth');
 const { audit }=require('../services/audit');
 const { hashToken }=require('../services/sessions');
+const { managedUser }=require('../services/admin-roles');
 router.use((req,res,next) => {
   if (!/^\/(access(?:\/|$)|devices\/[^/]+\/(?:key|challenge|proof)$|admin\/(?:access-policy|identity-links|access-decisions|devices)(?:\/|$))/.test(req.path)) return next('router');
   if (req.accessContext) return next();
@@ -45,7 +46,7 @@ router.post('/admin/identity-links',wrap(async (req,res) => {
   const provider=req.app.locals.config.oidcProviders.find(p => p.id===value.providerId && p.organizationId===tenantId());
   if (!provider) fail(400,'Provider is not configured for this organization');
   const row=await transaction(async () => {
-    found(await query('SELECT id FROM users WHERE id=$1',[value.userId]));
+    await managedUser(req.user,value.userId,true);
     const link=found(await query('INSERT INTO identity_links(user_id,provider_id,issuer,subject) VALUES($1,$2,$3,$4) RETURNING id,user_id,provider_id',[value.userId,provider.id,provider.issuer,value.subject]));
     await audit(req,'identity.link',link.id);return link;
   });
@@ -55,7 +56,7 @@ router.delete('/admin/identity-links/:id',wrap(async (req,res) => {
   admin(req);const linkId=target(req);
   await transaction(async () => {
     const link=found(await query('SELECT user_id FROM identity_links WHERE id=$1',[linkId]));
-    await query('SELECT id FROM users WHERE id=$1 FOR UPDATE',[link.user_id]);
+    await managedUser(req.user,link.user_id,true);
     await query('DELETE FROM identity_links WHERE id=$1',[linkId]);
     await query("UPDATE sessions SET is_active=FALSE,ended_at=NOW(),refresh_hash=NULL WHERE user_id=$1 AND authentication_method='oidc'",[link.user_id]);
     await audit(req,'identity.unlink',linkId);
@@ -107,7 +108,7 @@ router.patch('/admin/devices/:id/trust',wrap(async (req,res) => {
     const device=found(await query('SELECT * FROM devices WHERE id=$1 FOR UPDATE',[deviceId]));
     if (device.trust_state==='revoked' || device.status==='revoked') fail(409,'Revoked devices cannot be restored');
     if (value.trustState==='approved' && !device.public_key) fail(400,'Enroll a device key before approval');
-    await query('SELECT id FROM users WHERE id=$1 FOR UPDATE',[device.user_id]);
+    await managedUser(req.user,device.user_id,true);
     await query(`UPDATE devices SET trust_state=$1,status=CASE WHEN $1='revoked' THEN 'revoked' ELSE status END,
       posture_valid_until=CASE WHEN $1='approved' THEN NOW()+($2*INTERVAL '1 second') ELSE NULL END WHERE id=$3`,[value.trustState,value.validForSeconds || 0,deviceId]);
     if (['quarantined','revoked'].includes(value.trustState)) await query('UPDATE sessions SET is_active=FALSE,ended_at=NOW(),refresh_hash=NULL WHERE registered_device_id=$1 OR (user_id=$2 AND device_id=$3)',[deviceId,device.user_id,device.external_id]);

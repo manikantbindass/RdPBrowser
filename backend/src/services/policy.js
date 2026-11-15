@@ -20,13 +20,16 @@ function matches(pattern, url) {
   };
   return glob(url.hostname) || glob(url.href);
 }
-async function evaluate(urlString) {
+async function evaluate(urlString, userId) {
   let url;
   try { url=new URL(urlString); } catch { fail(400,'Invalid URL'); }
   if (!['https:','http:'].includes(url.protocol) || url.username || url.password) fail(400,'Only HTTP(S) URLs without credentials are supported');
   const organizationId=tenantId();
   const [policies,blocked,allowed]=await Promise.all([
-    query('SELECT id,revision,rules FROM policies WHERE organization_id=$1 AND is_active ORDER BY id LIMIT 101',[organizationId]),
+    query(`SELECT p.id,p.revision,p.rules FROM policies p WHERE p.organization_id=$1 AND p.is_active AND
+      (p.assignment_scope='organization' OR EXISTS (SELECT 1 FROM policy_user_assignments a
+        WHERE a.organization_id=p.organization_id AND a.policy_id=p.id AND a.user_id=$2))
+      ORDER BY p.id LIMIT 101`,[organizationId,userId]),
     query('SELECT pattern FROM blocked_urls WHERE organization_id=$1 AND is_active LIMIT 1001',[organizationId]),
     query('SELECT pattern FROM allowed_urls WHERE organization_id=$1 AND is_active LIMIT 1001',[organizationId]),
   ]);

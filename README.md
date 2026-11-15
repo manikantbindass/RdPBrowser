@@ -32,7 +32,7 @@ The repository is being improved incrementally. Existing API clients retain `/ap
 | API v1, legacy aliases, structured errors | Shared JSON Schemas and compatibility tests | Implemented |
 | PostgreSQL migration tracking and isolation | Adoption, concurrency, rollback/checksums, restricted-role RLS and cross-tenant tests | Implemented; production recovery drill pending |
 | Desktop frontend and Windows native debug build | TypeScript/Vite, Rust test, formatting and Clippy | Build verified; runtime security unverified |
-| Admin REST controls and realtime authentication | Tenant roles, live sessions, per-delivery revocation checks | Backend implemented; full admin UI acceptance pending |
+| Admin security console | Responsive organization, user, device, session, policy, audit and event views with tenant APIs and live updates | PostgreSQL and Chromium acceptance passed |
 | URL policy | Shared literal wildcard evaluator, revisioned storage, deny/allow parity | Backend implemented; client enforcement incomplete |
 | Android application | Flutter browser, session and device enrollment, native VPN guard; signed ARM64 verification build | Implemented; managed device acceptance pending |
 | Device registry and organization isolation | Tenant persistence, RLS/composite ownership, self-enrollment/revocation | Implemented; device attestation absent |
@@ -60,15 +60,15 @@ The API authorizes and records control decisions. Browser content does not pass 
 
 Captured from the running Tauri debug executable, not an AI mockup. This is the current development UI, not the new README design. Its placeholder IP/VPS data and status labels are not verified infrastructure or security signals.
 
-### Admin frontend — real login view
+### Admin security console
 
-![Actual admin frontend login page, with backend disconnected](assets/readme/admin-dashboard.png)
+![RemoteShield X console running against a disposable PostgreSQL test organization](assets/readme/admin-dashboard.png)
 
-Captured from the running, unmodified admin frontend in a clean browser profile. This is the login gate; no authenticated dashboard data or policy enforcement is demonstrated.
+Captured from the running console with the seeded Console verification lab organization. Counts represent that disposable test environment. [Console operations and verification](docs/ADMIN_CONSOLE.md)
 
 ### Android and management capture gaps
 
-See the [capture ledger](assets/readme/SCREENSHOTS.md) for actual captures and blockers. The admin frontend can display a real login view, but authenticated metrics and policy capture require a working database and an authorized admin session. A managed Android browser capture requires a provisioned test environment. An administrative device-management screen is not implemented.
+See the [capture ledger](assets/readme/SCREENSHOTS.md) for actual captures and blockers. A managed Android browser capture requires a provisioned test environment. The device and policy console views are exercised through the real local API in the Phase 09 browser suite.
 
 ## Security architecture
 

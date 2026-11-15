@@ -22,6 +22,7 @@ const definitions = {
   VPN_SUBNETS: Joi.string().max(2048).allow('').default(''),
   VPN_SOURCE_MODE: Joi.string().valid('tunnel', 'egress').default('tunnel'),
   VPN_EGRESS_IPS: Joi.string().max(2048).allow('').default(''),
+  VPN_PEER_STATUS_FILE: Joi.string().max(4096).allow('').default(''),
   SERVER_PUBLIC_IP: Joi.string().ip().default('127.0.0.1'),
   SERVER_VPN_IP: Joi.string().ip().default('10.8.0.1'),
   TRUST_PROXY_CIDRS: Joi.string().allow('').default(''),
@@ -48,6 +49,7 @@ function loadConfig(env = process.env) {
   if (error) throw new Error(`Invalid configuration keys: ${[...new Set(error.details.map(d => d.path[0]))].join(', ')}`);
   const config = Object.fromEntries(Object.keys(definitions).map(key => [key, value[key]]));
   const invalid = [];
+  if (config.VPN_PEER_STATUS_FILE && !path.isAbsolute(config.VPN_PEER_STATUS_FILE)) invalid.push('VPN_PEER_STATUS_FILE');
   const vpnSubnets = (config.VPN_SUBNETS || config.VPN_SUBNET).split(',').map(value => value.trim());
   const vpnEgressIps = config.VPN_EGRESS_IPS ? config.VPN_EGRESS_IPS.split(',').map(value => normalizeAddress(value.trim())) : [];
   if (vpnSubnets.length > 32 || vpnSubnets.some(value => {

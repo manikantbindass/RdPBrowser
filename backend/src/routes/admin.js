@@ -3,18 +3,23 @@ const router=require('express').Router();
 const { query,transaction }=require('../db/db');
 const { Joi,validate,id,pagination,wrap,fail }=require('../services/validation');
 const { audit }=require('../services/audit');
+const { managedUser }=require('../services/admin-roles');
 router.use((req,res,next) => ['admin','superadmin'].includes(req.user.role) ? next() : res.status(403).json({ error:'Admin access required' }));
+router.use((req,res,next) => { res.set('Cache-Control','no-store'); next(); });
+router.use(require('./console'));
 async function change(req,action,target,fn) {
-  return transaction(async () => { const result=await fn(); await audit(req,action,target); return result; });
+  return transaction(async () => { const result=await fn(); await audit(req,action,target || result?.id); return result; });
 }
 function affected(result) { if (!result.rowCount) fail(404,'Resource not found'); return result; }
 const validateId=req => validate(id.required(),req.params.id);
 // RLS and the tenant-required query service apply to every legacy query too.
 router.get('/sessions',wrap(async (req,res) => {
   const { limit,offset }=pagination(req);
-  const result=await query(`SELECT s.id,s.user_id,u.username,u.email,s.device_os,s.vpn_ip,s.public_ip,
+  const result=await query(`SELECT s.id,s.user_id,u.username,u.email,u.role,s.device_os,s.vpn_ip,s.public_ip,
     s.started_at,s.last_activity,s.expires_at,s.is_active FROM sessions s JOIN users u ON u.id=s.user_id
-    WHERE s.is_active=TRUE AND s.expires_at>NOW() ORDER BY s.last_activity DESC,s.id LIMIT $1 OFFSET $2`,[limit,offset]);
+    WHERE s.is_active AND s.expires_at>NOW() AND s.absolute_expires_at>NOW()
+    AND s.last_activity>NOW()-($3::int*INTERVAL '1 second')
+    ORDER BY s.last_activity DESC,s.id LIMIT $1 OFFSET $2`,[limit,offset,req.accessContext.policy.configuration.idleTimeoutSeconds]);
   res.json({ sessions:result.rows });
 }));
 router.post('/force-logout',wrap(async (req,res) => {
@@ -22,7 +27,7 @@ router.post('/force-logout',wrap(async (req,res) => {
   await change(req,'force_logout',userId || sessionId,async () => {
     let target=userId;
     if (sessionId) { const row=(await query('SELECT user_id FROM sessions WHERE id=$1',[sessionId])).rows[0]; if (!row) fail(404,'Resource not found'); target=row.user_id; }
-    affected(await query('SELECT id FROM users WHERE id=$1 FOR UPDATE',[target]));
+    await managedUser(req.user,target,true);
     await query(`UPDATE sessions SET is_active=FALSE,ended_at=NOW(),refresh_hash=NULL WHERE ${sessionId ? 'id' : 'user_id'}=$1`,[sessionId || userId]);
   });
   await req.app.get('io')?.emitToAdmins(req.user.organizationId,'session_terminated',{ userId,sessionId,by:req.user.sub });
@@ -65,13 +70,16 @@ router.patch('/anomalies/:id/resolve',wrap(async (req,res) => {
 }));
 router.get('/users',wrap(async (req,res) => {
   const { limit,offset }=pagination(req);
-  res.json({ users:(await query('SELECT id,username,email,role,is_active,is_locked,last_login,created_at FROM users ORDER BY created_at DESC,id LIMIT $1 OFFSET $2',[limit,offset])).rows });
+  const q=req.query.q===undefined ? null : validate(Joi.string().min(1).max(80),req.query.q);
+  res.json({ users:(await query(`SELECT id,username,email,role,is_active,is_locked,last_login,created_at FROM users
+    WHERE ($3::text IS NULL OR strpos(lower(username),lower($3))>0 OR strpos(lower(email),lower($3))>0)
+    ORDER BY created_at DESC,id LIMIT $1 OFFSET $2`,[limit,offset,q])).rows });
 }));
 router.patch('/users/:id/lock',wrap(async (req,res) => {
   const target=validateId(req);
   const { locked }=validate(Joi.object({ locked:Joi.boolean().required() }),req.body);
   await change(req,locked ? 'lock_user' : 'unlock_user',target,async () => {
-    affected(await query('SELECT id FROM users WHERE id=$1 FOR UPDATE',[target]));
+    await managedUser(req.user,target);
     await query('UPDATE users SET is_locked=$1 WHERE id=$2',[locked,target]);
     if (locked) await query('UPDATE sessions SET is_active=FALSE,ended_at=NOW(),refresh_hash=NULL WHERE user_id=$1',[target]);
   });
@@ -79,9 +87,12 @@ router.patch('/users/:id/lock',wrap(async (req,res) => {
 }));
 router.get('/stats',wrap(async (req,res) => {
   const [sessions,users,logs,alerts]=await Promise.all([
-    query('SELECT COUNT(*) FROM sessions WHERE is_active AND expires_at>NOW()'),query('SELECT COUNT(*) FROM users WHERE is_active'),
+    query(`SELECT COUNT(*) FROM sessions WHERE is_active AND expires_at>NOW() AND absolute_expires_at>NOW()
+      AND last_activity>NOW()-($1::int*INTERVAL '1 second')`,[req.accessContext.policy.configuration.idleTimeoutSeconds]),
+    query('SELECT COUNT(*) AS count,COUNT(*) FILTER (WHERE NOT is_locked) AS unlocked FROM users WHERE is_active'),
     query("SELECT COUNT(*) FROM ip_logs WHERE flagged AND created_at>NOW()-INTERVAL '24 hours'"),query('SELECT COUNT(*) FROM anomaly_alerts WHERE resolved=FALSE'),
   ]);
-  res.json({ activeSessions:Number(sessions.rows[0].count),totalUsers:Number(users.rows[0].count),flaggedLogs24h:Number(logs.rows[0].count),unresolvedAlerts:Number(alerts.rows[0].count) });
+  res.json({ activeSessions:Number(sessions.rows[0].count),totalUsers:Number(users.rows[0].count),unlockedUsers:Number(users.rows[0].unlocked),
+    flaggedLogs24h:Number(logs.rows[0].count),unresolvedAlerts:Number(alerts.rows[0].count) });
 }));
 module.exports=router;

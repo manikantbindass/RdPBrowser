@@ -17,4 +17,4 @@ function pagination(req) {
 }
 const wrap = fn => (req,res,next) => Promise.resolve().then(() => fn(req,res,next)).catch(next);
 function fail(status,message,code) { throw Object.assign(new Error(message),{ status,publicMessage:message,code }); }
-module.exports = { Joi,validate,id,userRegistration,pagination,wrap,fail };
+module.exports = { Joi,validate,id,password,userRegistration,pagination,wrap,fail };

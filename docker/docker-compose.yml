@@ -69,6 +69,7 @@ services:
       DB_RUNTIME_PASSWORD: ''
       OIDC_STATE_KEY: ${OIDC_STATE_KEY:-}
       OIDC_PROVIDERS_FILE: ${OIDC_PROVIDERS_FILE:-}
+      VPN_PEER_STATUS_FILE: ${VPN_PEER_STATUS_FILE:-}
     networks: [control, database]
     expose: ['3000']
     init: true

@@ -6,12 +6,13 @@ const { Joi,validate,id,userRegistration,pagination,wrap,fail }=require('../serv
 const { audit }=require('../services/audit');
 const { createUser }=require('./auth');
 const { evaluate }=require('../services/policy');
+const { managedUser }=require('../services/admin-roles');
 const admin=req => ['admin','superadmin'].includes(req.user.role);
 function requireAdmin(req) { if (!admin(req)) fail(403,'Admin access required'); }
 function resourceId(req) { return validate(id.required(),req.params.id); }
 function found(result) { if (!result.rows.length) fail(404,'Resource not found'); return result.rows[0]; }
 async function mutation(req,action,target,fn) {
-  return transaction(async () => { const result=await fn(); await audit(req,action,target); return result; });
+  return transaction(async () => { const result=await fn(); await audit(req,action,target || result?.id); return result; });
 }
 router.get('/organization',wrap(async (req,res) => {
   res.json({ organization:found(await query('SELECT id,name,is_active,created_at FROM organizations WHERE id=$1',[tenantId()])) });
@@ -42,7 +43,7 @@ router.delete('/devices/:id',wrap(async (req,res) => {
   await mutation(req,'device.revoke',deviceId,async () => {
     const device=found(await query(`SELECT * FROM devices WHERE id=$1 AND organization_id=$2
       AND ($3::uuid IS NULL OR user_id=$3) FOR UPDATE`,[deviceId,tenantId(),admin(req) ? null : req.user.sub]));
-    await query('SELECT id FROM users WHERE id=$1 FOR UPDATE',[device.user_id]);
+    await managedUser(req.user,device.user_id,true);
     await query("UPDATE devices SET status='revoked' WHERE id=$1",[deviceId]);
     await query("UPDATE devices SET trust_state='revoked',posture_valid_until=NULL WHERE id=$1",[deviceId]);
     await query('UPDATE sessions SET is_active=FALSE,ended_at=NOW(),refresh_hash=NULL WHERE user_id=$1 AND (device_id=$2 OR registered_device_id=$3)',[device.user_id,device.external_id,deviceId]);
@@ -63,36 +64,83 @@ router.delete('/sessions/:id',wrap(async (req,res) => {
   await mutation(req,'session.revoke',sessionId,async () => {
     const session=found(await query('SELECT user_id FROM sessions WHERE id=$1 AND organization_id=$2 AND ($3::uuid IS NULL OR user_id=$3)',
       [sessionId,tenantId(),admin(req) ? null : req.user.sub]));
-    await query('SELECT id FROM users WHERE id=$1 FOR UPDATE',[session.user_id]);
+    await managedUser(req.user,session.user_id,true);
     await query('UPDATE sessions SET is_active=FALSE,ended_at=NOW(),refresh_hash=NULL WHERE id=$1',[sessionId]);
   });
   res.json({ message:'Session terminated' });
 }));
 const pattern=Joi.string().min(1).max(500);
-const policySchema=Joi.object({ name:Joi.string().min(1).max(160).required(),rules:Joi.object({ deny:Joi.array().items(pattern).max(100).required(),allow:Joi.array().items(pattern).max(100).required() }).required(),isActive:Joi.boolean().default(true) });
-router.get('/policies',wrap(async (req,res) => {
+const assignmentSchema=Joi.object({
+  scope:Joi.string().valid('organization','users').required(),
+  userIds:Joi.array().items(id).unique().max(100).required()
+    .when('scope',{ is:'organization',then:Joi.array().length(0),otherwise:Joi.array().min(1) }),
+});
+const policySchema=Joi.object({ name:Joi.string().min(1).max(160).required(),rules:Joi.object({ deny:Joi.array().items(pattern).max(100).required(),allow:Joi.array().items(pattern).max(100).required() }).required(),isActive:Joi.boolean().default(true),
+  assignment:assignmentSchema });
+const organizationAssignment={ scope:'organization',userIds:[] };
+async function getAssignment(policyId, scope) {
+  if (scope==='organization') return organizationAssignment;
+  const { rows }=await query('SELECT user_id FROM policy_user_assignments WHERE policy_id=$1 ORDER BY user_id',[policyId]);
+  return { scope,userIds:rows.map(row => row.user_id) };
+}
+async function saveAssignment(policyId, assignment) {
+  if (assignment.userIds.length) {
+    const { rowCount }=await query('SELECT id FROM users WHERE id=ANY($1::uuid[])',[assignment.userIds]);
+    if (rowCount!==assignment.userIds.length) fail(400,'One or more assignment users are unavailable','ASSIGNMENT_USER_UNAVAILABLE');
+  }
+  await query('DELETE FROM policy_user_assignments WHERE policy_id=$1',[policyId]);
+  if (assignment.userIds.length) {
+    await query('INSERT INTO policy_user_assignments(policy_id,user_id) SELECT $1,unnest($2::uuid[])',[policyId,assignment.userIds]);
+  }
+}
+async function snapshot(req, policy, assignment) {
+  await query(`INSERT INTO policy_versions(policy_id,revision,name,rules,is_active,assignment,actor_id)
+    VALUES($1,$2,$3,$4,$5,$6,$7)`,[policy.id,policy.revision,policy.name,policy.rules,policy.is_active,assignment,req.user.sub]);
+  return { ...policy,assignment };
+}
+const listPolicies=wrap(async (req,res) => {
   const { limit,offset,page }=pagination(req);
-  const result=await query('SELECT id,name,revision,rules,is_active,created_at,updated_at FROM policies WHERE organization_id=$1 ORDER BY created_at DESC,id LIMIT $2 OFFSET $3',[tenantId(),limit,offset]);
+  const full=req.path==='/admin/policies';
+  if (full) requireAdmin(req);
+  const result=await query(`SELECT p.id,p.name,p.revision,p.rules,p.is_active,p.created_at,p.updated_at,
+      jsonb_build_object('scope',p.assignment_scope,'userIds',CASE WHEN $5 THEN COALESCE((
+        SELECT jsonb_agg(a.user_id ORDER BY a.user_id) FROM policy_user_assignments a WHERE a.policy_id=p.id
+      ),'[]'::jsonb) ELSE '[]'::jsonb END) AS assignment
+    FROM policies p WHERE p.organization_id=$1 AND ($5 OR p.assignment_scope='organization' OR EXISTS (
+      SELECT 1 FROM policy_user_assignments a WHERE a.policy_id=p.id AND a.user_id=$4
+    )) ORDER BY p.created_at DESC,p.id LIMIT $2 OFFSET $3`,[tenantId(),limit,offset,req.user.sub,full]);
   res.json({ policies:result.rows,page,limit });
-}));
+});
+router.get('/policies',listPolicies);
+router.get('/admin/policies',listPolicies);
 router.post('/policies',wrap(async (req,res) => {
   requireAdmin(req); const value=validate(policySchema,req.body);
-  const policy=await mutation(req,'policy.create',null,async () => found(await query('INSERT INTO policies(name,rules,is_active) VALUES($1,$2,$3) RETURNING *',[value.name,value.rules,value.isActive])));
+  const assignment=value.assignment || organizationAssignment;
+  const policy=await mutation(req,'policy.create',null,async () => {
+    const row=found(await query('INSERT INTO policies(name,rules,is_active,assignment_scope) VALUES($1,$2,$3,$4) RETURNING *',
+      [value.name,value.rules,value.isActive,assignment.scope]));
+    await saveAssignment(row.id,assignment);
+    return snapshot(req,row,assignment);
+  });
   res.status(201).json({ policy });
 }));
 router.put('/policies/:id',wrap(async (req,res) => {
   requireAdmin(req); const policyId=resourceId(req);
   const value=validate(policySchema.keys({ revision:Joi.number().integer().min(1).max(2147483646).required() }),req.body);
   const policy=await mutation(req,'policy.update',policyId,async () => {
-    const existing=found(await query('SELECT revision FROM policies WHERE id=$1 AND organization_id=$2 FOR UPDATE',[policyId,tenantId()]));
+    const existing=found(await query('SELECT revision,assignment_scope FROM policies WHERE id=$1 AND organization_id=$2 FOR UPDATE',[policyId,tenantId()]));
     if (existing.revision!==value.revision) fail(409,'Policy revision conflict');
-    return found(await query('UPDATE policies SET name=$1,rules=$2,is_active=$3,revision=revision+1,updated_at=NOW() WHERE id=$4 RETURNING *',[value.name,value.rules,value.isActive,policyId]));
+    const assignment=value.assignment || await getAssignment(policyId,existing.assignment_scope);
+    const row=found(await query('UPDATE policies SET name=$1,rules=$2,is_active=$3,assignment_scope=$4,revision=revision+1,updated_at=NOW() WHERE id=$5 RETURNING *',
+      [value.name,value.rules,value.isActive,assignment.scope,policyId]));
+    if (value.assignment) await saveAssignment(policyId,assignment);
+    return snapshot(req,row,assignment);
   });
   res.json({ policy });
 }));
 router.post('/policies/evaluate',wrap(async (req,res) => {
   const { url }=validate(Joi.object({ url:Joi.string().uri({ scheme:['http','https'] }).max(8192).required() }),req.body);
-  res.json(await evaluate(url));
+  res.json(await evaluate(url,req.user.sub));
 }));
 router.post('/events',wrap(async (req,res) => {
   const value=validate(Joi.object({ clientEventId:id.required(),deviceId:id, eventType:Joi.string().pattern(/^[a-z][a-z0-9_.-]{0,79}$/).required(),

@@ -12,7 +12,7 @@ function navigationCountry(req) {
 async function decision(req,res,navigate) {
   const url=navigate ? req.body.url : validate(Joi.string().uri({ scheme:['http','https'] }).max(8192).required(),req.query.url);
   const country=navigationCountry(req);
-  const result=await evaluate(url);
+  const result=await evaluate(url,req.user.sub);
   if (navigate) await transaction(async () => {
     // Do not persist URL credentials, query tokens or fragments in activity logs.
     const parsed=new URL(url); parsed.search=''; parsed.hash='';

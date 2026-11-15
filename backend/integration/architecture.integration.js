@@ -45,8 +45,14 @@ test('baseline migration preserves legacy rows, records checksums and is repeata
   await pool.query(readMigrations()[0].sql); // Existing unversioned installation.
   const hash = await bcrypt.hash('TestPassword1!', 4);
   const { rows } = await pool.query("INSERT INTO users(username,email,password_hash,role) VALUES ('phaseadmin','admin@test.invalid',$1,'admin') RETURNING id", [hash]);
-  const results = await Promise.all([migrate(pool), migrate(pool)]);
-  expect(results.flat()).toEqual(readMigrations().map(m => m.version));
+  const migrations=readMigrations();
+  const results = await Promise.all([migrate(pool,migrations.slice(0,3)), migrate(pool,migrations.slice(0,3))]);
+  expect(results.flat()).toEqual(migrations.slice(0,3).map(m => m.version));
+  const adoptedPolicy=(await pool.query(`INSERT INTO policies(organization_id,name,rules,revision)
+    VALUES($1,'Existing policy','{"deny":[],"allow":[]}',3) RETURNING id`,[DEFAULT_ORGANIZATION])).rows[0];
+  await migrate(pool);
+  expect((await pool.query('SELECT revision,assignment FROM policy_versions WHERE policy_id=$1',[adoptedPolicy.id])).rows[0])
+    .toEqual({revision:3,assignment:{scope:'organization',userIds:[]}});
   await provision(pool,{ role,password,schema });
   expect((await pool.query('SELECT username FROM users WHERE id=$1', [rows[0].id])).rows[0].username).toBe('phaseadmin');
   await verifyMigrations(pool);

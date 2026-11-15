@@ -3,6 +3,7 @@ const { Server } = require('socket.io');
 const { authenticateToken } = require('../middleware/auth');
 const { withTenant,uuid } = require('../db/tenant');
 const { query,transaction } = require('../db/db');
+const { managedUser } = require('../services/admin-roles');
 function authorize(socket, config, token,resource='realtime.connect') {
   return new Promise((resolve, reject) => {
     const req = { accessResource:resource,headers: { authorization: `Bearer ${token || ''}` }, app: { locals: { config } } };
@@ -53,8 +54,7 @@ function attachRealtime({ server, config, logger }) {
         const user = await authorize(socket, config, socket.handshake.auth?.token,'admin.manage');
         if (!socket.data.isAdmin || !['admin', 'superadmin'].includes(user.role)) throw new Error('Not admin');
         await withTenant(user.organizationId,() => transaction(async () => {
-          const target=await query('SELECT id FROM users WHERE id=$1 FOR UPDATE',[userId]);
-          if (!target.rows.length) throw new Error('Target not found');
+          await managedUser(user,userId,true);
           await query('UPDATE sessions SET is_active=FALSE,ended_at=NOW(),refresh_hash=NULL WHERE user_id=$1',[userId]);
           await query("INSERT INTO audit_log(actor_id,action,target) VALUES($1,'force_logout',$2)",[user.sub,userId]);
         }));

@@ -22,6 +22,7 @@ function resourceFor(req) {
   if (/\/auth\/status$/.test(path)) return 'device.enroll'; // Own-session bootstrap status, never a resource grant.
   if (/\/policies\/evaluate$/.test(path)) return 'browser.navigate';
   if (/\/(admin)(\/|$)/.test(path) || (req.method!=='GET' && /\/(users|policies)(\/|$)/.test(path))) return 'admin.manage';
+  if (req.method==='DELETE' && ['admin','superadmin'].includes(req.user?.role) && /\/(devices|sessions)\/[^/]+$/.test(path)) return 'admin.manage';
   if (/\/devices(\/|$)/.test(path)) return req.method==='POST' ? 'device.enroll' : 'session.manage';
   if (/\/events(\/|$)/.test(path)) return req.method==='GET' ? 'admin.manage' : 'events.ingest';
   if (/\/proxy(\/|$)/.test(path)) return 'browser.navigate';

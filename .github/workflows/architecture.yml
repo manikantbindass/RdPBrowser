@@ -39,3 +39,15 @@ jobs:
       - run: npm run test:integration
         env:
           INTEGRATION_DATABASE_URL: postgresql://remoteshield:ci_database_only@127.0.0.1:5432/remoteshield_phase02_test
+      - name: Console components and API client
+        working-directory: admin-dashboard
+        run: |
+          npm ci
+          npm test
+      - name: Console browser tests
+        working-directory: admin-dashboard
+        env:
+          INTEGRATION_DATABASE_URL: postgresql://remoteshield:ci_database_only@127.0.0.1:5432/remoteshield_phase02_test
+        run: |
+          npx playwright install --with-deps chromium
+          npm run test:browser

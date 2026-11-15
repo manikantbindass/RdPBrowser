@@ -11,7 +11,11 @@ const platforms={ type:'string',enum:['windows','linux','macos','android'] };
 const severity={ type:'string',enum:['low','medium','high','critical'] };
 const registration=object({ username:{ ...string(80,3),pattern:'^[a-zA-Z0-9]+$' },email:{ type:'string',format:'email',maxLength:255 },
   password:{ ...string(72,12),pattern:'^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])',description:'At most 72 UTF-8 bytes; no bcrypt truncation.' },deviceId:string(255) },['username','email','password']);
-const policy=object({ name:string(160),rules:object({ deny:{ type:'array',maxItems:100,items:string(500) },allow:{ type:'array',maxItems:100,items:string(500) } }),isActive:{ type:'boolean',default:true } },['name','rules']);
+const assignment={ oneOf:[
+  object({ scope:{const:'organization'},userIds:{type:'array',maxItems:0,items:uuid} }),
+  object({ scope:{const:'users'},userIds:{type:'array',minItems:1,maxItems:100,uniqueItems:true,items:uuid} }),
+] };
+const policy=object({ name:string(160),rules:object({ deny:{ type:'array',maxItems:100,items:string(500) },allow:{ type:'array',maxItems:100,items:string(500) } }),isActive:{ type:'boolean',default:true },assignment },['name','rules']);
 const schema={
   Error:require('../contracts/http.schema.json').$defs.apiError,
   Registration:registration,
@@ -65,6 +69,19 @@ operation('put','/admin/access-policy','Replace access policy using expected rev
 operation('post','/admin/identity-links','Link a preexisting local user to exact operator-configured issuer/subject',{ admin:true,status:201,input:object({ userId:uuid,providerId:string(64),subject:string(255) }) });
 operation('delete','/admin/identity-links/{id}','Unlink identity and revoke enterprise sessions',{ admin:true });
 operation('get','/admin/access-decisions','List server-owned organization authorization decisions',{ admin:true,list:true });
+operation('get','/admin/audit-log','List tenant audit records with an optional exact action code',{ admin:true,list:true,filters:{action:string(100)} });
+operation('get','/admin/security-summary','Seven UTC days of recorded server denials and client reports',{ admin:true,output:object({
+  days:{type:'array',minItems:7,maxItems:7,items:object({day:{type:'string',format:'date'},denials:{type:'integer',minimum:0},reports:{type:'integer',minimum:0}})},
+}) });
+operation('get','/admin/network-health','Current console source admission and recent tenant URL source observations',{ admin:true });
+operation('get','/admin/devices','List enrolled device metadata and public-key presence',{ admin:true,list:true,filters:{status:{enum:['registered','revoked']}} });
+operation('get','/admin/policies','List all organization URL policies and their assignments',{ admin:true,list:true });
+operation('get','/admin/policies/{id}/versions','List append-only policy and assignment revisions',{ admin:true,list:true });
+operation('patch','/admin/users/{id}/role','Superadmin changes a lower role and revokes sessions',{ admin:true,input:object({role:{enum:['user','admin']}}) });
+operation('get','/admin/account','Read own administrator profile and session details',{ admin:true });
+operation('put','/admin/account/password','Verify the current password, change it and revoke all own sessions',{ admin:true,input:object({
+  currentPassword:string(72),newPassword:registration.properties.password,
+}) });
 operation('post','/access/evaluate','Evaluate a server-defined resource with live identity/session/device context',{ input:object({ resource:{ enum:['auth.login','session.terminate','device.enroll','session.manage','browser.navigate','events.ingest','admin.manage','realtime.connect'] } }) });
 operation('post','/devices/{id}/key','Enroll an immutable owner P-256 public key; unknown trust until admin approval',{ status:201,input:object({ publicKey:object({ kty:{ const:'EC' },crv:{ const:'P-256' },x:{ type:'string',pattern:'^[A-Za-z0-9_-]{43}$' },y:{ type:'string',pattern:'^[A-Za-z0-9_-]{43}$' } }) }) });
 operation('post','/devices/{id}/challenge','Issue session-bound one-use five-minute device possession challenge',{ status:201 });
@@ -94,7 +111,8 @@ operation('post','/events','Ingest untrusted client event; idempotent per user/c
 operation('get','/events','List organization security events',{ admin:true,list:true,filters:{ severity,eventType:{ type:'string',pattern:'^[a-z][a-z0-9_.-]{0,79}$' } } });
 operation('post','/proxy/navigate','Legacy navigation decision and activity record',{ input:'Evaluation' });
 operation('get','/proxy/check','Legacy URL decision with identical policy semantics',{ filters:{ url:{ type:'string',format:'uri',maxLength:8192 } } });
-for (const route of ['sessions','users','blocked-urls','anomalies']) operation('get',`/admin/${route}`,`Legacy tenant ${route}`,{ admin:true,list:true });
+for (const route of ['sessions','blocked-urls','anomalies']) operation('get',`/admin/${route}`,`Legacy tenant ${route}`,{ admin:true,list:true });
+operation('get','/admin/users','Search organization users by literal name or email substring',{ admin:true,list:true,filters:{q:string(80)} });
 operation('get','/admin/ip-logs','Tenant activity logs',{ admin:true,list:true,filters:{ flagged:{ type:'boolean' } } });
 operation('get','/admin/stats','Tenant dashboard counts',{ admin:true });
 operation('post','/admin/force-logout','Revoke sessions atomically with audit',{ admin:true,input:{ ...object({ userId:uuid,sessionId:uuid },[]),oneOf:[{ required:['userId'],not:{ required:['sessionId'] } },{ required:['sessionId'],not:{ required:['userId'] } }] } });

@@ -1,5 +1,9 @@
 # Phase 01 verified feature inventory
 
+## Phase 09 admin console update
+
+The responsive console integrates organization, user, device, session, policy, event, audit and alert APIs with explicit data states. Migration 004 adds user policy assignments and append-only revision snapshots. Local PostgreSQL and Chromium acceptance cover role boundaries, actions, tenant isolation and accessibility checks. See the [Phase 09 report](PHASE09_REPORT.md) and [console operations](ADMIN_CONSOLE.md).
+
 ## Phase 08 network update
 
 The Linux gateway provisions and revokes per-device WireGuard peers and applies scoped dual-stack forwarding and DNS policy. The independent Linux client firewall remains active after tunnel teardown. The backend verifies the source of each protected request in tunnel-subnet or dedicated-egress mode. The production Compose files passed isolated TLS, DNS, source address and peer recovery checks. See [network operations](NETWORK_PROTECTION.md) and the [Phase 08 report](PHASE08_REPORT.md) for tested scope.
