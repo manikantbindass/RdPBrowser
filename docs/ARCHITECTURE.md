@@ -1,5 +1,7 @@
 # RemoteShield X architecture
 
+Phase 11 keeps OIDC, directory provisioning, access reviews and evidence exports in the existing PostgreSQL-backed control plane. A separately bound optional TLS listener exposes only the SCIM prefix. The console continues through the control boundary. Owner-only organization lifecycle commands use explicit tenant criteria. [ADR 0007](adr/0007-directory-governance.md)
+
 Phase 10 adds a deterministic detection boundary within the same deployable: HTTP observations → tenant-scoped minimal signals → bounded versioned worker → deduplicated incidents/evidence → authorized review and manual response. It does not participate in packet forwarding. PostgreSQL transactions, advisory locks, RLS and append-only runtime grants define persistence boundaries. See [ADR 0006](adr/0006-deterministic-detection.md) and [detection flows, APIs and limitations](DETECTION_AND_RESPONSE.md).
 
 Phase 02 established the modular control plane. Phase 04 adds tenant-aware persistence, RLS, lifecycle transactions and enterprise REST interfaces within the same Node/Express deployable and PostgreSQL database. No broker, Redis, Kubernetes or microservice split is introduced. Current backend verification/limits are in PHASE04_REPORT.md; the Phase 01 audit remains historical evidence.

@@ -2,10 +2,10 @@ name: Network packet checks
 on:
   pull_request:
     branches: [main]
-    paths: ['vpn-server/**', 'nginx/nginx.conf.template', '.github/workflows/network.yml']
+    paths: ['vpn-server/**', 'nginx/*.template', 'scripts/test-scim-edge.sh', '.github/workflows/network.yml']
   push:
     branches: [codex/remoteshield-enterprise-completion]
-    paths: ['vpn-server/**', 'nginx/nginx.conf.template', '.github/workflows/network.yml']
+    paths: ['vpn-server/**', 'nginx/*.template', 'scripts/test-scim-edge.sh', '.github/workflows/network.yml']
 permissions:
   contents: read
 jobs:
@@ -18,3 +18,4 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y wireguard-tools nftables unbound dnsutils tcpdump nginx openssl
       - run: sudo bash vpn-server/tests/lab.sh
+      - run: sudo bash scripts/test-scim-edge.sh

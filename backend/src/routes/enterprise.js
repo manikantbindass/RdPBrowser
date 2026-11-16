@@ -71,15 +71,17 @@ router.delete('/sessions/:id',wrap(async (req,res) => {
 }));
 const pattern=Joi.string().min(1).max(500);
 const assignmentSchema=Joi.object({
-  scope:Joi.string().valid('organization','users').required(),
+  scope:Joi.string().valid('organization','users','groups').required(),
   userIds:Joi.array().items(id).unique().max(100).required()
-    .when('scope',{ is:'organization',then:Joi.array().length(0),otherwise:Joi.array().min(1) }),
+    .when('scope',{ is:'users',then:Joi.array().min(1),otherwise:Joi.array().length(0) }),
+  groupIds:Joi.array().items(id).unique().max(100).when('scope',{ is:'groups',then:Joi.array().min(1).required(),otherwise:Joi.array().length(0) }),
 });
 const policySchema=Joi.object({ name:Joi.string().min(1).max(160).required(),rules:Joi.object({ deny:Joi.array().items(pattern).max(100).required(),allow:Joi.array().items(pattern).max(100).required() }).required(),isActive:Joi.boolean().default(true),
   assignment:assignmentSchema });
 const organizationAssignment={ scope:'organization',userIds:[] };
 async function getAssignment(policyId, scope) {
   if (scope==='organization') return organizationAssignment;
+  if (scope==='groups') return { scope,userIds:[],groupIds:(await query('SELECT group_id FROM policy_group_assignments WHERE policy_id=$1 ORDER BY group_id',[policyId])).rows.map(r=>r.group_id) };
   const { rows }=await query('SELECT user_id FROM policy_user_assignments WHERE policy_id=$1 ORDER BY user_id',[policyId]);
   return { scope,userIds:rows.map(row => row.user_id) };
 }
@@ -89,8 +91,14 @@ async function saveAssignment(policyId, assignment) {
     if (rowCount!==assignment.userIds.length) fail(400,'One or more assignment users are unavailable','ASSIGNMENT_USER_UNAVAILABLE');
   }
   await query('DELETE FROM policy_user_assignments WHERE policy_id=$1',[policyId]);
+  await query('DELETE FROM policy_group_assignments WHERE policy_id=$1',[policyId]);
   if (assignment.userIds.length) {
     await query('INSERT INTO policy_user_assignments(policy_id,user_id) SELECT $1,unnest($2::uuid[])',[policyId,assignment.userIds]);
+  }
+  if (assignment.scope==='groups') {
+    const groups=await query('SELECT g.id FROM directory_groups g JOIN directory_connections d ON d.id=g.directory_id AND d.organization_id=g.organization_id WHERE g.id=ANY($1::uuid[]) AND NOT g.is_deleted AND d.is_active',[assignment.groupIds]);
+    if (groups.rowCount!==assignment.groupIds.length) fail(400,'One or more assignment groups are unavailable','ASSIGNMENT_GROUP_UNAVAILABLE');
+    await query('INSERT INTO policy_group_assignments(policy_id,group_id) SELECT $1,unnest($2::uuid[])',[policyId,assignment.groupIds]);
   }
 }
 async function snapshot(req, policy, assignment) {
@@ -105,9 +113,13 @@ const listPolicies=wrap(async (req,res) => {
   const result=await query(`SELECT p.id,p.name,p.revision,p.rules,p.is_active,p.created_at,p.updated_at,
       jsonb_build_object('scope',p.assignment_scope,'userIds',CASE WHEN $5 THEN COALESCE((
         SELECT jsonb_agg(a.user_id ORDER BY a.user_id) FROM policy_user_assignments a WHERE a.policy_id=p.id
-      ),'[]'::jsonb) ELSE '[]'::jsonb END) AS assignment
+      ),'[]'::jsonb) ELSE '[]'::jsonb END) || CASE WHEN p.assignment_scope='groups' THEN
+        jsonb_build_object('groupIds',CASE WHEN $5 THEN COALESCE((SELECT jsonb_agg(a.group_id ORDER BY a.group_id) FROM policy_group_assignments a WHERE a.policy_id=p.id),'[]'::jsonb) ELSE '[]'::jsonb END)
+        ELSE '{}'::jsonb END AS assignment
     FROM policies p WHERE p.organization_id=$1 AND ($5 OR p.assignment_scope='organization' OR EXISTS (
       SELECT 1 FROM policy_user_assignments a WHERE a.policy_id=p.id AND a.user_id=$4
+    ) OR EXISTS (SELECT 1 FROM policy_group_assignments a JOIN directory_members m ON m.group_id=a.group_id AND m.organization_id=a.organization_id JOIN directory_groups g ON g.id=m.group_id AND g.organization_id=m.organization_id
+      WHERE a.policy_id=p.id AND m.user_id=$4 AND NOT g.is_deleted
     )) ORDER BY p.created_at DESC,p.id LIMIT $2 OFFSET $3`,[tenantId(),limit,offset,req.user.sub,full]);
   res.json({ policies:result.rows,page,limit });
 });

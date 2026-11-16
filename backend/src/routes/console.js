@@ -6,6 +6,7 @@ const router = require('express').Router();
 const { query, transaction } = require('../db/db');
 const { Joi, validate, id, password, pagination, wrap, fail } = require('../services/validation');
 const { audit } = require('../services/audit');
+const { change } = require('../services/governance-change');
 const { managedUser } = require('../services/admin-roles');
 const { gatewayHealth } = require('../services/gateway-snapshot');
 
@@ -48,10 +49,11 @@ router.patch('/users/:id/role', wrap(async (req, res) => {
   const { role } = validate(Joi.object({ role: Joi.string().valid('user', 'admin').required() }), req.body);
   await transaction(async () => {
     const user = await managedUser(req.user, userId);
+    if (user.directory_id) fail(409,'Directory-managed roles require a group mapping','DIRECTORY_MANAGED_ROLE');
     if (user.role === role) return;
     await query('UPDATE users SET role=$1 WHERE id=$2', [role, userId]);
     await query('UPDATE sessions SET is_active=FALSE,ended_at=NOW(),refresh_hash=NULL WHERE user_id=$1 AND is_active', [userId]);
-    await audit(req, `user.role_${role}`, userId);
+    await change(req, `user.role_${role}`, userId, { role:user.role }, { role });
   });
   res.json({ message: 'Role updated', role });
 }));
@@ -60,7 +62,7 @@ router.get('/audit-log', wrap(async (req, res) => {
   const { limit, offset, page } = pagination(req);
   const action = req.query.action === undefined ? null :
     validate(Joi.string().pattern(/^[a-z][a-z0-9_.]{0,99}$/), req.query.action);
-  const { rows } = await query(`SELECT a.id,a.actor_id,u.username AS actor,a.action,a.target,a.request_id,a.created_at
+  const { rows } = await query(`SELECT a.id,a.actor_id,u.username AS actor,a.actor_kind,a.provisioning_credential_id,a.action,a.target,a.request_id,a.created_at
     FROM audit_log a LEFT JOIN users u ON u.id=a.actor_id AND u.organization_id=a.organization_id
     WHERE ($1::text IS NULL OR a.action=$1) ORDER BY a.created_at DESC,a.id LIMIT $2 OFFSET $3`, [action, limit, offset]);
   res.json({ entries: rows, page, limit });

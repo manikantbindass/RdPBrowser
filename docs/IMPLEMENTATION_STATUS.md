@@ -1,5 +1,9 @@
 # Phase 01 verified feature inventory
 
+## Phase 11 enterprise governance update
+
+Migration 006 adds scoped directory credentials, SCIM users/groups, group roles and URL policy assignment, provider activation and console SSO, access reviews, audited evidence exports, device posture and operator organization lifecycle. Local signed protocol fixtures, PostgreSQL, Chrome and isolated ingress verification cover the implemented boundaries. Live provider acceptance and deployed governance processes remain open. [Phase 11 report](PHASE11_REPORT.md) · [Integration setup](ENTERPRISE_GOVERNANCE.md)
+
 ## Phase 10 detection and response update
 
 Versioned deterministic rules now consume tenant-scoped observations for password failures, token reuse, session sources, asserted device changes, server policy denials, request volume and selected untrusted VPN reports. Migration 005 adds atomic incident deduplication, consumed evidence, worker health and append-only review history. The console provides severity/confidence filters, explanations, evidence, revision-checked review, manual session termination/account lock and live-authorized in-app notifications. Collection remains explicitly disabled by default. No production ML accuracy, automatic native VPN telemetry or complete traffic inspection is claimed. See [operations and evaluation](DETECTION_AND_RESPONSE.md) and [Phase 10 evidence](PHASE10_REPORT.md).

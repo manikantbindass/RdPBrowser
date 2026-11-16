@@ -8,6 +8,8 @@ router.use((req,res,next) => ['admin','superadmin'].includes(req.user.role) ? ne
 router.use((req,res,next) => { res.set('Cache-Control','no-store'); next(); });
 router.use(require('./console'));
 router.use(require('./detection'));
+router.use(require('./integrations'));
+router.use(require('./governance'));
 async function change(req,action,target,fn) {
   return transaction(async () => { const result=await fn(); await audit(req,action,target || result?.id); return result; });
 }

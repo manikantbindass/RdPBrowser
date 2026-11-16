@@ -51,6 +51,7 @@ function decide({ user,session,device,resource,policy,now=Date.now(),login=false
   // A live session may always terminate itself, even after policy tightening.
   if (resource==='session.terminate') return { allowed:true,reason:'SELF_TERMINATION',resource,sensitivity };
   if (!policy.allowedAuthMethods.includes(session.authentication_method)) return deny('AUTH_METHOD_DENIED');
+  if (session.authentication_method==='password' && user.password_auth_enabled===false) return deny('PASSWORD_AUTH_DISABLED');
   if ((policy.requireMfa || (sensitivity==='high' && policy.highSensitivityRequireMfa)) &&
       (!session.mfa_verified || session.authentication_method!=='oidc' || now-new Date(session.authenticated_at).getTime()>policy.maxMfaAgeSeconds*1000)) return deny('MFA_REQUIRED');
   if (device && (device.user_id!==user.id || device.organization_id!==user.organization_id)) return deny('DEVICE_OWNER_MISMATCH');

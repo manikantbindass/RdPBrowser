@@ -1,0 +1,31 @@
+# Dedicated public SCIM ingress. Deliberately excludes admin, OIDC, API and WebSocket paths.
+upstream scim_control { server backend:3000; }
+server {
+    listen 127.0.0.1:80;
+    access_log off;
+    location = /health { return 204; }
+    location / { return 404; }
+}
+server {
+    listen 443 ssl;
+    server_name ${SCIM_DOMAIN};
+    server_tokens off;
+    ssl_certificate /etc/nginx/certs/tls.crt;
+    ssl_certificate_key /etc/nginx/certs/tls.key;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    client_max_body_size 32k;
+    access_log off;
+    error_log /dev/stderr crit;
+    add_header Strict-Transport-Security "max-age=31536000" always;
+    add_header X-Content-Type-Options nosniff always;
+    location ^~ /scim/v2/ {
+        proxy_pass http://scim_control;
+        proxy_set_header Host ${SCIM_DOMAIN};
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Forwarded-Host ${SCIM_DOMAIN};
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header Authorization $http_authorization;
+        proxy_read_timeout 20s;
+    }
+    location / { return 404; }
+}

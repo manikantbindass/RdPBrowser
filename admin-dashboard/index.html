@@ -41,6 +41,10 @@
         <details><summary>Choose an organization</summary><label>Organization ID <input name="organizationId" autocomplete="off" maxlength="36"></label></details>
         <p id="login-message" class="message" role="alert" hidden></p>
         <button class="btn primary" type="submit">Sign in <svg class="icon" aria-hidden="true"><use href="#i-arrow"></use></svg></button>
+          <details><summary>Enterprise SSO</summary>
+            <label>Configured provider ID <input name="provider" autocomplete="off" maxlength="64" spellcheck="false"></label>
+            <button class="btn" id="sso-start" type="button">Continue with SSO</button>
+          </details>
       </form>
     </div>
   </section>
@@ -63,6 +67,8 @@
         <a href="#events" data-page="events"><svg class="icon" aria-hidden="true"><use href="#i-pulse"></use></svg>Security events</a>
         <a href="#audit" data-page="audit"><svg class="icon" aria-hidden="true"><use href="#i-audit"></use></svg>Audit log</a>
         <a href="#alerts" data-page="alerts"><svg class="icon" aria-hidden="true"><use href="#i-alert"></use></svg>Risk &amp; alerts</a>
+        <a href="#integrations" data-page="integrations"><svg class="icon" aria-hidden="true"><use href="#i-network"></use></svg>Integrations</a>
+        <a href="#governance" data-page="governance"><svg class="icon" aria-hidden="true"><use href="#i-audit"></use></svg>Governance</a>
         <p class="nav-label">Preferences</p>
         <a href="#account" data-page="account"><svg class="icon" aria-hidden="true"><use href="#i-settings"></use></svg>Account settings</a>
       </nav>

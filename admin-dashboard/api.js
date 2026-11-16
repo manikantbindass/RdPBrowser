@@ -60,6 +60,13 @@ export function createApi(fetcher = globalThis.fetch) {
       if (version === epoch) session = next;
       return next.user;
     },
+    async finishSso(provider) {
+      clear();
+      const version = epoch;
+      const next = await send('/auth/oidc/' + encodeURIComponent(provider) + '/console-session', { method: 'POST' });
+      if (version === epoch) session = next;
+      return next.user;
+    },
     async logout() {
       try { if (session) await request('/auth/logout', { method: 'POST' }); }
       finally { clear(); }

@@ -14,6 +14,8 @@ const pages = {
   events: ['Security events', 'Explore client reports and server-recorded URL activity.'],
   audit: ['Audit log', 'Review administrative actions and authorization decisions.'],
   alerts: ['Risk & alerts', 'Triage unresolved anomalies reported for this organization.'],
+  integrations: ['Integrations', 'Review SSO configuration and manage directory provisioning.'],
+  governance: ['Governance', 'Review access, device posture and administrative evidence.'],
   account: ['Account settings', 'Review your administrator profile and session.'],
 };
 let active = 'overview';
@@ -102,23 +104,42 @@ async function signIn(event) {
   message('login-message', '');
   try {
     await api.login({ username: username.trim(), password, ...(organizationId.trim() && { organizationId: organizationId.trim() }) });
-    const { account } = await api.request('/admin/account');
-    const { organization } = await api.request('/organization');
-    identity = account;
-    $('account-name').textContent = account.username;
-    $('account-role').textContent = account.role === 'superadmin' ? 'Superadmin' : 'Administrator';
-    $('avatar').textContent = account.username.slice(0, 2).toUpperCase();
-    $('org-name').textContent = organization.name;
-    $('sign-in').hidden = true;
-    $('console').hidden = false;
-    // Clear login inputs before authenticated views can receive focus.
-    form.reset();
-    setPage(readLocation(), true);
+    await openConsole();
   } catch (error) {
     if (api.token()) await api.logout().catch(() => {});
     message('login-message', error.status === 403 ? 'Administrator access is required. ' + describe(error) : describe(error), 'danger');
   } finally {
     form.querySelector('[type=submit]').disabled = false;
+    delete form.dataset.pending;
+  }
+}
+async function openConsole() {
+  const [{ account }, { organization }] = await Promise.all([api.request('/admin/account'), api.request('/organization')]);
+  identity = account;
+  $('account-name').textContent = account.username;
+  $('account-role').textContent = account.role === 'superadmin' ? 'Superadmin' : 'Administrator';
+  $('avatar').textContent = account.username.slice(0, 2).toUpperCase();
+  $('org-name').textContent = organization.name;
+  $('sign-in').hidden = true;
+  $('console').hidden = false;
+  $('login').reset();
+  setPage(readLocation(), true);
+}
+async function finishSso() {
+  const provider = /^#sso=([a-z][a-z0-9-]{0,63})$/.exec(location.hash)?.[1];
+  if (!provider) return;
+  history.replaceState(null, '', location.pathname);
+  const form = $('login');
+  form.dataset.pending = 'true';
+  form.querySelector('[type=submit]').disabled = true;
+  $('sso-start').disabled = true;
+  try { await api.finishSso(provider); await openConsole(); }
+  catch (error) {
+    if (api.token()) await api.logout().catch(() => {});
+    message('login-message', 'Enterprise sign-in failed. ' + describe(error), 'danger');
+  } finally {
+    form.querySelector('[type=submit]').disabled = false;
+    $('sso-start').disabled = false;
     delete form.dataset.pending;
   }
 }
@@ -228,6 +249,11 @@ $('dialog').addEventListener('close', () => {
 $('dialog-close').addEventListener('click', () => $('dialog').close());
 $('dialog-cancel').addEventListener('click', () => $('dialog').close());
 $('login').addEventListener('submit', signIn);
+$('sso-start').addEventListener('click', () => {
+  const provider = $('login').elements.provider.value.trim();
+  if (!/^[a-z][a-z0-9-]{0,63}$/.test(provider)) return message('login-message', 'Enter your configured provider ID.', 'danger');
+  location.assign('/api/v1/auth/oidc/' + provider + '/start?return=console');
+});
 $('refresh').addEventListener('click', () => { message('notification', ''); load(); });
 $('logout').addEventListener('click', async () => {
   const control = $('logout');
@@ -244,3 +270,4 @@ window.addEventListener('hashchange', () => {
   if (window.location.hash !== '#main') setPage(readLocation(), true);
 });
 setInterval(() => { if (['overview', 'sessions', 'alerts'].includes(active)) refreshInBackground(); }, 90000);
+finishSso();

@@ -23,6 +23,8 @@ async function provision(pool,{ role='remoteshield_app',password,schema='public'
     await client.query(`REVOKE DELETE,UPDATE ON "${schema}".access_decisions FROM "${role}"`);
     await client.query(`REVOKE DELETE,UPDATE ON "${schema}".policy_versions FROM "${role}"`);
     await client.query(`REVOKE DELETE,UPDATE ON "${schema}".detection_evidence,"${schema}".incident_reviews FROM "${role}"`);
+    await client.query(`REVOKE DELETE,UPDATE ON "${schema}".governance_changes,"${schema}".evidence_exports FROM "${role}"`);
+    await client.query(`REVOKE DELETE,UPDATE ON "${schema}".access_review_decisions FROM "${role}"`);
     await client.query('COMMIT');
   } catch (err) { await client.query('ROLLBACK'); throw err; }
   finally { client.release(); }

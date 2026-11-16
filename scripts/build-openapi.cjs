@@ -14,6 +14,7 @@ const registration=object({ username:{ ...string(80,3),pattern:'^[a-zA-Z0-9]+$' 
 const assignment={ oneOf:[
   object({ scope:{const:'organization'},userIds:{type:'array',maxItems:0,items:uuid} }),
   object({ scope:{const:'users'},userIds:{type:'array',minItems:1,maxItems:100,uniqueItems:true,items:uuid} }),
+  object({ scope:{const:'groups'},userIds:{type:'array',maxItems:0,items:uuid},groupIds:{type:'array',minItems:1,maxItems:100,uniqueItems:true,items:uuid} }),
 ] };
 const policy=object({ name:string(160),rules:object({ deny:{ type:'array',maxItems:100,items:string(500) },allow:{ type:'array',maxItems:100,items:string(500) } }),isActive:{ type:'boolean',default:true },assignment },['name','rules']);
 const schema={
@@ -89,6 +90,7 @@ operation('post','/devices/{id}/proof','Prove ECDSA-SHA256-DER key possession; t
 operation('patch','/admin/devices/{id}/trust','Update posture trust; revoked devices cannot be restored',{ admin:true,input:object({ trustState:{ enum:['unknown','approved','quarantined','revoked'] },validForSeconds:{ type:'integer',minimum:60,maximum:86400 },reason:{ enum:['operator_verified','noncompliant','compromised','review_required'] } },['trustState','reason']) });
 operation('get','/auth/oidc/{provider}/start','Start browser-bound confidential OIDC authorization code flow',{ publicRoute:true,status:303 });
 doc.paths['/auth/oidc/{provider}/start'].get.parameters=[{ name:'provider',in:'path',required:true,schema:{ type:'string',pattern:'^[a-z][a-z0-9-]{0,63}$' } }];
+doc.paths['/auth/oidc/{provider}/start'].get.parameters.push({ name:'return',in:'query',schema:{ const:'console' } });
 doc.paths['/auth/oidc/{provider}/start'].get.responses['303']={ description:'Redirect to configured IdP; sets Secure/HttpOnly/SameSite=Lax browser-binding cookie. No tokens in URL.',headers:{ Location:{ schema:{ type:'string',format:'uri' } } } };
 operation('get','/auth/oidc/{provider}/callback','Consume one-use state/code and issue local tokens only for an explicit identity link',{ publicRoute:true,output:ref('SessionResult') });
 doc.paths['/auth/oidc/{provider}/callback'].get.parameters=[{ name:'provider',in:'path',required:true,schema:{ type:'string',pattern:'^[a-z][a-z0-9-]{0,63}$' } },
@@ -97,6 +99,10 @@ doc.paths['/auth/oidc/{provider}/callback'].get.parameters=[{ name:'provider',in
   { name:'code',in:'query',schema:{ type:'string',maxLength:4096 },description:'Exactly one of code/error is required. Browser-binding cookie is required.' },
   { name:'error',in:'query',schema:{ type:'string',maxLength:100 } },{ name:'error_description',in:'query',schema:{ type:'string',maxLength:1000 } },
   { name:'iss',in:'query',schema:{ type:'string',format:'uri',maxLength:2048 } },{ name:'session_state',in:'query',schema:{ type:'string',maxLength:2048 } }];
+doc.paths['/auth/oidc/{provider}/callback'].get.responses['303']={ description:'Console request only. Sets a secure one-use handoff cookie and redirects to the same-origin console without tokens.' };
+operation('post','/auth/oidc/{provider}/console-session','Exchange the one-use console handoff bound to the configured origin',{publicRoute:true,output:ref('SessionResult')});
+doc.paths['/auth/oidc/{provider}/console-session'].post.parameters=[{name:'provider',in:'path',required:true,schema:string(64)},
+  {name:'Origin',in:'header',required:true,schema:string(2048)},{name:'__Host-rsx_console',in:'cookie',required:true,schema:string(43)}];
 operation('post','/users','Register an ordinary user in the admin organization',{ input:'Registration',admin:true,status:201 });
 operation('get','/devices','List own devices; admins list organization devices',{ list:true,filters:{ status:{ enum:['registered','revoked'] } } });
 operation('post','/devices','Register own device; this is not device attestation',{ input:'DeviceRegistration',status:201 });
@@ -130,6 +136,61 @@ operation('delete','/admin/blocked-urls/{id}','Deactivate legacy deny rule',{ ad
 operation('patch','/admin/anomalies/{id}/resolve','Resolve tenant anomaly',{ admin:true });
 operation('patch','/admin/users/{id}/lock','Lock user and revoke sessions; unlock never revives old sessions',{ admin:true,input:object({ locked:{ type:'boolean' } }) });
 operation('get','/laila/search','Public external search adapter',{ publicRoute:true,filters:{ q:{ type:'string',minLength:1,maxLength:500 } } });
+const adminOnly={admin:true};
+const dateTime={type:'string',format:'date-time'};
+const providerId={type:'string',pattern:'^[a-z][a-z0-9-]{0,63}$'};
+operation('get','/admin/integrations/oidc','List sanitized tenant identity-provider configuration and activation state',adminOnly);
+operation('post','/admin/integrations/oidc/{provider}/validate','Superadmin validates discovery metadata for the configured provider',adminOnly);
+operation('put','/admin/integrations/oidc/{provider}/state','Superadmin activates or disables a provider using its revision',{...adminOnly,input:object({revision:{type:'integer',minimum:0},enabled:{type:'boolean'}})});
+for (const [path,method] of [['validate','post'],['state','put']]) doc.paths['/admin/integrations/oidc/{provider}/'+path][method].parameters=[{name:'provider',in:'path',required:true,schema:providerId}];
+operation('get','/admin/integrations/directories','List tenant directory connections and SCIM base location',{...adminOnly,list:true});
+operation('post','/admin/integrations/directories','Superadmin creates a directory connection',{...adminOnly,status:201,input:object({name:string(160),providerId,ssoLinking:{type:'boolean'}},['name'])});
+operation('patch','/admin/integrations/directories/{id}','Superadmin updates directory state and revokes access on disable',{...adminOnly,input:object({revision:incidentRevision,name:string(160),isActive:{type:'boolean'},ssoLinking:{type:'boolean'}})});
+operation('get','/admin/integrations/directories/{id}/credentials','List provisioning credential metadata without secrets',{...adminOnly,list:true});
+operation('post','/admin/integrations/directories/{id}/credentials','Superadmin issues a provisioning credential and sees the secret once',{...adminOnly,status:201,input:object({expiresInDays:{type:'integer',minimum:1,maximum:365}})});
+operation('delete','/admin/integrations/credentials/{id}','Superadmin revokes a provisioning credential',adminOnly);
+operation('get','/admin/integrations/groups','List managed directory groups',{...adminOnly,list:true,filters:{directoryId:uuid}});
+operation('patch','/admin/integrations/groups/{id}/mapping','Superadmin maps a group to user or admin and revokes affected sessions',{...adminOnly,input:object({revision:incidentRevision,role:{enum:['user','admin']}})});
+operation('get','/admin/governance/changes','List recorded administrative changes',{...adminOnly,list:true});
+operation('get','/admin/governance/device-compliance','List registry posture status and evidence provenance',{...adminOnly,list:true});
+operation('post','/admin/governance/exports','Export an audited, bounded evidence page with integrity digest',{...adminOnly,input:object({dataset:{enum:['audit','changes','reviews','policy_versions','users','devices']},limit:{type:'integer',minimum:1,maximum:500},from:dateTime,to:dateTime,cursor:string(3000)},['dataset'])});
+operation('get','/admin/governance/reviews','List access review campaigns',{...adminOnly,list:true});
+operation('post','/admin/governance/reviews','Snapshot active accounts and their entitlements for independent review',{...adminOnly,status:201,input:object({name:string(160),dueAt:dateTime,userIds:{type:'array',minItems:1,maxItems:100,uniqueItems:true,items:uuid}},['name','dueAt'])});
+operation('get','/admin/governance/reviews/{id}/items','List snapshot and decision state for review items',{...adminOnly,list:true});
+operation('post','/admin/governance/reviews/{id}/close','Close a review after all decisions are recorded',{...adminOnly,input:object({revision:incidentRevision})});
+const reviewPath='/admin/governance/reviews/{id}/items/{itemId}';
+operation('patch',reviewPath,'Record an independent access-review decision and revoke application access if selected',{...adminOnly,input:object({revision:incidentRevision,decision:{enum:['retain','revoke']},reason:{enum:['access_required','no_longer_needed','followup_required']}})});
+operation('post',reviewPath+'/refresh','Refresh the current entitlement snapshot while keeping prior decision evidence',{...adminOnly,input:object({revision:incidentRevision})});
+for (const [path,method] of [[reviewPath,'patch'],[reviewPath+'/refresh','post']]) doc.paths[path][method].parameters.push({name:'itemId',in:'path',required:true,schema:uuid});
+doc.components.securitySchemes.scimBearer={type:'http',scheme:'bearer',description:'Opaque, expiring directory credential. Application JWTs are rejected.'};
+schema.ScimError={ type:'object',required:['schemas','status','detail'],properties:{ schemas:{type:'array',items:{const:'urn:ietf:params:scim:api:messages:2.0:Error'}},status:{type:'string'},detail:{type:'string'},scimType:{type:'string'},requestId:uuid } };
+const scimObject={type:'object',required:['schemas'],properties:{schemas:{type:'array',items:{type:'string'}}},additionalProperties:true};
+const scimPath='/scim/v2/{organizationId}';
+function scimOperation(method,suffix,summary,{body,status=200,collection=false}={}) {
+  const path=scimPath+suffix;
+  operation(method,path,summary,{status,...(body && {input:scimObject})});
+  const op=doc.paths[path][method];
+  op.description='SCIM 2.0 subset with a directory-scoped bearer credential. See docs/ENTERPRISE_GOVERNANCE.md for supported attributes and update operations.';
+  op.servers=[{url:'/'}];op.security=[{scimBearer:[]}];
+  op.parameters=[{name:'organizationId',in:'path',required:true,schema:uuid},...(op.parameters || [])];
+  if (path.includes('{schemaId}')) op.parameters.push({name:'schemaId',in:'path',required:true,schema:string(255)});
+  if (collection) op.parameters.push({name:'startIndex',in:'query',schema:{type:'integer',minimum:1,maximum:1000000}},
+    {name:'count',in:'query',schema:{type:'integer',minimum:0,maximum:100}},{name:'filter',in:'query',schema:string(600)});
+  if (method==='get' && /^\/(Users|Groups)/.test(suffix)) op.parameters.push({name:'excludedAttributes',in:'query',schema:{enum:['members','groups']}});
+  if (['put','patch','delete'].includes(method)) op.parameters.push({name:'If-Match',in:'header',schema:string(32)});
+  if (body) op.requestBody.content['application/scim+json']={schema:scimObject};
+  op.responses[status]=status===204 ? {description:'Resource soft-deleted'} : {description:'SCIM response',content:{'application/scim+json':{schema:scimObject}}};
+  op.responses.default={description:'SCIM error including optional scimType and request correlation',content:{'application/scim+json':{schema:ref('ScimError')}}};
+}
+for (const suffix of ['/ServiceProviderConfig','/ResourceTypes','/Schemas','/Schemas/{schemaId}']) scimOperation('get',suffix,'Read SCIM discovery metadata');
+for (const kind of ['Users','Groups']) {
+  scimOperation('get','/'+kind,'List directory-owned '+kind.toLowerCase(),{collection:true});
+  scimOperation('post','/'+kind,'Create a directory-owned resource',{body:true,status:201});
+  scimOperation('get','/'+kind+'/{id}','Read a directory-owned resource');
+  scimOperation('put','/'+kind+'/{id}','Replace supported attributes',{body:true});
+  scimOperation('patch','/'+kind+'/{id}','Apply bounded SCIM PatchOp operations',{body:true});
+  scimOperation('delete','/'+kind+'/{id}','Soft-delete and revoke affected access',{status:204});
+}
 for (const name of ['health','ready']) {
   operation('get',`/${name}`,name==='health' ? 'Process liveness' : 'Database role/schema readiness; 503 while draining',{ publicRoute:true });
   doc.paths[`/${name}`].get.servers=[{ url:'/' }];

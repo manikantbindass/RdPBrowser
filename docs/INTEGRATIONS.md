@@ -1,15 +1,15 @@
 # Enterprise extension boundaries
 
-No dynamic plugin loading, network broker or integration service is enabled. The following are design ports inside the existing backend deployable; their implementations require explicit later scope and acceptance tests.
+Phase 11 implements an OIDC administration workflow, SCIM user/group provisioning, role and URL policy assignment, and governance evidence exports in the existing backend. The other integration ports below describe their acceptance boundaries. [Enterprise setup and responsibilities](ENTERPRISE_GOVERNANCE.md)
 
 | Port | Input/output contract | Constraints before enablement |
 |---|---|---|
-| Identity provider (OIDC/SAML) | Verified external identity -> local user/membership mapping | Verify issuer/audience/signature, nonce/state, provisioning policy and revocation; never accept role/organization directly from untrusted claims |
-| Directory provisioning (SCIM) | Versioned organization/user/device DTOs | Tenant-scoped authorization, idempotency, soft deletion and audit events; migration first |
+| Identity provider (OIDC) | Verified issuer and subject -> local identity | Confirm tenant-specific discovery, claims, MFA, secret rotation and revocation |
+| Directory provisioning (SCIM) | Scoped Users and Groups, roles and membership | Migration 006, expiring directory bearer, dedicated TLS ingress and tenant interoperability drill |
 | Device enrollment/MDM | Device DTO + platform evidence -> enrollment decision | Native verification, replay prevention, bounded evidence lifetime, admin approval policy |
 | Policy evaluation | User/device/session context + policy revision -> decision/reasons | Deterministic rule semantics, tenant scope and version; do not equate decision with packet enforcement |
 | Native enforcement | Signed/versioned policy -> applied revision + measured status | Rust/Android adapters, trusted evidence model, outage policy and OS routing/DNS tests |
-| Audit/SIEM export | Versioned event envelope -> acknowledged event ID | Secret/PII minimization, retention, retry limits, authenticated sink, durable/idempotent delivery before guarantees |
+| Audit export and optional SIEM relay | Page manifest and digest, future signed event envelope | Evidence retention and recipient access for exports. A webhook relay needs durable retry, controlled egress and duplicate-safe receipts. |
 | Remote protocol transport | Authorized session/destination -> bounded transport handle | Per-protocol host identity, credential lifetime, destination allowlist, revocation/backpressure/resource limits |
 | Secrets provider | Secret reference -> short-lived material | External credentials never public contracts/UI bundles/logs; rotation and provider outage behavior |
 

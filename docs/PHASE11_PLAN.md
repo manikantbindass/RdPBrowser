@@ -1,0 +1,13 @@
+# Phase 11 audit and implementation plan
+
+The baseline already supports confidential OIDC authorization code/PKCE, signed-token verification, explicit issuer/subject links, provider MFA assurance and tenant-scoped access policy. Providers are configured by an operator file; there is no administrative validation/activation workflow. Users have no directory ownership, groups, SCIM credentials or provisioning endpoint. URL policies support organization/user assignment. Audit and policy histories exist, but there is no evidence export, access-review campaign or organization lifecycle tool. Device trust reporting is operator posture, not MDM attestation.
+
+1. Preserve existing OIDC flows and add sanitized provider inventory, validation/activation state and credential-free Okta/Entra examples. Provider endpoints/secrets remain operator controlled.
+2. Add migration 006 for directory ownership, revocable scoped provisioning credentials, groups/membership, group policy assignment, administrative changes, evidence exports and access-review records. Enforce tenant RLS/composite ownership and immutable runtime evidence grants.
+3. Implement a documented SCIM 2.0 subset: discovery, bounded filtered Users/Groups, create/replace/patch, soft deletion/deactivation, idempotent membership and optional version preconditions. Directory credentials cannot adopt existing local accounts or assign arbitrary roles. Only explicitly approved group mappings can grant local admin; superadmin remains outside directory authority.
+4. Revoke application sessions transactionally on deactivation and authorization changes. Keep WireGuard peer revocation an explicit separate gateway responsibility.
+5. Add bounded evidence export, change history, posture reporting and independent access-review decisions with manual revocation. Add operator-only atomic organization onboarding/offboarding; do not create a cross-tenant HTTP administrator.
+6. Integrate useful governance controls into the existing console. Specify optional signed webhook delivery and retry/replay requirements without implying an unconfigured external delivery service exists.
+7. Test real PostgreSQL provisioning, tenant/privilege boundaries, deprovisioning, policy effects, rollback/retry recovery, evidence and review workflows; retain baseline suites. Document exact SCIM/vendor limits, privacy/retention and SOC 2 evidence responsibilities without certification claims.
+
+No live Okta/Entra tenant, external receiver or production credential is available. Standards/protocol tests and configuration examples cannot substitute for tenant-specific interoperability acceptance. No later phase is authorized by this plan.

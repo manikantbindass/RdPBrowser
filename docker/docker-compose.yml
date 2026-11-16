@@ -71,6 +71,9 @@ services:
       DB_RUNTIME_PASSWORD: ''
       OIDC_STATE_KEY: ${OIDC_STATE_KEY:-}
       OIDC_PROVIDERS_FILE: ${OIDC_PROVIDERS_FILE:-}
+      SCIM_ENABLED: ${SCIM_ENABLED:-false}
+      SCIM_PUBLIC_BASE_URL: ${SCIM_PUBLIC_BASE_URL:-}
+      SCIM_RATE_LIMIT_MAX: ${SCIM_RATE_LIMIT_MAX:-200}
       VPN_PEER_STATUS_FILE: ${VPN_PEER_STATUS_FILE:-}
     networks: [control, database]
     expose: ['3000']

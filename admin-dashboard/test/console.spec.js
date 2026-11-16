@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { startFixture } from './fixture.cjs';
+import { createHash } from 'node:crypto';
 
 let fixture;
 test.beforeAll(async () => { fixture = await startFixture(); });
@@ -144,4 +145,66 @@ test('notifies administrators and reviews real detection evidence with revision 
   await page.getByLabel('Incident status', { exact: true }).selectOption('resolved');
   await page.getByRole('button', { name: 'Apply filters', exact: true }).click();
   await expect(page.getByRole('row').filter({ hasText: 'vpn_client_bypass' })).toBeVisible();
+});
+
+test('issues a scoped directory credential and assigns a real directory group policy', async ({ page, request }) => {
+  await login(page);
+  await page.getByRole('link', { name: 'Integrations', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Directory provisioning' })).toBeVisible();
+  await page.getByRole('button', { name: 'Add directory' }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Directory name').fill('Browser directory fixture');
+  await dialog.getByRole('button', { name: 'Add directory' }).click();
+  const directory = page.getByRole('row').filter({ hasText: 'Browser directory fixture' });
+  await directory.getByRole('button', { name: 'Credentials' }).click();
+  await dialog.getByRole('button', { name: 'Issue credential' }).click();
+  const credential = dialog.getByLabel('Provisioning bearer credential');
+  await expect(credential).toBeVisible();
+  const token = await credential.inputValue();
+  const organization = token.split('.')[1];
+  const group = await request.post(fixture.origin + '/scim/v2/' + organization + '/Groups', {
+    headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/scim+json' },
+    data: { schemas: ['urn:ietf:params:scim:schemas:core:2.0:Group'], displayName: 'Fixture managed group', externalId: 'browser-fixture-group' },
+  });
+  expect(group.status()).toBe(201);
+  const { id } = await group.json();
+  await dialog.getByRole('button', { name: 'Close dialog' }).click();
+  await expect(credential).toHaveCount(0);
+  await page.getByRole('button', { name: 'Refresh' }).click();
+  await expect(page.getByText('Fixture managed group', { exact: true })).toBeVisible();
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  await page.getByRole('link', { name: 'URL policies', exact: true }).click();
+  await page.getByRole('button', { name: 'Create policy' }).click();
+  await dialog.getByLabel('Policy name').fill('Directory browser policy');
+  await dialog.getByLabel('Assignment', { exact: true }).selectOption('groups');
+  await dialog.getByLabel('Group IDs, one per line').fill(id);
+  await dialog.getByRole('button', { name: 'Create policy' }).click();
+  await expect(page.getByRole('row').filter({ hasText: 'Directory browser policy' })).toContainText('1 assigned group');
+});
+
+test('starts a review and downloads a verifiable governance export', async ({ page }) => {
+  await login(page);
+  await page.getByRole('link', { name: 'Governance', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Device posture' })).toBeVisible();
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  await page.getByRole('button', { name: 'Start review' }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Review name').fill('Browser access review');
+  await dialog.getByLabel('Due date').fill(new Date(Date.now() + 86400000).toISOString().slice(0, 10));
+  await dialog.getByRole('button', { name: 'Start review' }).click();
+  await page.getByRole('row').filter({ hasText: 'Browser access review' }).getByRole('button', { name: 'View items' }).click();
+  await expect(dialog.getByRole('table', { name: 'Review items' })).toBeVisible();
+  await dialog.getByRole('button', { name: 'Close dialog' }).click();
+  await page.getByRole('button', { name: 'Prepare export' }).click();
+  const pendingDownload = page.waitForEvent('download');
+  await dialog.getByRole('button', { name: 'Download JSON page' }).click();
+  const download = await pendingDownload;
+  const stream = await download.createReadStream();
+  const chunks = [];
+  for await (const chunk of stream) chunks.push(chunk);
+  const { manifest, rows } = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+  expect(manifest.dataset).toBe('audit');
+  expect(rows.some(row => row.action === 'review.create')).toBe(true);
+  const canonical = JSON.stringify(rows.map(row => Object.fromEntries(Object.keys(row).sort().map(key => [key, row[key]]))));
+  expect(manifest.sha256).toBe(createHash('sha256').update(canonical).digest('hex'));
 });

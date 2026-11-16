@@ -33,6 +33,9 @@ const definitions = {
   MAX_SESSIONS_PER_USER: Joi.number().integer().min(1).max(100).default(1),
   DEVICE_BINDING_ENABLED: Joi.boolean().default(true),
   ANOMALY_DETECTION_ENABLED: Joi.boolean().default(false),
+  SCIM_ENABLED: Joi.boolean().default(false),
+  SCIM_PUBLIC_BASE_URL: Joi.string().uri({ scheme:['https'] }).allow('').default(''),
+  SCIM_RATE_LIMIT_MAX: Joi.number().integer().min(10).max(5000).default(200),
   DETECTION_INTERVAL_MS: Joi.number().integer().min(1000).max(300000).default(30000),
   DETECTION_SIGNAL_RETENTION_DAYS: Joi.number().integer().min(1).max(30).default(7),
   ANOMALY_ORGANIZATION_IDS: Joi.string().default('00000000-0000-4000-8000-000000000001'),
@@ -51,6 +54,11 @@ function loadConfig(env = process.env) {
   if (error) throw new Error(`Invalid configuration keys: ${[...new Set(error.details.map(d => d.path[0]))].join(', ')}`);
   const config = Object.fromEntries(Object.keys(definitions).map(key => [key, value[key]]));
   const invalid = [];
+  if (config.SCIM_PUBLIC_BASE_URL) {
+    const base=new URL(config.SCIM_PUBLIC_BASE_URL);
+    if (base.username || base.password || base.hash || base.search || base.pathname!=='/scim/v2') invalid.push('SCIM_PUBLIC_BASE_URL');
+  }
+  if (config.NODE_ENV==='production' && config.SCIM_ENABLED && !config.SCIM_PUBLIC_BASE_URL) invalid.push('SCIM_PUBLIC_BASE_URL');
   if (config.VPN_PEER_STATUS_FILE && !path.isAbsolute(config.VPN_PEER_STATUS_FILE)) invalid.push('VPN_PEER_STATUS_FILE');
   const vpnSubnets = (config.VPN_SUBNETS || config.VPN_SUBNET).split(',').map(value => value.trim());
   const vpnEgressIps = config.VPN_EGRESS_IPS ? config.VPN_EGRESS_IPS.split(',').map(value => normalizeAddress(value.trim())) : [];

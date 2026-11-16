@@ -1459,6 +1459,13 @@
               "type": "string",
               "pattern": "^[a-z][a-z0-9-]{0,63}$"
             }
+          },
+          {
+            "name": "return",
+            "in": "query",
+            "schema": {
+              "const": "console"
+            }
           }
         ]
       }
@@ -1478,6 +1485,9 @@
                 }
               }
             }
+          },
+          "303": {
+            "description": "Console request only. Sets a secure one-use handoff cookie and redirects to the same-origin console without tokens."
           },
           "default": {
             "description": "Error; includes server-owned X-Request-ID correlation. 400 validation, 401 authentication, 403 authorization, 404 invisible resource, 409 conflict, 429 limit, 500 internal, 503 readiness/capacity.",
@@ -1559,6 +1569,68 @@
             "schema": {
               "type": "string",
               "maxLength": 2048
+            }
+          }
+        ]
+      }
+    },
+    "/auth/oidc/{provider}/console-session": {
+      "post": {
+        "operationId": "post__auth_oidc__provider__console_session",
+        "summary": "Exchange the one-use console handoff bound to the configured origin",
+        "description": "Data access is scoped to the authenticated organization; ownership rules apply.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error; includes server-owned X-Request-ID correlation. 400 validation, 401 authentication, 403 authorization, 404 invisible resource, 409 conflict, 429 limit, 500 internal, 503 readiness/capacity.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [],
+        "parameters": [
+          {
+            "name": "provider",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2048
+            }
+          },
+          {
+            "name": "__Host-rsx_console",
+            "in": "cookie",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 43
             }
           }
         ]
@@ -3276,6 +3348,2594 @@
         ]
       }
     },
+    "/admin/integrations/oidc": {
+      "get": {
+        "operationId": "get__admin_integrations_oidc",
+        "summary": "List sanitized tenant identity-provider configuration and activation state",
+        "description": "Requires a live organization admin/superadmin session. No cross-organization superadmin bypass.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error; includes server-owned X-Request-ID correlation. 400 validation, 401 authentication, 403 authorization, 404 invisible resource, 409 conflict, 429 limit, 500 internal, 503 readiness/capacity.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/integrations/oidc/{provider}/validate": {
+      "post": {
+        "operationId": "post__admin_integrations_oidc__provider__validate",
+        "summary": "Superadmin validates discovery metadata for the configured provider",
+        "description": "Requires a live organization admin/superadmin session. No cross-organization superadmin bypass.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error; includes server-owned X-Request-ID correlation. 400 validation, 401 authentication, 403 authorization, 404 invisible resource, 409 conflict, 429 limit, 500 internal, 503 readiness/capacity.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "provider",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]{0,63}$"
+            }
+          }
+        ]
+      }
+    },
+    "/admin/integrations/oidc/{provider}/state": {
+      "put": {
+        "operationId": "put__admin_integrations_oidc__provider__state",
+        "summary": "Superadmin activates or disables a provider using its revision",
+        "description": "Requires a live organization admin/superadmin session. No cross-organization superadmin bypass.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error; includes server-owned X-Request-ID correlation. 400 validation, 401 authentication, 403 authorization, 404 invisible resource, 409 conflict, 429 limit, 500 internal, 503 readiness/capacity.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "revision": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "enabled": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "revision",
+                  "enabled"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "provider",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]{0,63}$"
+            }
+          }
+        ]
+      }
+    },
+    "/admin/integrations/directories": {
+      "get": {
+        "operationId": "get__admin_integrations_directories",
+        "summary": "List tenant directory connections and SCIM base location",
+        "description": "Requires a live organization admin/superadmin session. No cross-organization superadmin bypass.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error; includes server-owned X-Request-ID correlation. 400 validation, 401 authentication, 403 authorization, 404 invisible resource, 409 conflict, 429 limit, 500 internal, 503 readiness/capacity.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10000,
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 50
+            }
+          }
+        ]
+      },
+      "post": {
+        "operationId": "post__admin_integrations_directories",
+        "summary": "Superadmin creates a directory connection",
+        "description": "Requires a live organization admin/superadmin session. No cross-organization superadmin bypass.",
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error; includes server-owned X-Request-ID correlation. 400 validation, 401 authentication, 403 authorization, 404 invisible resource, 409 conflict, 429 limit, 500 internal, 503 readiness/capacity.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 160
+                  },
+                  "providerId": {
+                    "type": "string",
+                    "pattern": "^[a-z][a-z0-9-]{0,63}$"
+                  },
+                  "ssoLinking": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "name"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/integrations/directories/{id}": {
+      "patch": {
+        "operationId": "patch__admin_integrations_directories__id_",
+        "summary": "Superadmin updates directory state and revokes access on disable",
+        "description": "Requires a live organization admin/superadmin session. No cross-organization superadmin bypass.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error; includes server-owned X-Request-ID correlation. 400 validation, 401 authentication, 403 authorization, 404 invisible resource, 409 conflict, 429 limit, 500 internal, 503 readiness/capacity.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "revision": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 2147483646
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 160
+                  },
+                  "isActive": {
+                    "type": "boolean"
+                  },
+                  "ssoLinking": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "revision",
+                  "name",
+                  "isActive",
+                  "ssoLinking"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/admin/integrations/directories/{id}/credentials": {
+      "get": {
+        "operationId": "get__admin_integrations_directories__id__credentials",
+        "summary": "List provisioning credential metadata without secrets",
+        "description": "Requires a live organization admin/superadmin session. No cross-organization superadmin bypass.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error; includes server-owned X-Request-ID correlation. 400 validation, 401 authentication, 403 authorization, 404 invisible resource, 409 conflict, 429 limit, 500 internal, 503 readiness/capacity.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10000,
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 50
+            }
+          }
+        ]
+      },
+      "post": {
+        "operationId": "post__admin_integrations_directories__id__credentials",
+        "summary": "Superadmin issues a provisioning credential and sees the secret once",
+        "description": "Requires a live organization admin/superadmin session. No cross-organization superadmin bypass.",
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error; includes server-owned X-Request-ID correlation. 400 validation, 401 authentication, 403 authorization, 404 invisible resource, 409 conflict, 429 limit, 500 internal, 503 readiness/capacity.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "expiresInDays": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 365
+                  }
+                },
+                "required": [
+                  "expiresInDays"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/admin/integrations/credentials/{id}": {
+      "delete": {
+        "operationId": "delete__admin_integrations_credentials__id_",
+        "summary": "Superadmin revokes a provisioning credential",
+        "description": "Requires a live organization admin/superadmin session. No cross-organization superadmin bypass.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error; includes server-owned X-Request-ID correlation. 400 validation, 401 authentication, 403 authorization, 404 invisible resource, 409 conflict, 429 limit, 500 internal, 503 readiness/capacity.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/admin/integrations/groups": {
+      "get": {
+        "operationId": "get__admin_integrations_groups",
+        "summary": "List managed directory groups",
+        "description": "Requires a live organization admin/superadmin session. No cross-organization superadmin bypass.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error; includes server-owned X-Request-ID correlation. 400 validation, 401 authentication, 403 authorization, 404 invisible resource, 409 conflict, 429 limit, 500 internal, 503 readiness/capacity.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10000,
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 50
+            }
+          },
+          {
+            "name": "directoryId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/admin/integrations/groups/{id}/mapping": {
+      "patch": {
+        "operationId": "patch__admin_integrations_groups__id__mapping",
+        "summary": "Superadmin maps a group to user or admin and revokes affected sessions",
+        "description": "Requires a live organization admin/superadmin session. No cross-organization superadmin bypass.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error; includes server-owned X-Request-ID correlation. 400 validation, 401 authentication, 403 authorization, 404 invisible resource, 409 conflict, 429 limit, 500 internal, 503 readiness/capacity.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "revision": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 2147483646
+                  },
+                  "role": {
+                    "enum": [
+                      "user",
+                      "admin"
+                    ]
+                  }
+                },
+                "required": [
+                  "revision",
+                  "role"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/admin/governance/changes": {
+      "get": {
+        "operationId": "get__admin_governance_changes",
+        "summary": "List recorded administrative changes",
+        "description": "Requires a live organization admin/superadmin session. No cross-organization superadmin bypass.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error; includes server-owned X-Request-ID correlation. 400 validation, 401 authentication, 403 authorization, 404 invisible resource, 409 conflict, 429 limit, 500 internal, 503 readiness/capacity.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10000,
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 50
+            }
+          }
+        ]
+      }
+    },
+    "/admin/governance/device-compliance": {
+      "get": {
+        "operationId": "get__admin_governance_device_compliance",
+        "summary": "List registry posture status and evidence provenance",
+        "description": "Requires a live organization admin/superadmin session. No cross-organization superadmin bypass.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error; includes server-owned X-Request-ID correlation. 400 validation, 401 authentication, 403 authorization, 404 invisible resource, 409 conflict, 429 limit, 500 internal, 503 readiness/capacity.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10000,
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 50
+            }
+          }
+        ]
+      }
+    },
+    "/admin/governance/exports": {
+      "post": {
+        "operationId": "post__admin_governance_exports",
+        "summary": "Export an audited, bounded evidence page with integrity digest",
+        "description": "Requires a live organization admin/superadmin session. No cross-organization superadmin bypass.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error; includes server-owned X-Request-ID correlation. 400 validation, 401 authentication, 403 authorization, 404 invisible resource, 409 conflict, 429 limit, 500 internal, 503 readiness/capacity.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "dataset": {
+                    "enum": [
+                      "audit",
+                      "changes",
+                      "reviews",
+                      "policy_versions",
+                      "users",
+                      "devices"
+                    ]
+                  },
+                  "limit": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 500
+                  },
+                  "from": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "to": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "cursor": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 3000
+                  }
+                },
+                "required": [
+                  "dataset"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/governance/reviews": {
+      "get": {
+        "operationId": "get__admin_governance_reviews",
+        "summary": "List access review campaigns",
+        "description": "Requires a live organization admin/superadmin session. No cross-organization superadmin bypass.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error; includes server-owned X-Request-ID correlation. 400 validation, 401 authentication, 403 authorization, 404 invisible resource, 409 conflict, 429 limit, 500 internal, 503 readiness/capacity.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10000,
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 50
+            }
+          }
+        ]
+      },
+      "post": {
+        "operationId": "post__admin_governance_reviews",
+        "summary": "Snapshot active accounts and their entitlements for independent review",
+        "description": "Requires a live organization admin/superadmin session. No cross-organization superadmin bypass.",
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error; includes server-owned X-Request-ID correlation. 400 validation, 401 authentication, 403 authorization, 404 invisible resource, 409 conflict, 429 limit, 500 internal, 503 readiness/capacity.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 160
+                  },
+                  "dueAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "userIds": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 100,
+                    "uniqueItems": true,
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                },
+                "required": [
+                  "name",
+                  "dueAt"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/governance/reviews/{id}/items": {
+      "get": {
+        "operationId": "get__admin_governance_reviews__id__items",
+        "summary": "List snapshot and decision state for review items",
+        "description": "Requires a live organization admin/superadmin session. No cross-organization superadmin bypass.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error; includes server-owned X-Request-ID correlation. 400 validation, 401 authentication, 403 authorization, 404 invisible resource, 409 conflict, 429 limit, 500 internal, 503 readiness/capacity.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10000,
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 50
+            }
+          }
+        ]
+      }
+    },
+    "/admin/governance/reviews/{id}/close": {
+      "post": {
+        "operationId": "post__admin_governance_reviews__id__close",
+        "summary": "Close a review after all decisions are recorded",
+        "description": "Requires a live organization admin/superadmin session. No cross-organization superadmin bypass.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error; includes server-owned X-Request-ID correlation. 400 validation, 401 authentication, 403 authorization, 404 invisible resource, 409 conflict, 429 limit, 500 internal, 503 readiness/capacity.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "revision": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 2147483646
+                  }
+                },
+                "required": [
+                  "revision"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/admin/governance/reviews/{id}/items/{itemId}": {
+      "patch": {
+        "operationId": "patch__admin_governance_reviews__id__items__itemId_",
+        "summary": "Record an independent access-review decision and revoke application access if selected",
+        "description": "Requires a live organization admin/superadmin session. No cross-organization superadmin bypass.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error; includes server-owned X-Request-ID correlation. 400 validation, 401 authentication, 403 authorization, 404 invisible resource, 409 conflict, 429 limit, 500 internal, 503 readiness/capacity.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "revision": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 2147483646
+                  },
+                  "decision": {
+                    "enum": [
+                      "retain",
+                      "revoke"
+                    ]
+                  },
+                  "reason": {
+                    "enum": [
+                      "access_required",
+                      "no_longer_needed",
+                      "followup_required"
+                    ]
+                  }
+                },
+                "required": [
+                  "revision",
+                  "decision",
+                  "reason"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "itemId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/admin/governance/reviews/{id}/items/{itemId}/refresh": {
+      "post": {
+        "operationId": "post__admin_governance_reviews__id__items__itemId__refresh",
+        "summary": "Refresh the current entitlement snapshot while keeping prior decision evidence",
+        "description": "Requires a live organization admin/superadmin session. No cross-organization superadmin bypass.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error; includes server-owned X-Request-ID correlation. 400 validation, 401 authentication, 403 authorization, 404 invisible resource, 409 conflict, 429 limit, 500 internal, 503 readiness/capacity.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "revision": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 2147483646
+                  }
+                },
+                "required": [
+                  "revision"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "itemId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/scim/v2/{organizationId}/ServiceProviderConfig": {
+      "get": {
+        "operationId": "get__scim_v2__organizationId__ServiceProviderConfig",
+        "summary": "Read SCIM discovery metadata",
+        "description": "SCIM 2.0 subset with a directory-scoped bearer credential. See docs/ENTERPRISE_GOVERNANCE.md for supported attributes and update operations.",
+        "responses": {
+          "200": {
+            "description": "SCIM response",
+            "content": {
+              "application/scim+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "schemas"
+                  ],
+                  "properties": {
+                    "schemas": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "SCIM error including optional scimType and request correlation",
+            "content": {
+              "application/scim+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScimError"
+                }
+              }
+            }
+          }
+        },
+        "servers": [
+          {
+            "url": "/"
+          }
+        ],
+        "security": [
+          {
+            "scimBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/scim/v2/{organizationId}/ResourceTypes": {
+      "get": {
+        "operationId": "get__scim_v2__organizationId__ResourceTypes",
+        "summary": "Read SCIM discovery metadata",
+        "description": "SCIM 2.0 subset with a directory-scoped bearer credential. See docs/ENTERPRISE_GOVERNANCE.md for supported attributes and update operations.",
+        "responses": {
+          "200": {
+            "description": "SCIM response",
+            "content": {
+              "application/scim+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "schemas"
+                  ],
+                  "properties": {
+                    "schemas": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "SCIM error including optional scimType and request correlation",
+            "content": {
+              "application/scim+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScimError"
+                }
+              }
+            }
+          }
+        },
+        "servers": [
+          {
+            "url": "/"
+          }
+        ],
+        "security": [
+          {
+            "scimBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/scim/v2/{organizationId}/Schemas": {
+      "get": {
+        "operationId": "get__scim_v2__organizationId__Schemas",
+        "summary": "Read SCIM discovery metadata",
+        "description": "SCIM 2.0 subset with a directory-scoped bearer credential. See docs/ENTERPRISE_GOVERNANCE.md for supported attributes and update operations.",
+        "responses": {
+          "200": {
+            "description": "SCIM response",
+            "content": {
+              "application/scim+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "schemas"
+                  ],
+                  "properties": {
+                    "schemas": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "SCIM error including optional scimType and request correlation",
+            "content": {
+              "application/scim+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScimError"
+                }
+              }
+            }
+          }
+        },
+        "servers": [
+          {
+            "url": "/"
+          }
+        ],
+        "security": [
+          {
+            "scimBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/scim/v2/{organizationId}/Schemas/{schemaId}": {
+      "get": {
+        "operationId": "get__scim_v2__organizationId__Schemas__schemaId_",
+        "summary": "Read SCIM discovery metadata",
+        "description": "SCIM 2.0 subset with a directory-scoped bearer credential. See docs/ENTERPRISE_GOVERNANCE.md for supported attributes and update operations.",
+        "responses": {
+          "200": {
+            "description": "SCIM response",
+            "content": {
+              "application/scim+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "schemas"
+                  ],
+                  "properties": {
+                    "schemas": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "SCIM error including optional scimType and request correlation",
+            "content": {
+              "application/scim+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScimError"
+                }
+              }
+            }
+          }
+        },
+        "servers": [
+          {
+            "url": "/"
+          }
+        ],
+        "security": [
+          {
+            "scimBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "schemaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 255
+            }
+          }
+        ]
+      }
+    },
+    "/scim/v2/{organizationId}/Users": {
+      "get": {
+        "operationId": "get__scim_v2__organizationId__Users",
+        "summary": "List directory-owned users",
+        "description": "SCIM 2.0 subset with a directory-scoped bearer credential. See docs/ENTERPRISE_GOVERNANCE.md for supported attributes and update operations.",
+        "responses": {
+          "200": {
+            "description": "SCIM response",
+            "content": {
+              "application/scim+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "schemas"
+                  ],
+                  "properties": {
+                    "schemas": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "SCIM error including optional scimType and request correlation",
+            "content": {
+              "application/scim+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScimError"
+                }
+              }
+            }
+          }
+        },
+        "servers": [
+          {
+            "url": "/"
+          }
+        ],
+        "security": [
+          {
+            "scimBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "startIndex",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000
+            }
+          },
+          {
+            "name": "count",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 600
+            }
+          },
+          {
+            "name": "excludedAttributes",
+            "in": "query",
+            "schema": {
+              "enum": [
+                "members",
+                "groups"
+              ]
+            }
+          }
+        ]
+      },
+      "post": {
+        "operationId": "post__scim_v2__organizationId__Users",
+        "summary": "Create a directory-owned resource",
+        "description": "SCIM 2.0 subset with a directory-scoped bearer credential. See docs/ENTERPRISE_GOVERNANCE.md for supported attributes and update operations.",
+        "responses": {
+          "201": {
+            "description": "SCIM response",
+            "content": {
+              "application/scim+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "schemas"
+                  ],
+                  "properties": {
+                    "schemas": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "SCIM error including optional scimType and request correlation",
+            "content": {
+              "application/scim+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScimError"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "schemas"
+                ],
+                "properties": {
+                  "schemas": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "additionalProperties": true
+              }
+            },
+            "application/scim+json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "schemas"
+                ],
+                "properties": {
+                  "schemas": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "additionalProperties": true
+              }
+            }
+          }
+        },
+        "servers": [
+          {
+            "url": "/"
+          }
+        ],
+        "security": [
+          {
+            "scimBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/scim/v2/{organizationId}/Users/{id}": {
+      "get": {
+        "operationId": "get__scim_v2__organizationId__Users__id_",
+        "summary": "Read a directory-owned resource",
+        "description": "SCIM 2.0 subset with a directory-scoped bearer credential. See docs/ENTERPRISE_GOVERNANCE.md for supported attributes and update operations.",
+        "responses": {
+          "200": {
+            "description": "SCIM response",
+            "content": {
+              "application/scim+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "schemas"
+                  ],
+                  "properties": {
+                    "schemas": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "SCIM error including optional scimType and request correlation",
+            "content": {
+              "application/scim+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScimError"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "excludedAttributes",
+            "in": "query",
+            "schema": {
+              "enum": [
+                "members",
+                "groups"
+              ]
+            }
+          }
+        ],
+        "servers": [
+          {
+            "url": "/"
+          }
+        ],
+        "security": [
+          {
+            "scimBearer": []
+          }
+        ]
+      },
+      "put": {
+        "operationId": "put__scim_v2__organizationId__Users__id_",
+        "summary": "Replace supported attributes",
+        "description": "SCIM 2.0 subset with a directory-scoped bearer credential. See docs/ENTERPRISE_GOVERNANCE.md for supported attributes and update operations.",
+        "responses": {
+          "200": {
+            "description": "SCIM response",
+            "content": {
+              "application/scim+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "schemas"
+                  ],
+                  "properties": {
+                    "schemas": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "SCIM error including optional scimType and request correlation",
+            "content": {
+              "application/scim+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScimError"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "schemas"
+                ],
+                "properties": {
+                  "schemas": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "additionalProperties": true
+              }
+            },
+            "application/scim+json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "schemas"
+                ],
+                "properties": {
+                  "schemas": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "additionalProperties": true
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 32
+            }
+          }
+        ],
+        "servers": [
+          {
+            "url": "/"
+          }
+        ],
+        "security": [
+          {
+            "scimBearer": []
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "patch__scim_v2__organizationId__Users__id_",
+        "summary": "Apply bounded SCIM PatchOp operations",
+        "description": "SCIM 2.0 subset with a directory-scoped bearer credential. See docs/ENTERPRISE_GOVERNANCE.md for supported attributes and update operations.",
+        "responses": {
+          "200": {
+            "description": "SCIM response",
+            "content": {
+              "application/scim+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "schemas"
+                  ],
+                  "properties": {
+                    "schemas": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "SCIM error including optional scimType and request correlation",
+            "content": {
+              "application/scim+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScimError"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "schemas"
+                ],
+                "properties": {
+                  "schemas": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "additionalProperties": true
+              }
+            },
+            "application/scim+json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "schemas"
+                ],
+                "properties": {
+                  "schemas": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "additionalProperties": true
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 32
+            }
+          }
+        ],
+        "servers": [
+          {
+            "url": "/"
+          }
+        ],
+        "security": [
+          {
+            "scimBearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "delete__scim_v2__organizationId__Users__id_",
+        "summary": "Soft-delete and revoke affected access",
+        "description": "SCIM 2.0 subset with a directory-scoped bearer credential. See docs/ENTERPRISE_GOVERNANCE.md for supported attributes and update operations.",
+        "responses": {
+          "204": {
+            "description": "Resource soft-deleted"
+          },
+          "default": {
+            "description": "SCIM error including optional scimType and request correlation",
+            "content": {
+              "application/scim+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScimError"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 32
+            }
+          }
+        ],
+        "servers": [
+          {
+            "url": "/"
+          }
+        ],
+        "security": [
+          {
+            "scimBearer": []
+          }
+        ]
+      }
+    },
+    "/scim/v2/{organizationId}/Groups": {
+      "get": {
+        "operationId": "get__scim_v2__organizationId__Groups",
+        "summary": "List directory-owned groups",
+        "description": "SCIM 2.0 subset with a directory-scoped bearer credential. See docs/ENTERPRISE_GOVERNANCE.md for supported attributes and update operations.",
+        "responses": {
+          "200": {
+            "description": "SCIM response",
+            "content": {
+              "application/scim+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "schemas"
+                  ],
+                  "properties": {
+                    "schemas": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "SCIM error including optional scimType and request correlation",
+            "content": {
+              "application/scim+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScimError"
+                }
+              }
+            }
+          }
+        },
+        "servers": [
+          {
+            "url": "/"
+          }
+        ],
+        "security": [
+          {
+            "scimBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "startIndex",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000
+            }
+          },
+          {
+            "name": "count",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 600
+            }
+          },
+          {
+            "name": "excludedAttributes",
+            "in": "query",
+            "schema": {
+              "enum": [
+                "members",
+                "groups"
+              ]
+            }
+          }
+        ]
+      },
+      "post": {
+        "operationId": "post__scim_v2__organizationId__Groups",
+        "summary": "Create a directory-owned resource",
+        "description": "SCIM 2.0 subset with a directory-scoped bearer credential. See docs/ENTERPRISE_GOVERNANCE.md for supported attributes and update operations.",
+        "responses": {
+          "201": {
+            "description": "SCIM response",
+            "content": {
+              "application/scim+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "schemas"
+                  ],
+                  "properties": {
+                    "schemas": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "SCIM error including optional scimType and request correlation",
+            "content": {
+              "application/scim+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScimError"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "schemas"
+                ],
+                "properties": {
+                  "schemas": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "additionalProperties": true
+              }
+            },
+            "application/scim+json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "schemas"
+                ],
+                "properties": {
+                  "schemas": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "additionalProperties": true
+              }
+            }
+          }
+        },
+        "servers": [
+          {
+            "url": "/"
+          }
+        ],
+        "security": [
+          {
+            "scimBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/scim/v2/{organizationId}/Groups/{id}": {
+      "get": {
+        "operationId": "get__scim_v2__organizationId__Groups__id_",
+        "summary": "Read a directory-owned resource",
+        "description": "SCIM 2.0 subset with a directory-scoped bearer credential. See docs/ENTERPRISE_GOVERNANCE.md for supported attributes and update operations.",
+        "responses": {
+          "200": {
+            "description": "SCIM response",
+            "content": {
+              "application/scim+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "schemas"
+                  ],
+                  "properties": {
+                    "schemas": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "SCIM error including optional scimType and request correlation",
+            "content": {
+              "application/scim+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScimError"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "excludedAttributes",
+            "in": "query",
+            "schema": {
+              "enum": [
+                "members",
+                "groups"
+              ]
+            }
+          }
+        ],
+        "servers": [
+          {
+            "url": "/"
+          }
+        ],
+        "security": [
+          {
+            "scimBearer": []
+          }
+        ]
+      },
+      "put": {
+        "operationId": "put__scim_v2__organizationId__Groups__id_",
+        "summary": "Replace supported attributes",
+        "description": "SCIM 2.0 subset with a directory-scoped bearer credential. See docs/ENTERPRISE_GOVERNANCE.md for supported attributes and update operations.",
+        "responses": {
+          "200": {
+            "description": "SCIM response",
+            "content": {
+              "application/scim+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "schemas"
+                  ],
+                  "properties": {
+                    "schemas": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "SCIM error including optional scimType and request correlation",
+            "content": {
+              "application/scim+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScimError"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "schemas"
+                ],
+                "properties": {
+                  "schemas": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "additionalProperties": true
+              }
+            },
+            "application/scim+json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "schemas"
+                ],
+                "properties": {
+                  "schemas": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "additionalProperties": true
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 32
+            }
+          }
+        ],
+        "servers": [
+          {
+            "url": "/"
+          }
+        ],
+        "security": [
+          {
+            "scimBearer": []
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "patch__scim_v2__organizationId__Groups__id_",
+        "summary": "Apply bounded SCIM PatchOp operations",
+        "description": "SCIM 2.0 subset with a directory-scoped bearer credential. See docs/ENTERPRISE_GOVERNANCE.md for supported attributes and update operations.",
+        "responses": {
+          "200": {
+            "description": "SCIM response",
+            "content": {
+              "application/scim+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "schemas"
+                  ],
+                  "properties": {
+                    "schemas": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "SCIM error including optional scimType and request correlation",
+            "content": {
+              "application/scim+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScimError"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "schemas"
+                ],
+                "properties": {
+                  "schemas": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "additionalProperties": true
+              }
+            },
+            "application/scim+json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "schemas"
+                ],
+                "properties": {
+                  "schemas": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "additionalProperties": true
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 32
+            }
+          }
+        ],
+        "servers": [
+          {
+            "url": "/"
+          }
+        ],
+        "security": [
+          {
+            "scimBearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "delete__scim_v2__organizationId__Groups__id_",
+        "summary": "Soft-delete and revoke affected access",
+        "description": "SCIM 2.0 subset with a directory-scoped bearer credential. See docs/ENTERPRISE_GOVERNANCE.md for supported attributes and update operations.",
+        "responses": {
+          "204": {
+            "description": "Resource soft-deleted"
+          },
+          "default": {
+            "description": "SCIM error including optional scimType and request correlation",
+            "content": {
+              "application/scim+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScimError"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 32
+            }
+          }
+        ],
+        "servers": [
+          {
+            "url": "/"
+          }
+        ],
+        "security": [
+          {
+            "scimBearer": []
+          }
+        ]
+      }
+    },
     "/health": {
       "get": {
         "operationId": "get__health",
@@ -3355,6 +6015,11 @@
         "type": "http",
         "scheme": "bearer",
         "bearerFormat": "JWT"
+      },
+      "scimBearer": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Opaque, expiring directory credential. Application JWTs are rejected."
       }
     },
     "schemas": {
@@ -3580,6 +6245,38 @@
                   "scope",
                   "userIds"
                 ]
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "scope": {
+                    "const": "groups"
+                  },
+                  "userIds": {
+                    "type": "array",
+                    "maxItems": 0,
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "groupIds": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 100,
+                    "uniqueItems": true,
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                },
+                "required": [
+                  "scope",
+                  "userIds",
+                  "groupIds"
+                ]
               }
             ]
           }
@@ -3674,6 +6371,38 @@
                 "required": [
                   "scope",
                   "userIds"
+                ]
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "scope": {
+                    "const": "groups"
+                  },
+                  "userIds": {
+                    "type": "array",
+                    "maxItems": 0,
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "groupIds": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 100,
+                    "uniqueItems": true,
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                },
+                "required": [
+                  "scope",
+                  "userIds",
+                  "groupIds"
                 ]
               }
             ]
@@ -3859,6 +6588,35 @@
           "maxProofAgeSeconds",
           "maxMfaAgeSeconds"
         ]
+      },
+      "ScimError": {
+        "type": "object",
+        "required": [
+          "schemas",
+          "status",
+          "detail"
+        ],
+        "properties": {
+          "schemas": {
+            "type": "array",
+            "items": {
+              "const": "urn:ietf:params:scim:api:messages:2.0:Error"
+            }
+          },
+          "status": {
+            "type": "string"
+          },
+          "detail": {
+            "type": "string"
+          },
+          "scimType": {
+            "type": "string"
+          },
+          "requestId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
       }
     }
   }

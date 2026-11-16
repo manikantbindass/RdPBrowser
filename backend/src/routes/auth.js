@@ -59,6 +59,7 @@ router.post('/login',require('../contracts').validateBody('loginRequest'),wrap(a
       return { invalid:true }; // Commit evidence before returning a denial.
     }
     if (!user.is_active || user.is_locked) fail(403,'Account unavailable');
+    if (!user.password_auth_enabled) fail(403,'Directory-managed account requires enterprise authentication','SSO_REQUIRED');
     if (req.app.locals.config.DEVICE_BINDING_ENABLED && user.device_id && user.device_id!==deviceId) fail(403,'Device not authorized for this account');
     if (deviceId && (await query("SELECT id FROM devices WHERE external_id=$1 AND (status='revoked' OR trust_state IN ('revoked','quarantined') OR user_id<>$2)",[deviceId,user.id])).rows.length) fail(403,'Device unavailable');
     req.user = { sub:user.id };
@@ -94,6 +95,7 @@ router.post('/refresh',wrap(async (req,res) => {
       }
       return { invalid:true };
     }
+    await require('../services/sso-settings').assertSessionProvider(req.app.locals.config,payload.organizationId,session.oidc_provider_id);
     await query('DELETE FROM used_refresh_tokens WHERE expires_at<NOW()');
     await query('INSERT INTO used_refresh_tokens(user_id,token_hash,family_id,expires_at) VALUES($1,$2,$3,$4)',[user.id,hashToken(refreshToken),session.family_id,session.absolute_expires_at]);
     await query('UPDATE sessions SET is_active=FALSE,ended_at=NOW(),refresh_hash=NULL WHERE id=$1',[session.id]);

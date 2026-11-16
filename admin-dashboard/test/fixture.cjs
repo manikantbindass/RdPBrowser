@@ -69,7 +69,7 @@ async function startFixture() {
     const origin = 'http://127.0.0.1:' + server.address().port;
     const config = loadConfig({ NODE_ENV: 'test', DATABASE_URL: url.toString(), JWT_SECRET: randomBytes(32).toString('hex'),
       JWT_REFRESH_SECRET: randomBytes(32).toString('hex'), VPN_REQUIRED: 'false', CORS_ORIGINS: origin, RATE_LIMIT_MAX: '1000',
-      AUTH_RATE_LIMIT_MAX: '100', MAX_SESSIONS_PER_USER: '5', ANOMALY_DETECTION_ENABLED:'true' });
+      AUTH_RATE_LIMIT_MAX: '100', MAX_SESSIONS_PER_USER: '5', ANOMALY_DETECTION_ENABLED:'true', SCIM_ENABLED:'true' });
     const logger = { info() {}, warn() {}, error() {} };
     db.configure(config, logger);
     await db.initDB();

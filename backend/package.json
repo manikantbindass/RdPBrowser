@@ -9,6 +9,7 @@
     "lint": "eslint src/ --ext .js --max-warnings 0",
     "test": "jest --coverage --testEnvironment node",
     "migrate": "node src/db/migrate.js",
+    "organization": "node src/organization-cli.js",
     "config:check": "node src/validate-config.js",
     "test:integration": "jest --runInBand --testPathIgnorePatterns=/__tests__/ --testMatch=**/integration/*.integration.js --coverage=false"
   },

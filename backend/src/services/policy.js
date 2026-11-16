@@ -28,7 +28,10 @@ async function evaluate(urlString, userId) {
   const [policies,blocked,allowed]=await Promise.all([
     query(`SELECT p.id,p.revision,p.rules FROM policies p WHERE p.organization_id=$1 AND p.is_active AND
       (p.assignment_scope='organization' OR EXISTS (SELECT 1 FROM policy_user_assignments a
-        WHERE a.organization_id=p.organization_id AND a.policy_id=p.id AND a.user_id=$2))
+        WHERE a.organization_id=p.organization_id AND a.policy_id=p.id AND a.user_id=$2) OR EXISTS (
+        SELECT 1 FROM policy_group_assignments a JOIN directory_members m ON m.group_id=a.group_id AND m.organization_id=a.organization_id
+        JOIN directory_groups g ON g.id=m.group_id AND g.organization_id=m.organization_id
+        WHERE a.organization_id=p.organization_id AND a.policy_id=p.id AND m.user_id=$2 AND NOT g.is_deleted))
       ORDER BY p.id LIMIT 101`,[organizationId,userId]),
     query('SELECT pattern FROM blocked_urls WHERE organization_id=$1 AND is_active LIMIT 1001',[organizationId]),
     query('SELECT pattern FROM allowed_urls WHERE organization_id=$1 AND is_active LIMIT 1001',[organizationId]),

@@ -1,0 +1,18 @@
+
+> test:browser
+> playwright test
+
+
+Running 7 tests using 1 worker
+
+(node:34936) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 1 test\console.spec.js:17:1 › loads live overview, chart and API error states on desktop and mobile (3.0s)
+  ok 2 test\console.spec.js:51:1 › creates an assigned URL policy and reads persisted history (2.2s)
+  ok 3 test\console.spec.js:75:1 › keeps device labels inert and audits revocation from the console (1.4s)
+  ok 4 test\console.spec.js:88:1 › ordinary accounts cannot open the console (573ms)
+  ok 5 test\console.spec.js:94:1 › creates a user and applies a role change through the console (1.6s)
+  ok 6 test\console.spec.js:111:1 › all navigation views load and session termination takes effect (1.4s)
+  ok 7 test\console.spec.js:125:1 › notifies administrators and reviews real detection evidence with revision protection (2.8s)
+
+  7 passed (18.4s)

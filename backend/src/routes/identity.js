@@ -56,8 +56,9 @@ router.delete('/admin/identity-links/:id',wrap(async (req,res) => {
   admin(req);const linkId=target(req);
   await transaction(async () => {
     const link=found(await query('SELECT user_id FROM identity_links WHERE id=$1',[linkId]));
-    await managedUser(req.user,link.user_id,true);
+    const user=await managedUser(req.user,link.user_id,true);
     await query('DELETE FROM identity_links WHERE id=$1',[linkId]);
+    if (user.directory_id) await query('UPDATE users SET is_locked=TRUE WHERE id=$1',[user.id]);
     await query("UPDATE sessions SET is_active=FALSE,ended_at=NOW(),refresh_hash=NULL WHERE user_id=$1 AND authentication_method='oidc'",[link.user_id]);
     await audit(req,'identity.unlink',linkId);
   });res.json({ message:'Identity link and enterprise sessions revoked' });
@@ -112,7 +113,8 @@ router.patch('/admin/devices/:id/trust',wrap(async (req,res) => {
     await query(`UPDATE devices SET trust_state=$1,status=CASE WHEN $1='revoked' THEN 'revoked' ELSE status END,
       posture_valid_until=CASE WHEN $1='approved' THEN NOW()+($2*INTERVAL '1 second') ELSE NULL END WHERE id=$3`,[value.trustState,value.validForSeconds || 0,deviceId]);
     if (['quarantined','revoked'].includes(value.trustState)) await query('UPDATE sessions SET is_active=FALSE,ended_at=NOW(),refresh_hash=NULL WHERE registered_device_id=$1 OR (user_id=$2 AND device_id=$3)',[deviceId,device.user_id,device.external_id]);
-    await audit(req,'device.trust_'+value.trustState,deviceId);
+    await require('../services/governance-change').change(req,'device.trust_'+value.trustState,deviceId,
+      { trustState:device.trust_state,validUntil:device.posture_valid_until },{ trustState:value.trustState,validForSeconds:value.validForSeconds || null,reason:value.reason });
   });res.json({ message:'Device trust updated' });
 }));
 router.post('/access/evaluate',wrap(async (req,res) => {

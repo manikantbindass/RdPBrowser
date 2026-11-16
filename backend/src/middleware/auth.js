@@ -27,7 +27,7 @@ async function authenticateToken(req, res, next) {
     const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
     return await withTenant(organizationId, async () => {
     const sessionResult = await query(
-      `SELECT s.*,u.role,u.is_active AS user_active,u.is_locked,u.organization_id AS user_organization_id,o.is_active AS organization_active
+      `SELECT s.*,u.role,u.is_active AS user_active,u.is_locked,u.password_auth_enabled,u.organization_id AS user_organization_id,o.is_active AS organization_active
        FROM sessions s JOIN users u ON u.id=s.user_id AND u.organization_id=s.organization_id
        JOIN organizations o ON o.id=s.organization_id
        WHERE s.token_hash = $1 AND s.user_id = $2 AND s.is_active AND u.is_active AND NOT u.is_locked AND o.is_active
@@ -47,11 +47,12 @@ async function authenticateToken(req, res, next) {
     req.user = { ...payload, organizationId, role:sessionResult.rows[0].role };
     req.sessionId = sessionResult.rows[0].id;
     const session=sessionResult.rows[0];
+    await require('../services/sso-settings').assertSessionProvider(req.app.locals.config,organizationId,session.oidc_provider_id);
     const device=session.registered_device_id ? (await query('SELECT * FROM devices WHERE id=$1 AND user_id=$2',[session.registered_device_id,payload.sub])).rows[0] :
       session.device_id ? (await query('SELECT * FROM devices WHERE external_id=$1',[session.device_id])).rows[0] : null;
     const policy=await loadPolicy();
     const principal={ id:payload.sub,role:session.role,is_active:session.user_active,is_locked:session.is_locked,
-      organization_id:session.user_organization_id,organization_active:session.organization_active };
+      organization_id:session.user_organization_id,organization_active:session.organization_active,password_auth_enabled:session.password_auth_enabled };
     const decision=decide({ user:principal,session,device,resource:resourceFor(req),policy:policy.configuration });
     if (session.registered_device_id && !device) decision.allowed=false,decision.reason='DEVICE_INVALID';
     await recordDecision(req,principal,session,device,decision,policy.revision);

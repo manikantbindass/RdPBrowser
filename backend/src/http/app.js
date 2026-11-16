@@ -42,8 +42,11 @@ function createApp({ config, logger, database }) {
     cb(Object.assign(new Error('Origin denied'), { status: 403, code: 'ORIGIN_DENIED', publicMessage: 'Origin not allowed' }));
   }, credentials: true }));
   app.use(rateLimit({ windowMs: config.RATE_LIMIT_WINDOW_MS, max: config.RATE_LIMIT_MAX, standardHeaders: true, legacyHeaders: false,
-    skip:req => (req.method==='GET' && ['/health','/ready'].includes(req.path)) || (['GET','POST'].includes(req.method) && /^\/api(?:\/v1)?\/auth\/status$/.test(req.path)),
+    skip:req => req.path.startsWith('/scim/v2/') || (req.method==='GET' && ['/health','/ready'].includes(req.path)) || (['GET','POST'].includes(req.method) && /^\/api(?:\/v1)?\/auth\/status$/.test(req.path)),
     handler: (req, res) => res.status(429).json({ error: 'Too many requests, please try again later.' }) }));
+  // Directory provisioning has its own scoped credential, parser and limiter.
+  // Do not put identity-provider provisioning behind end-user VPN admission.
+  app.use('/scim/v2/:organizationId',require('../routes/scim'));
   app.use(express.json({ limit: '10kb' }));
   app.use(express.urlencoded({ extended: true, limit: '10kb' }));
   app.get('/health', (req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString(), service: 'RemoteShield X Backend' }));

@@ -40,6 +40,7 @@ The repository is being improved incrementally. Existing API clients retain `/ap
 | Refresh rotation | Persisted single-use refresh, session revocation and race tests; Android secure credential storage | Implemented; live Android session acceptance pending |
 | Enterprise identity and access policy | OIDC/PKCE/signature checks, provider MFA assurance, refresh-family reuse detection, device key proof and live resource decisions | Backend implemented; live IdP/native handoff/attestation acceptance pending |
 | Security detection and response | Explainable rules, deduplicated evidence, incident review, manual containment and in-app admin notifications | Opt-in; [synthetic evaluation and limitations](DETECTION_AND_RESPONSE.md); no validated production ML |
+| Enterprise integrations and governance | Okta/Entra OIDC configuration, SCIM users/groups, group policies, access reviews and evidence export | [Implemented and tested with local fixtures](ENTERPRISE_GOVERNANCE.md); live tenant verification pending |
 | Device trust and signed releases | Open defects and missing acceptance evidence | Incomplete |
 | RDP, media/AI modules, offline audit sync | Placeholder UI or no implementation found | Not implemented |
 

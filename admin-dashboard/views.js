@@ -1,5 +1,6 @@
 import { actions, activityChart, button, chip, code, count, definition, field, icon, input,
   moment, muted, node, panel, select, stateCard, table } from './components.js';
+import { createGovernanceViews } from './governance.js';
 
 const PAGE_SIZE = 25;
 const severity = value => chip(value, { critical: 'danger', high: 'danger', medium: 'warning', low: 'blue' }[value]);
@@ -34,7 +35,7 @@ export function createViews({ api, getAccount, showDialog, confirm, refresh, nav
     const query = new URLSearchParams({ page: current.page, limit: PAGE_SIZE, ...current.params });
     const data = await api.request(path + '?' + query);
     const rows = data[property];
-    return { rows, page: current.page, more: data.total !== undefined ? current.page * PAGE_SIZE < data.total : rows.length === PAGE_SIZE };
+    return { rows, page: current.page, more: data.total !== undefined ? current.page * PAGE_SIZE < data.total : rows.length === PAGE_SIZE, extra: data };
   }
   const controls = (key, data) => {
     const pagerNode = pager(data, page => { state(key).page = page; refresh(); });
@@ -196,7 +197,9 @@ export function createViews({ api, getAccount, showDialog, confirm, refresh, nav
     return async () => {
       const initial = policy?.assignment || { scope: 'organization', userIds: [] };
       const selected = new Set(initial.userIds);
-      const scope = select('assignment', [['organization', 'Entire organization'], ['users', 'Selected users']], initial.scope);
+      const scope = select('assignment', [['organization', 'Entire organization'], ['users', 'Selected users'], ['groups', 'Directory groups']], initial.scope);
+      const groupPicker = node('fieldset', { class: 'picker', hidden: scope.value !== 'groups' }, node('legend', {}, 'Assigned groups'),
+        field('Group IDs, one per line', textArea('groupIds', (initial.groupIds || []).join('\n'))), muted('Find group IDs on the Integrations page.'));
       const search = input('userSearch', { maxlength: 80, type: 'search' });
       const matches = node('div', { class: 'picker-list' });
       const assigned = node('div', { class: 'picker-selected' });
@@ -238,6 +241,7 @@ export function createViews({ api, getAccount, showDialog, confirm, refresh, nav
           button('Find users', findUsers)), matches, assigned);
       scope.addEventListener('change', () => {
         picker.hidden = scope.value !== 'users';
+        groupPicker.hidden = scope.value !== 'groups';
         if (!picker.hidden) findUsers();
       });
       search.addEventListener('keydown', event => { if (event.key === 'Enter') { event.preventDefault(); findUsers(); } });
@@ -247,13 +251,13 @@ export function createViews({ api, getAccount, showDialog, confirm, refresh, nav
           field('Deny patterns, one per line', textArea('deny', policy?.rules.deny.join('\n') || '')),
           field('Allow patterns, one per line', textArea('allow', policy?.rules.allow.join('\n') || '')),
           node('p', { class: 'muted' }, 'Use * as a wildcard. Deny matches win. A populated allow list requires a match.'),
-          field('Assignment', scope), picker,
+          field('Assignment', scope), picker, groupPicker,
           node('label', { class: 'check-label' }, input('active', { type: 'checkbox', checked: policy?.is_active ?? true }), 'Policy active')],
         async run(form) {
           const userIds = scope.value === 'users' ? [...selected] : [];
           if (scope.value === 'users' && !userIds.length) throw new Error('Select at least one user.');
           const body = { name: form.get('name').trim(), rules: { deny: lines(form.get('deny')), allow: lines(form.get('allow')) },
-            isActive: form.has('active'), assignment: { scope: scope.value, userIds }, ...(policy && { revision: policy.revision }) };
+            isActive: form.has('active'), assignment: { scope: scope.value, userIds, ...(scope.value === 'groups' && { groupIds: lines(form.get('groupIds')) }) }, ...(policy && { revision: policy.revision }) };
           if (new TextEncoder().encode(JSON.stringify(body)).length > 10240) throw new Error('Reduce the rule or assignment lists to fit the 10 KiB request limit.');
           await api.request(policy ? '/policies/' + policy.id : '/policies', { method: policy ? 'PUT' : 'POST', body });
           refresh();
@@ -273,7 +277,7 @@ export function createViews({ api, getAccount, showDialog, confirm, refresh, nav
             node('summary', {}, 'Revision ' + version.revision + ' · ' + version.name),
             definition([['Saved', moment(version.created_at)], ['Actor', version.actor || 'Migration'],
               ['State', version.is_active ? 'Active' : 'Disabled'], ['Assignment', version.assignment.scope === 'organization' ? 'Entire organization' :
-                version.assignment.userIds.map(id => code(id))],
+                (version.assignment.groupIds || version.assignment.userIds).map(id => code(id))],
               ['Deny', version.rules.deny.join(', ') || 'None'], ['Allow', version.rules.allow.join(', ') || 'None']]))),
           versions.length ? nullText() : stateCard('No recorded revisions', 'Revisions appear here after a policy is saved.'),
           actions(page > 1 && button('Previous revisions', () => load(page - 1)),
@@ -302,7 +306,8 @@ export function createViews({ api, getAccount, showDialog, confirm, refresh, nav
       panel('Versioned URL policies', 'Manage explicit organization or user assignments.', node('div', {},
         table('URL policies', ['Policy', 'Assignment', 'Revision', 'Status', 'Actions'], data.rows.map(row => [
           person(row.name, row.rules.deny.length + ' deny · ' + row.rules.allow.length + ' allow'),
-          row.assignment.scope === 'users' ? chip(row.assignment.userIds.length + (row.assignment.userIds.length === 1 ? ' assigned user' : ' assigned users'), 'blue') : 'Entire organization',
+          row.assignment.scope === 'groups' ? chip(row.assignment.groupIds.length + (row.assignment.groupIds.length === 1 ? ' assigned group' : ' assigned groups'), 'blue') :
+            row.assignment.scope === 'users' ? chip(row.assignment.userIds.length + (row.assignment.userIds.length === 1 ? ' assigned user' : ' assigned users'), 'blue') : 'Entire organization',
           'v' + row.revision, yes(row.is_active, 'Active', 'Disabled'),
           actions(button('Edit', policyEditor(row), 'subtle'), button('History', policyHistory(row), 'subtle')),
         ])), controls('policies', data)), button('Create policy', policyEditor(), 'primary', 'plus')),
@@ -430,7 +435,8 @@ export function createViews({ api, getAccount, showDialog, confirm, refresh, nav
           },
         }), 'primary') : node('p', { class: 'muted' }, 'Manage your password with your identity provider.'))));
   }
-  return { overview, users, devices, sessions, network, policies, events, audit, alerts, account, reset: () => pageState.clear() };
+  return { overview, users, devices, sessions, network, policies, events, audit, alerts, account,
+    ...createGovernanceViews({ api, getAccount, showDialog, confirm, refresh, list, controls }), reset: () => pageState.clear() };
 }
 
 function nullText() { return document.createTextNode(''); }

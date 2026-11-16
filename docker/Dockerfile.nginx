@@ -1,5 +1,5 @@
 FROM nginx:1.28-alpine@sha256:a8b39bd9cf0f83869a2162827a0caf6137ddf759d50a171451b335cecc87d236
 COPY nginx/nginx.conf.template /etc/nginx/templates/default.conf.template
-COPY admin-dashboard/index.html admin-dashboard/styles.css admin-dashboard/app.js admin-dashboard/api.js admin-dashboard/components.js admin-dashboard/views.js /var/www/remoteshield/admin-dashboard/
+COPY admin-dashboard/index.html admin-dashboard/styles.css admin-dashboard/app.js admin-dashboard/api.js admin-dashboard/components.js admin-dashboard/views.js admin-dashboard/governance.js /var/www/remoteshield/admin-dashboard/
 EXPOSE 80 443
 HEALTHCHECK --interval=10s --timeout=3s --retries=6 CMD wget -qO- http://127.0.0.1/health || exit 1

@@ -1,8 +1,10 @@
 # Container control-plane TLS edge. WireGuard/OS enforce application traffic routing.
 upstream control_api { server backend:3000; }
+log_format rsx_control '$remote_addr [$time_local] "$request_method $uri $server_protocol" $status $body_bytes_sent';
 server {
     listen 80;
     server_name ${DOMAIN};
+    access_log /var/log/nginx/access.log rsx_control;
     location = /health { proxy_pass http://control_api; }
     location / { return 301 https://$host$request_uri; }
 }
@@ -10,6 +12,7 @@ server {
     listen 443 ssl;
     server_name ${DOMAIN};
     server_tokens off;
+    access_log /var/log/nginx/access.log rsx_control;
     ssl_certificate /etc/nginx/certs/tls.crt;
     ssl_certificate_key /etc/nginx/certs/tls.key;
     ssl_protocols TLSv1.2 TLSv1.3;
@@ -20,6 +23,14 @@ server {
     add_header X-Content-Type-Options nosniff always;
     add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' wss:; img-src 'self' data:; frame-ancestors 'none'" always;
     location /api/ {
+        proxy_pass http://control_api;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+    location ~ ^/api/(v1/)?auth/oidc/ {
+        error_log /dev/stderr crit;
         proxy_pass http://control_api;
         proxy_set_header Host $host;
         proxy_set_header X-Forwarded-For $remote_addr;

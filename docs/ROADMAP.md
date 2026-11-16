@@ -1,5 +1,9 @@
 # Phase 01 roadmap and recovery plan
 
+## Phase 11 implementation and deployment gates
+
+OIDC setup and console handoff, SCIM users/groups, directory lifecycle, policy assignments, access reviews, posture and evidence export are implemented. Verify provider-specific setup, claims and deprovisioning in controlled Okta and Entra tenants. Evaluate provisioning/review capacity, retention and evidence handling for the intended deployment. Optional webhook transport remains a documented signing/retry design. [Phase 11 operations](ENTERPRISE_GOVERNANCE.md)
+
 ## Phase 10 delivery and remaining gates
 
 Deterministic observations/rules, incident evidence/deduplication, review/response APIs, console triage and in-app notifications are implemented. [Detection operations](DETECTION_AND_RESPONSE.md) defines the opt-in rollout and additive migration recovery. Next acceptance requires representative tenant-labeled activity, threshold/false-positive review, sustained peak-load and retention measurements, automatic verified native/gateway telemetry sources, privacy/archival policy and optional external notification integrations. Machine learning remains deferred without suitable training/evaluation data. No subsequent phase starts automatically.
