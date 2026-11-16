@@ -66,6 +66,11 @@ async function recordDecision(req,user,session,device,decision,revision) {
   await query(`INSERT INTO access_decisions(user_id,session_id,device_id,resource,sensitivity,outcome,reason,request_id,policy_revision)
     VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)`,[user.id,session?.id || null,device?.id || null,decision.resource,decision.sensitivity,
     decision.allowed ? 'allow' : 'deny',decision.reason,requestId,revision]);
+  if (req.ip && req.requestId) {
+    const { observe }=require('./detection-signals');
+    await observe(req,'session.observed',{ userId:user.id,sessionId:session?.id });
+    if (!decision.allowed) await observe(req,'policy.denied',{ userId:user.id,sessionId:session?.id,reason:decision.reason });
+  }
   req.app?.get?.('logger')?.info({ event:'access.decision',requestId,organizationId:tenantId(),userId:user.id,
     resource:decision.resource,outcome:decision.allowed ? 'allow' : 'deny',reason:decision.reason,policyRevision:revision });
 }

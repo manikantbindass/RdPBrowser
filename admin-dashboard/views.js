@@ -346,15 +346,69 @@ export function createViews({ api, getAccount, showDialog, confirm, refresh, nav
   }
 
   async function alerts() {
-    const data = await list('alerts', '/admin/anomalies', 'anomalies');
-    return panel('Unresolved anomalies', 'Stored alerts from the organization’s anomaly detector.', node('div', {},
-      table('Unresolved anomalies', ['Alert', 'Severity', 'User', 'Reported', 'Actions'], data.rows.map(row => [
-        node('div', {}, node('strong', {}, row.alert_type), row.details ? node('details', {},
-          node('summary', {}, 'Alert details'), node('pre', { class: 'alert-details' }, JSON.stringify(row.details, null, 2))) : null),
-        severity(row.severity), row.username || 'System', moment(row.created_at),
-        action('Resolve', 'Resolve this alert?', 'The alert is removed from the unresolved queue. The resolution is recorded in the audit log.',
-          '/admin/anomalies/' + row.id + '/resolve', 'PATCH'),
-      ]), 'No unresolved alerts'), controls('alerts', data)));
+    const [data, detector] = await Promise.all([list('alerts', '/admin/alerts', 'alerts'), api.request('/admin/detection-rules')]);
+    const selected = state('alerts').params;
+    return node('div', { class: 'stack' },
+      panel('Detection health', 'Deterministic rules with recorded evidence. Confidence measures the signal, not whether an account is compromised.',
+        node('div', { class: 'panel-body' }, definition([['Worker', chip(detector.health, detector.health === 'healthy' ? 'good' : 'warning')],
+          ['Last successful scan', moment(detector.lastSuccess)], ['Scan interval', detector.intervalMs / 1000 + ' seconds']]),
+        node('details', {}, node('summary', {}, 'Rule definitions'), ...detector.rules.map(rule => node('p', {},
+          node('strong', {}, rule.id + ' v' + rule.version + ' · ' + rule.severity + ' · ' + rule.confidence + ' confidence'),
+          ' · Threshold ' + rule.threshold + ' in ' + rule.window + 's. ' + rule.explanation))))),
+      panel('Security incidents', 'Review observations before taking manual action. Client reports are unverified.', node('div', {},
+        filterForm('alerts', [field('Incident status', select('status', [['open', 'Open'], ['investigating', 'Investigating'], ['resolved', 'Resolved'], ['dismissed', 'Dismissed'], ['all', 'All statuses']], selected.status || 'open')),
+          field('Severity', select('severity', [['', 'Any severity'], ['critical', 'Critical'], ['high', 'High'], ['medium', 'Medium'], ['low', 'Low']], selected.severity)),
+          field('Detection rule', select('ruleId', [['', 'Any rule'], ...detector.rules.map(rule => [rule.id, rule.id])], selected.ruleId))]),
+        table('Security incidents', ['Rule', 'Severity / confidence', 'Account', 'Status', 'Evidence', 'Last observed', 'Actions'], data.rows.map(row => [
+          person(row.rule_id || row.alert_type, row.explanation), node('div', {}, severity(row.severity), muted(row.confidence + ' confidence')),
+          row.username || 'Unattributed', chip(row.status, 'blue'), String(row.evidence_count), moment(row.last_seen),
+          button('Review', () => openIncident(row.id), 'subtle'),
+        ]), 'No incidents match these filters'), controls('alerts', data))));
+  }
+
+  async function openIncident(id) {
+    const content = node('div', { class: 'stack' });
+    showDialog({ title: 'Incident review', content: [content] });
+    async function load(kind, page = 1) {
+      const body = await api.request('/admin/alerts/' + id + '/' + kind + '?limit=20&page=' + page);
+      const rows = body[kind];
+      const host = content.querySelector('[data-history="' + kind + '"]');
+      host.replaceChildren(kind === 'evidence' ? table('Incident evidence', ['Event', 'Trust', 'Reason', 'Request ID', 'Observed'], rows.map(row => [
+        row.event_type, row.trust, row.reason || '—', code(row.request_id), moment(row.observed_at),
+      ]), 'No recorded evidence') : table('Incident review history', ['Status', 'Disposition', 'Actor', 'Response', 'Time'], rows.map(row => [
+        row.status, row.disposition, code(row.actor_id), row.response || 'Review', moment(row.created_at),
+      ]), 'No reviews yet'),
+        actions(page > 1 && button('Newer ' + kind, () => load(kind, page - 1).catch(failed)),
+          rows.length === 20 && button('Older ' + kind, () => load(kind, page + 1).catch(failed))));
+    }
+    function failed(error) { content.replaceChildren(stateCard('Incident unavailable', error.message, null, 'error')); }
+    try {
+      const { alert } = await api.request('/admin/alerts/' + id);
+      const reviewStatus = select('status', [['open', 'Open'], ['investigating', 'Investigating'], ['resolved', 'Resolved'], ['dismissed', 'Dismissed']], alert.status);
+      const disposition = select('disposition', [['pending', 'Pending'], ['confirmed', 'Confirmed'], ['benign', 'Benign'], ['insufficient_evidence', 'Insufficient evidence']], alert.disposition);
+      const save = button('Save review', async () => {
+        save.disabled = true;
+        try {
+          await api.request('/admin/alerts/' + id + '/review', { method: 'PATCH', body: { revision: alert.review_revision, status: reviewStatus.value, disposition: disposition.value } });
+          await openIncident(id); refresh();
+        } catch (error) { failed(error); }
+      }, 'primary');
+      const respond = action => confirm({ title: action === 'lock_user' ? 'Lock the associated account?' : 'Terminate the associated session?',
+        detail: 'This is a manual containment action. Authentication failures identify an account target, not the person who attempted access. Existing role restrictions apply.',
+        submit: 'Confirm response', async run() {
+          await api.request('/admin/alerts/' + id + '/respond', { method: 'POST', body: { revision: alert.review_revision, action } }); refresh();
+        } });
+      content.replaceChildren(node('p', {}, alert.explanation), definition([['Rule', alert.rule_id || 'Legacy'], ['Confidence', alert.confidence],
+        ['Evidence observations', String(alert.evidence_count)], ['Review revision', String(alert.review_revision)]]),
+      !alert.rule_id && alert.details ? node('details', {}, node('summary', {}, 'Legacy alert details'),
+        node('pre', { class: 'alert-details', tabindex: '0', 'aria-label': 'Legacy alert details' }, JSON.stringify(alert.details, null, 2))) : nullText(),
+      field('Review status', reviewStatus), field('Disposition', disposition), save,
+      actions(!alert.resolved && alert.user_id && button('Lock account', () => respond('lock_user'), 'danger'),
+        !alert.resolved && alert.session_id && button('Terminate session', () => respond('terminate_session'), 'danger')),
+      node('h3', {}, 'Detection evidence'), node('div', { 'data-history': 'evidence' }),
+      node('h3', {}, 'Review history'), node('div', { 'data-history': 'reviews' }));
+      await Promise.all([load('evidence'), load('reviews')]);
+    } catch (error) { failed(error); }
   }
 
   async function account() {

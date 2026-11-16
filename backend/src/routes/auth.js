@@ -54,17 +54,22 @@ router.post('/login',require('../contracts').validateBody('loginRequest'),wrap(a
     await ensureOrganization();
     const user = (await query('SELECT * FROM users WHERE username=$1 FOR UPDATE',[username])).rows[0];
     const valid = await bcrypt.compare(password,user?.password_hash || '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxY6qM3LqH/OmZ0bDymXbD1N1wG');
-    if (!user || !valid) fail(401,'Invalid credentials');
+    if (!user || !valid) {
+      await require('../services/detection-signals').observe(req,'auth.failure',{ userId:user?.id,subject:username,reason:'INVALID_CREDENTIALS' });
+      return { invalid:true }; // Commit evidence before returning a denial.
+    }
     if (!user.is_active || user.is_locked) fail(403,'Account unavailable');
     if (req.app.locals.config.DEVICE_BINDING_ENABLED && user.device_id && user.device_id!==deviceId) fail(403,'Device not authorized for this account');
     if (deviceId && (await query("SELECT id FROM devices WHERE external_id=$1 AND (status='revoked' OR trust_state IN ('revoked','quarantined') OR user_id<>$2)",[deviceId,user.id])).rows.length) fail(403,'Device unavailable');
     req.user = { sub:user.id };
     const session = await issueSession(req,user,deviceId,deviceOs);
+    if (!session.denied) await require('../services/detection-signals').observe(req,'auth.success',{ userId:user.id,device:deviceId });
     await query('UPDATE users SET last_login=NOW() WHERE id=$1',[user.id]);
     await audit(req,'login',user.id);
     return session;
   }));
   if (result.denied) fail(403,'Access policy denied authentication',result.denied);
+  if (result.invalid) fail(401,'Invalid credentials');
   await req.app.get('io')?.emitToAdmins(organizationId,'user_logged_in',{ userId:result.user.id,username,deviceOs,timestamp:new Date().toISOString() });
   res.json({ message:'Login successful',...result });
 }));
@@ -85,6 +90,7 @@ router.post('/refresh',wrap(async (req,res) => {
       if (used) {
         await query('UPDATE sessions SET is_active=FALSE,ended_at=NOW(),refresh_hash=NULL WHERE user_id=$1 AND family_id=$2',[user.id,used.family_id]);
         req.user={ sub:user.id }; await audit(req,'refresh.reuse',user.id);
+        return { invalid:true,reuse:true };
       }
       return { invalid:true };
     }
@@ -96,6 +102,11 @@ router.post('/refresh',wrap(async (req,res) => {
     await audit(req,'refresh',session.id);
     return issued;
   }));
+  if (result.reuse) {
+    // Optional telemetry must never roll back an already required revocation.
+    try { await withTenant(payload.organizationId,() => require('../services/detection-signals').observe(req,'session.refresh_reuse')); }
+    catch { req.app.get('logger')?.error({ event:'detection.reuse_observation_failed',requestId:req.requestId }); }
+  }
   if (result.invalid) fail(401,'Invalid or expired refresh token');
   if (result.denied) fail(403,'Access policy denied refresh',result.denied);
   res.json(result);

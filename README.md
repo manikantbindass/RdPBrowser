@@ -39,6 +39,7 @@ The repository is being improved incrementally. Existing API clients retain `/ap
 | VPN, DNS and kill-switch enforcement | Per-device WireGuard keys, dual-stack Linux gateway, independent Linux client firewall and isolated packet tests | Linux lab verified. Deployed and other OS profiles require acceptance. |
 | Refresh rotation | Persisted single-use refresh, session revocation and race tests; Android secure credential storage | Implemented; live Android session acceptance pending |
 | Enterprise identity and access policy | OIDC/PKCE/signature checks, provider MFA assurance, refresh-family reuse detection, device key proof and live resource decisions | Backend implemented; live IdP/native handoff/attestation acceptance pending |
+| Security detection and response | Explainable rules, deduplicated evidence, incident review, manual containment and in-app admin notifications | Opt-in; [synthetic evaluation and limitations](docs/DETECTION_AND_RESPONSE.md); no validated production ML |
 | Device trust and signed releases | Open defects and missing acceptance evidence | Incomplete |
 | RDP, media/AI modules, offline audit sync | Placeholder UI or no implementation found | Not implemented |
 

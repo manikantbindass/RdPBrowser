@@ -70,6 +70,11 @@ function startSocket() {
   connection.on('user_logged_in', () => visiblePage(['overview', 'sessions']));
   connection.on('session_terminated', () => visiblePage(['overview', 'sessions']));
   connection.on('url_blocked', () => visiblePage(['policies']));
+  connection.on('security_alert', alert => {
+    if (connection !== socket) return;
+    message('notification', 'New ' + alert.severity + ' security incident: ' + alert.ruleId + '. Open Risk & alerts to review.');
+    visiblePage(['alerts', 'overview']);
+  });
 }
 
 function signedOut(text) {
@@ -238,4 +243,4 @@ $('menu').addEventListener('click', () => {
 window.addEventListener('hashchange', () => {
   if (window.location.hash !== '#main') setPage(readLocation(), true);
 });
-setInterval(() => { if (active === 'overview' || active === 'sessions') refreshInBackground(); }, 90000);
+setInterval(() => { if (['overview', 'sessions', 'alerts'].includes(active)) refreshInBackground(); }, 90000);

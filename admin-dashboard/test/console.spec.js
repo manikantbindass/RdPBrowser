@@ -110,7 +110,7 @@ test('creates a user and applies a role change through the console', async ({ pa
 
 test('all navigation views load and session termination takes effect', async ({ page }) => {
   await login(page);
-  for (const [link, heading] of [['Security events', 'Reported security events'], ['Risk & alerts', 'Unresolved anomalies'],
+  for (const [link, heading] of [['Security events', 'Reported security events'], ['Risk & alerts', 'Security incidents'],
     ['Account settings', 'Administrator profile'], ['Sessions', 'Active sessions']]) {
     await page.getByRole('link', { name: link, exact: true }).click();
     await expect(page.getByRole('heading', { name: heading, exact: true, level: 2 })).toBeVisible();
@@ -120,4 +120,28 @@ test('all navigation views load and session termination takes effect', async ({ 
   await current.getByRole('button', { name: 'Terminate', exact: true }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Terminate', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Administrator sign in' })).toBeVisible();
+});
+
+test('notifies administrators and reviews real detection evidence with revision protection', async ({ page }) => {
+  await login(page);
+  await expect(page.getByText('Live updates connected')).toBeVisible();
+  await fixture.detectionFixture();
+  await expect(page.locator('#notification')).toContainText('vpn_client_bypass');
+  await page.getByRole('link', { name: 'Risk & alerts', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Security incidents', level: 2 })).toBeVisible();
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  const incident = page.getByRole('row').filter({ hasText: 'vpn_client_bypass' });
+  await incident.getByRole('button', { name: 'Review', exact: true }).click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog.getByText(/client_report/)).toBeVisible();
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  await dialog.getByLabel('Review status', { exact: true }).selectOption('resolved');
+  await dialog.getByLabel('Disposition', { exact: true }).selectOption('benign');
+  await dialog.getByRole('button', { name: 'Save review', exact: true }).click();
+  await expect(dialog.getByLabel('Review status', { exact: true })).toHaveValue('resolved');
+  await expect(dialog.getByRole('table', { name: 'Incident review history' }).getByText('benign', { exact: true })).toBeVisible();
+  await dialog.getByRole('button', { name: 'Close dialog' }).click();
+  await page.getByLabel('Incident status', { exact: true }).selectOption('resolved');
+  await page.getByRole('button', { name: 'Apply filters', exact: true }).click();
+  await expect(page.getByRole('row').filter({ hasText: 'vpn_client_bypass' })).toBeVisible();
 });

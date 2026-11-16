@@ -1,0 +1,14 @@
+{
+  "dataset": "synthetic deterministic stress cases v1; not population estimates",
+  "cases": 50,
+  "truePositive": 10,
+  "trueNegative": 20,
+  "falsePositive": 10,
+  "falseNegative": 10,
+  "precision": 0.5,
+  "recall": 0.5,
+  "falsePositiveRate": 0.3333333333333333,
+  "falseNegativeRate": 0.5,
+  "modeledObservationToScanLatencyMs": 1000,
+  "evaluationDurationMs": 0.475
+}

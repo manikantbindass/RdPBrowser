@@ -115,6 +115,15 @@ for (const route of ['sessions','blocked-urls','anomalies']) operation('get',`/a
 operation('get','/admin/users','Search organization users by literal name or email substring',{ admin:true,list:true,filters:{q:string(80)} });
 operation('get','/admin/ip-logs','Tenant activity logs',{ admin:true,list:true,filters:{ flagged:{ type:'boolean' } } });
 operation('get','/admin/stats','Tenant dashboard counts',{ admin:true });
+const incidentStatus={enum:['open','investigating','resolved','dismissed']};
+const incidentRevision={type:'integer',minimum:1,maximum:2147483646};
+operation('get','/admin/detection-rules','Versioned deterministic rules and tenant worker health',{admin:true});
+operation('get','/admin/alerts','Tenant incident queue; defaults to open incidents',{admin:true,list:true,filters:{status:{enum:[...incidentStatus.enum,'all']},severity,ruleId:string(64)}});
+operation('get','/admin/alerts/{id}','Incident explanation, confidence, revision and evidence count',{admin:true});
+operation('get','/admin/alerts/{id}/evidence','Append-only redacted detection evidence',{admin:true,list:true});
+operation('get','/admin/alerts/{id}/reviews','Append-only review and manual response history',{admin:true,list:true});
+operation('patch','/admin/alerts/{id}/review','Revision-checked review; closed states require a nonpending disposition',{admin:true,input:object({revision:incidentRevision,status:incidentStatus,disposition:{enum:['pending','confirmed','benign','insufficient_evidence']}})});
+operation('post','/admin/alerts/{id}/respond','Manual containment subject to existing administrator role hierarchy',{admin:true,input:object({revision:incidentRevision,action:{enum:['terminate_session','lock_user']}})});
 operation('post','/admin/force-logout','Revoke sessions atomically with audit',{ admin:true,input:{ ...object({ userId:uuid,sessionId:uuid },[]),oneOf:[{ required:['userId'],not:{ required:['sessionId'] } },{ required:['sessionId'],not:{ required:['userId'] } }] } });
 operation('post','/admin/blocked-urls','Upsert legacy tenant deny rule',{ admin:true,status:201,input:object({ pattern:string(500),reason:string(255) },['pattern']) });
 operation('delete','/admin/blocked-urls/{id}','Deactivate legacy deny rule',{ admin:true });

@@ -2585,6 +2585,438 @@
         }
       }
     },
+    "/admin/detection-rules": {
+      "get": {
+        "operationId": "get__admin_detection_rules",
+        "summary": "Versioned deterministic rules and tenant worker health",
+        "description": "Requires a live organization admin/superadmin session. No cross-organization superadmin bypass.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error; includes server-owned X-Request-ID correlation. 400 validation, 401 authentication, 403 authorization, 404 invisible resource, 409 conflict, 429 limit, 500 internal, 503 readiness/capacity.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/alerts": {
+      "get": {
+        "operationId": "get__admin_alerts",
+        "summary": "Tenant incident queue; defaults to open incidents",
+        "description": "Requires a live organization admin/superadmin session. No cross-organization superadmin bypass.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error; includes server-owned X-Request-ID correlation. 400 validation, 401 authentication, 403 authorization, 404 invisible resource, 409 conflict, 429 limit, 500 internal, 503 readiness/capacity.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10000,
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 50
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "open",
+                "investigating",
+                "resolved",
+                "dismissed",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "severity",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "low",
+                "medium",
+                "high",
+                "critical"
+              ]
+            }
+          },
+          {
+            "name": "ruleId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            }
+          }
+        ]
+      }
+    },
+    "/admin/alerts/{id}": {
+      "get": {
+        "operationId": "get__admin_alerts__id_",
+        "summary": "Incident explanation, confidence, revision and evidence count",
+        "description": "Requires a live organization admin/superadmin session. No cross-organization superadmin bypass.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error; includes server-owned X-Request-ID correlation. 400 validation, 401 authentication, 403 authorization, 404 invisible resource, 409 conflict, 429 limit, 500 internal, 503 readiness/capacity.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/admin/alerts/{id}/evidence": {
+      "get": {
+        "operationId": "get__admin_alerts__id__evidence",
+        "summary": "Append-only redacted detection evidence",
+        "description": "Requires a live organization admin/superadmin session. No cross-organization superadmin bypass.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error; includes server-owned X-Request-ID correlation. 400 validation, 401 authentication, 403 authorization, 404 invisible resource, 409 conflict, 429 limit, 500 internal, 503 readiness/capacity.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10000,
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 50
+            }
+          }
+        ]
+      }
+    },
+    "/admin/alerts/{id}/reviews": {
+      "get": {
+        "operationId": "get__admin_alerts__id__reviews",
+        "summary": "Append-only review and manual response history",
+        "description": "Requires a live organization admin/superadmin session. No cross-organization superadmin bypass.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error; includes server-owned X-Request-ID correlation. 400 validation, 401 authentication, 403 authorization, 404 invisible resource, 409 conflict, 429 limit, 500 internal, 503 readiness/capacity.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10000,
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 50
+            }
+          }
+        ]
+      }
+    },
+    "/admin/alerts/{id}/review": {
+      "patch": {
+        "operationId": "patch__admin_alerts__id__review",
+        "summary": "Revision-checked review; closed states require a nonpending disposition",
+        "description": "Requires a live organization admin/superadmin session. No cross-organization superadmin bypass.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error; includes server-owned X-Request-ID correlation. 400 validation, 401 authentication, 403 authorization, 404 invisible resource, 409 conflict, 429 limit, 500 internal, 503 readiness/capacity.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "revision": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 2147483646
+                  },
+                  "status": {
+                    "enum": [
+                      "open",
+                      "investigating",
+                      "resolved",
+                      "dismissed"
+                    ]
+                  },
+                  "disposition": {
+                    "enum": [
+                      "pending",
+                      "confirmed",
+                      "benign",
+                      "insufficient_evidence"
+                    ]
+                  }
+                },
+                "required": [
+                  "revision",
+                  "status",
+                  "disposition"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/admin/alerts/{id}/respond": {
+      "post": {
+        "operationId": "post__admin_alerts__id__respond",
+        "summary": "Manual containment subject to existing administrator role hierarchy",
+        "description": "Requires a live organization admin/superadmin session. No cross-organization superadmin bypass.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error; includes server-owned X-Request-ID correlation. 400 validation, 401 authentication, 403 authorization, 404 invisible resource, 409 conflict, 429 limit, 500 internal, 503 readiness/capacity.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "revision": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 2147483646
+                  },
+                  "action": {
+                    "enum": [
+                      "terminate_session",
+                      "lock_user"
+                    ]
+                  }
+                },
+                "required": [
+                  "revision",
+                  "action"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
     "/admin/force-logout": {
       "post": {
         "operationId": "post__admin_force_logout",

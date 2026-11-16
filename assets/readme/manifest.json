@@ -12,11 +12,12 @@
   },
   "assets": {
     "admin-dashboard.png": {
-      "bytes": 146922,
-      "sha256": "bef0423245347e2d9edd93a6ebdbf9ae7a4613f9dc4b31b71b44614f1acf17f3",
-      "width": 1038,
-      "height": 838,
-      "frames": 1
+      "bytes": 119637,
+      "sha256": "db633e824fc0c04de631298da95d735b66bfc766c1131108ffbb103d424dd9db",
+      "width": 1280,
+      "height": 907,
+      "frames": 1,
+      "provenance": "Real Phase 09 Console verification lab screenshot; docs/PHASE09_REPORT.md"
     },
     "architecture.svg": {
       "bytes": 4800,
@@ -80,6 +81,22 @@
     "security-workflow.svg": {
       "bytes": 3904,
       "sha256": "06b4986327063a855c196d6cc38fbbe13883c1f58fd734a734aeeb24cdb3ccef"
+    },
+    "device-management.png": {
+      "bytes": 59465,
+      "sha256": "c3350cfdde849d3bad42b53d9fc43f46cc7018174093d47439661c03813b1699",
+      "width": 1280,
+      "height": 720,
+      "frames": 1,
+      "provenance": "Real Phase 09 Console verification lab screenshot; docs/PHASE09_REPORT.md"
+    },
+    "policy-management.png": {
+      "bytes": 71012,
+      "sha256": "f99b8aba50c427f5c2f99fd26c8ddc7874000cc967e418ddd8e9630e03042d54",
+      "width": 1280,
+      "height": 853,
+      "frames": 1,
+      "provenance": "Real Phase 09 Console verification lab screenshot; docs/PHASE09_REPORT.md"
     }
   }
 }

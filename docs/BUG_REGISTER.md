@@ -1,5 +1,19 @@
 # Phase 01 defect register
 
+## Phase 10 detection disposition
+
+| Severity | Component / issue | Impact | Remediation / status |
+|---|---|---|---|
+| High | Prior worker joins country activity across a user's sessions | Misattributes geography and labels inferred compromise | Removed; server session-source changes are explained low-confidence observations |
+| High | Check-then-insert alert deduplication | Concurrent workers duplicate alerts; repeated evidence can inflate counts | Tenant advisory lock, partial unique index and per-rule immutable evidence consumption; real PostgreSQL race tests |
+| High | Missing failed-authentication observations | Password guessing cannot be reviewed through incidents | Persist minimal failure signals before returning 401; threshold and spray rules; no credential logging |
+| Medium | No incident review revision or response history | Stale administrative updates and unaudited triage | Revision-checked reviews/manual containment and append-only history; legacy resolve compatibility retained |
+| Medium | Fixed UTC office hours and misleading AI label | Predictable benign alerts and unsupported detection claims | Removed; versioned deterministic definitions, qualitative confidence and synthetic confounder evaluation |
+| Medium | Worker errors and bounded processing lack visible health | Missing observations could be mistaken for a safe environment | Exposed failed/lagging/capacity states, structured failures and explicit processing limits |
+| Medium | Native disconnection events and production labeled data absent | Offline/client bypasses and unobserved attacks remain undetected | Open: integrate verified telemetry, evaluate real tenant data and define privacy/retention acceptance |
+
+See [Phase 10 report](PHASE10_REPORT.md) for actual verification. Historical audit entries below remain evidence of the original repository, not current detector behavior.
+
 ## Phase 05 identity disposition (2026-11-12)
 
 | IDs | Change | Remaining limit |

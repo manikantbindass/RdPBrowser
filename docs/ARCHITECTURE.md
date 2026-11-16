@@ -1,5 +1,7 @@
 # RemoteShield X architecture
 
+Phase 10 adds a deterministic detection boundary within the same deployable: HTTP observations → tenant-scoped minimal signals → bounded versioned worker → deduplicated incidents/evidence → authorized review and manual response. It does not participate in packet forwarding. PostgreSQL transactions, advisory locks, RLS and append-only runtime grants define persistence boundaries. See [ADR 0006](adr/0006-deterministic-detection.md) and [detection flows, APIs and limitations](DETECTION_AND_RESPONSE.md).
+
 Phase 02 established the modular control plane. Phase 04 adds tenant-aware persistence, RLS, lifecycle transactions and enterprise REST interfaces within the same Node/Express deployable and PostgreSQL database. No broker, Redis, Kubernetes or microservice split is introduced. Current backend verification/limits are in PHASE04_REPORT.md; the Phase 01 audit remains historical evidence.
 
 ## Component ownership and dependencies

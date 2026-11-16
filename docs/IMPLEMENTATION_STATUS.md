@@ -1,5 +1,9 @@
 # Phase 01 verified feature inventory
 
+## Phase 10 detection and response update
+
+Versioned deterministic rules now consume tenant-scoped observations for password failures, token reuse, session sources, asserted device changes, server policy denials, request volume and selected untrusted VPN reports. Migration 005 adds atomic incident deduplication, consumed evidence, worker health and append-only review history. The console provides severity/confidence filters, explanations, evidence, revision-checked review, manual session termination/account lock and live-authorized in-app notifications. Collection remains explicitly disabled by default. No production ML accuracy, automatic native VPN telemetry or complete traffic inspection is claimed. See [operations and evaluation](DETECTION_AND_RESPONSE.md) and [Phase 10 evidence](PHASE10_REPORT.md).
+
 ## Phase 09 admin console update
 
 The responsive console integrates organization, user, device, session, policy, event, audit and alert APIs with explicit data states. Migration 004 adds user policy assignments and append-only revision snapshots. Local PostgreSQL and Chromium acceptance cover role boundaries, actions, tenant isolation and accessibility checks. See the [Phase 09 report](PHASE09_REPORT.md) and [console operations](ADMIN_CONSOLE.md).

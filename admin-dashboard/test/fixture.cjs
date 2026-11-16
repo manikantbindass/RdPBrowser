@@ -11,7 +11,7 @@ const { loadConfig } = require('../../backend/src/config');
 const db = require('../../backend/src/db/db');
 const { migrate } = require('../../backend/src/db/migrations');
 const { provision } = require('../../backend/src/db/provision');
-const { DEFAULT_ORGANIZATION } = require('../../backend/src/db/tenant');
+const { DEFAULT_ORGANIZATION, withTenant } = require('../../backend/src/db/tenant');
 const { attachRealtime } = require('../../backend/src/realtime');
 
 async function startFixture() {
@@ -69,7 +69,7 @@ async function startFixture() {
     const origin = 'http://127.0.0.1:' + server.address().port;
     const config = loadConfig({ NODE_ENV: 'test', DATABASE_URL: url.toString(), JWT_SECRET: randomBytes(32).toString('hex'),
       JWT_REFRESH_SECRET: randomBytes(32).toString('hex'), VPN_REQUIRED: 'false', CORS_ORIGINS: origin, RATE_LIMIT_MAX: '1000',
-      AUTH_RATE_LIMIT_MAX: '100', MAX_SESSIONS_PER_USER: '5' });
+      AUTH_RATE_LIMIT_MAX: '100', MAX_SESSIONS_PER_USER: '5', ANOMALY_DETECTION_ENABLED:'true' });
     const logger = { info() {}, warn() {}, error() {} };
     db.configure(config, logger);
     await db.initDB();
@@ -77,7 +77,17 @@ async function startFixture() {
     host.use(app);
     realtime = attachRealtime({ server, config, logger });
     app.set('io', realtime.io);
-    return { origin, password, close };
+    async function detectionFixture() {
+      const { observe } = require('../../backend/src/services/detection-signals');
+      const { scanOrganization } = require('../../backend/src/services/detection-engine');
+      return withTenant(DEFAULT_ORGANIZATION, async () => {
+        await observe({ app,ip:'192.0.2.5',requestId:randomUUID(),user:{ sub:member } },'client.vpn_bypass',{ trust:'client_report' });
+        const alerts = await scanOrganization(config);
+        for (const alert of alerts) await realtime.io.emitToAdmins(DEFAULT_ORGANIZATION,'security_alert',alert);
+        return alerts;
+      });
+    }
+    return { origin, password, close, detectionFixture };
   } catch (error) {
     await close();
     throw error;

@@ -7,6 +7,7 @@ const { managedUser }=require('../services/admin-roles');
 router.use((req,res,next) => ['admin','superadmin'].includes(req.user.role) ? next() : res.status(403).json({ error:'Admin access required' }));
 router.use((req,res,next) => { res.set('Cache-Control','no-store'); next(); });
 router.use(require('./console'));
+router.use(require('./detection'));
 async function change(req,action,target,fn) {
   return transaction(async () => { const result=await fn(); await audit(req,action,target || result?.id); return result; });
 }
@@ -65,7 +66,7 @@ router.get('/anomalies',wrap(async (req,res) => {
 }));
 router.patch('/anomalies/:id/resolve',wrap(async (req,res) => {
   const target=validateId(req);
-  await change(req,'anomaly.resolve',target,async () => affected(await query('UPDATE anomaly_alerts SET resolved=TRUE WHERE id=$1',[target])));
+  await require('../services/incidents').review(req,target,{ status:'resolved',disposition:'insufficient_evidence' },'anomaly.resolve');
   res.json({ message:'Alert resolved' });
 }));
 router.get('/users',wrap(async (req,res) => {

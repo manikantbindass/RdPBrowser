@@ -33,6 +33,10 @@ jobs:
           cache-dependency-path: backend/package-lock.json
       - run: npm ci
       - run: npm run lint
+      - name: Deterministic rules and synthetic evaluation
+        run: |
+          node node_modules/eslint/bin/eslint.js ../security/anomaly-detector --config .eslintrc.cjs --max-warnings 0
+          node ../scripts/evaluate-detections.cjs
       - run: node ../scripts/build-openapi.cjs
       - run: git diff --exit-code -- ../contracts/openapi.json
       - run: npm test -- --runInBand --detectOpenHandles

@@ -32,13 +32,14 @@ The repository is being improved incrementally. Existing API clients retain `/ap
 | API v1, legacy aliases, structured errors | Shared JSON Schemas and compatibility tests | Implemented |
 | PostgreSQL migration tracking and isolation | Adoption, concurrency, rollback/checksums, restricted-role RLS and cross-tenant tests | Implemented; production recovery drill pending |
 | Desktop frontend and Windows native debug build | TypeScript/Vite, Rust test, formatting and Clippy | Build verified; runtime security unverified |
-| Admin REST controls and realtime authentication | Tenant roles, live sessions, per-delivery revocation checks | Backend implemented; full admin UI acceptance pending |
+| Admin security console | Responsive organization, user, device, session, policy, audit and event views with tenant APIs and live updates | PostgreSQL and Chromium acceptance passed |
 | URL policy | Shared literal wildcard evaluator, revisioned storage, deny/allow parity | Backend implemented; client enforcement incomplete |
-| Android application | Flutter source; missing screens, native channels and wrapper | Blocked |
+| Android application | Flutter browser, session and device enrollment, native VPN guard; signed ARM64 verification build | Implemented; managed device acceptance pending |
 | Device registry and organization isolation | Tenant persistence, RLS/composite ownership, self-enrollment/revocation | Implemented; device attestation absent |
-| VPN, DNS and kill-switch enforcement | WireGuard templates; native failure/bypass gaps | Unverified/incomplete |
-| Refresh rotation | Persisted single-use refresh, session revocation and race tests | Implemented; client secure storage remains |
+| VPN, DNS and kill-switch enforcement | Per-device WireGuard keys, dual-stack Linux gateway, independent Linux client firewall and isolated packet tests | Linux lab verified. Deployed and other OS profiles require acceptance. |
+| Refresh rotation | Persisted single-use refresh, session revocation and race tests; Android secure credential storage | Implemented; live Android session acceptance pending |
 | Enterprise identity and access policy | OIDC/PKCE/signature checks, provider MFA assurance, refresh-family reuse detection, device key proof and live resource decisions | Backend implemented; live IdP/native handoff/attestation acceptance pending |
+| Security detection and response | Explainable rules, deduplicated evidence, incident review, manual containment and in-app admin notifications | Opt-in; [synthetic evaluation and limitations](DETECTION_AND_RESPONSE.md); no validated production ML |
 | Device trust and signed releases | Open defects and missing acceptance evidence | Incomplete |
 | RDP, media/AI modules, offline audit sync | Placeholder UI or no implementation found | Not implemented |
 
@@ -60,15 +61,15 @@ The API authorizes and records control decisions. Browser content does not pass 
 
 Captured from the running Tauri debug executable, not an AI mockup. This is the current development UI, not the new README design. Its placeholder IP/VPS data and status labels are not verified infrastructure or security signals.
 
-### Admin frontend — real login view
+### Admin security console
 
-![Actual admin frontend login page, with backend disconnected](../assets/readme/admin-dashboard.png)
+![RemoteShield X console running against a disposable PostgreSQL test organization](../assets/readme/admin-dashboard.png)
 
-Captured from the running, unmodified admin frontend in a clean browser profile. This is the login gate; no authenticated dashboard data or policy enforcement is demonstrated.
+Captured from the running console with the seeded Console verification lab organization. Counts represent that disposable test environment. [Console operations and verification](ADMIN_CONSOLE.md)
 
 ### Android and management capture gaps
 
-See the [capture ledger](../assets/readme/SCREENSHOTS.md) for actual captures and blockers. Unavailable views are not replaced with fabricated dashboards. The admin frontend can display a real login view, but authenticated metrics/policy capture requires a working database and authorized admin session. Android cannot currently build/run from this checkout. A device-management screen is not implemented.
+See the [capture ledger](../assets/readme/SCREENSHOTS.md) for actual captures and blockers. A managed Android browser capture requires a provisioned test environment. The device and policy console views are exercised through the real local API in the Phase 09 browser suite.
 
 ## Security architecture
 
@@ -93,7 +94,7 @@ Development mode deliberately permits direct control-plane access. Experimental 
 | Windows desktop | Local native debug build and real UI capture | No signed installer or enforcement certification |
 | Linux desktop | Tauri/WebKitGTK target; prior build workflow evidence | Current runtime/distro acceptance not established |
 | macOS desktop | Universal target configured | Current signing/notarization/runtime acceptance not established |
-| Android | minSdk26, target/compile35; ARM64/x86_64 Gradle declarations | Missing imports/native integration/wrapper; no Android14–17 guarantee |
+| Android | Minimum API 26; target and compile API 36; signed ARM64 verification APK; Android 16 emulator smoke test passed | Physical device matrix, production signing and provisioned VPN acceptance pending |
 | Backend | Local Node24 checks; Node22 architecture CI/container | Original dependency findings remain open |
 | PostgreSQL/Nginx/Docker | Real integration and earlier healthy local stack | Final local rerun blocked by Docker Desktop availability; production TLS not certified |
 
@@ -120,7 +121,7 @@ On Windows Docker Desktop, select the Linux context for this shell:
 $env:DOCKER_CONTEXT='desktop-linux'
 ```
 
-Follow [Local development](LOCAL_DEVELOPMENT.md) for host-side hot reload, native builds, test-database setup and endpoint configuration. Generated credentials remain ignored; do not commit `.env` files. No default administrator account is provided.
+Follow [Local development](LOCAL_DEVELOPMENT.md) for host-side hot reload, native builds, test-database setup and endpoint configuration. [Android operations](ANDROID_OPERATIONS.md) covers the Flutter toolchain, WireGuard setup and signing. Generated credentials remain ignored; do not commit `.env` files. No default administrator account is provided.
 
 ## Docker and VPN setup
 
@@ -133,7 +134,7 @@ The local stack sequences PostgreSQL, migrations, backend readiness and Nginx. D
 
 Production uses the base Compose file with reviewed secrets, a deliberate DB trust model, actual TLS certificates and verified ingress addresses. Read the [migration/recovery guide](MIGRATION_PHASE02.md) before mapping existing data volumes. Never delete volumes as routine recovery.
 
-WireGuard templates live in [vpn-server/](../vpn-server/). The privileged [setup script](../vpn-server/setup.sh) changes packages, keys, firewall and routing; it is not idempotent and should not be run blindly on a working VPS. [Audit findings B41–B43](BUG_REGISTER.md) describe the provisioning and DNS/IPv6/failure gaps. A configured tunnel is not proof of a working kill switch.
+Production Compose publishes HTTPS at the WireGuard IPv4 address. Provision the Linux gateway first, then enroll each device with its own key. The network guide covers the dedicated Linux firewall, DNS and IPv6 policies, platform requirements and recovery. [Network protection](NETWORK_PROTECTION.md)
 
 ## API and administration
 
@@ -142,6 +143,7 @@ New clients use `/api/v1`; existing `/api` aliases remain. Login and navigation 
 | Entry point | Purpose |
 |---|---|
 | `/api/v1/meta` | Public API metadata; enforcement reported as external |
+| `/api/v1/network/status` | Server-observed address and source-gate decision for this request |
 | `/api/v1/auth/*` | Persisted registration/login sessions and single-use refresh rotation |
 | `/api/v1/admin/*` | Role-gated sessions, rules, users and audit views |
 | `/api/v1/proxy/navigate` | Policy approval, not content proxying |
@@ -174,7 +176,7 @@ python scripts/validate_readme.py
 
 ## Roadmap
 
-1. Restore complete Android sources/toolchain and enforce reliable release gates.
+1. Verify Android deployment with a provisioned backend, WireGuard lockdown and production signing on physical devices.
 2. Review remaining dependencies, production role provisioning and authentication operations.
 3. Verify managed native navigation, tunnel failure, DNS and IPv6 behavior per platform.
 4. Complete device attestation, client policy enforcement and safe administration UI flows.

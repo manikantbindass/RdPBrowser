@@ -151,6 +151,8 @@ router.post('/events',wrap(async (req,res) => {
     if (value.deviceId) found(await query("SELECT id FROM devices WHERE id=$1 AND organization_id=$2 AND user_id=$3 AND status='registered'",[value.deviceId,tenantId(),req.user.sub]));
     const result=await query(`INSERT INTO security_events(user_id,device_id,event_type,severity,client_event_id,occurred_at) VALUES($1,$2,$3,$4,$5,$6)
       ON CONFLICT(organization_id,user_id,client_event_id) DO NOTHING RETURNING id,created_at`,[req.user.sub,value.deviceId || null,value.eventType,value.severity,value.clientEventId,timestamp]);
+    const signal={ 'vpn.disconnected':'client.vpn_disconnected','vpn.bypass_suspected':'client.vpn_bypass' }[value.eventType];
+    if (result.rows.length && signal) await require('../services/detection-signals').observe(req,signal,{ trust:'client_report',reason:'UNVERIFIED_CLIENT_REPORT' });
     return result.rows[0] || found(await query('SELECT id,created_at FROM security_events WHERE user_id=$1 AND client_event_id=$2',[req.user.sub,value.clientEventId]));
   });
   res.status(201).json({ event,trust:'untrusted-client-report' });

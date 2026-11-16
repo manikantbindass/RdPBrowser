@@ -1,5 +1,9 @@
 # Phase 01 roadmap and recovery plan
 
+## Phase 10 delivery and remaining gates
+
+Deterministic observations/rules, incident evidence/deduplication, review/response APIs, console triage and in-app notifications are implemented. [Detection operations](DETECTION_AND_RESPONSE.md) defines the opt-in rollout and additive migration recovery. Next acceptance requires representative tenant-labeled activity, threshold/false-positive review, sustained peak-load and retention measurements, automatic verified native/gateway telemetry sources, privacy/archival policy and optional external notification integrations. Machine learning remains deferred without suitable training/evaluation data. No subsequent phase starts automatically.
+
 ## Phase 05 identity delivery and remaining gates
 
 Implemented backend OIDC/PKCE/signature checks, provider-assurance MFA, linked identities, bounded token families, organization/resource/session policy, device possession/admin posture and decision logs. Read PHASE05_REPORT.md and IDENTITY_AND_ACCESS.md. Next identity acceptance requires real Okta/Entra tenant testing, native/browser secure handoff/storage UX, MDM/hardware posture/per-request proof, external deprovisioning and production recovery/load/security review. Existing dependency/network/Android/release gates remain open; no subsequent phase starts automatically.

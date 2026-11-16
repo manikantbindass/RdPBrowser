@@ -33,6 +33,8 @@ const definitions = {
   MAX_SESSIONS_PER_USER: Joi.number().integer().min(1).max(100).default(1),
   DEVICE_BINDING_ENABLED: Joi.boolean().default(true),
   ANOMALY_DETECTION_ENABLED: Joi.boolean().default(false),
+  DETECTION_INTERVAL_MS: Joi.number().integer().min(1000).max(300000).default(30000),
+  DETECTION_SIGNAL_RETENTION_DAYS: Joi.number().integer().min(1).max(30).default(7),
   ANOMALY_ORGANIZATION_IDS: Joi.string().default('00000000-0000-4000-8000-000000000001'),
   SSH_ENABLED: Joi.boolean().default(false),
   GEO_RESTRICTION_ENABLED: Joi.boolean().default(false),

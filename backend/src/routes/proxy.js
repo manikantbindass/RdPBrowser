@@ -19,6 +19,7 @@ async function decision(req,res,navigate) {
     await query(`INSERT INTO ip_logs(user_id,session_id,request_ip,vpn_confirmed,url_requested,country_code,flagged,flag_reason)
       VALUES($1,$2,$3,$4,$5,$6,$7,$8)`,[req.user.sub,req.sessionId,req.vpnClientIp || req.ip,req.app.locals.config.VPN_REQUIRED,parsed.toString(),country,!result.allowed,result.allowed ? null : result.reason]);
     await query('UPDATE sessions SET last_activity=NOW() WHERE id=$1',[req.sessionId]);
+    if (!result.allowed) await require('../services/detection-signals').observe(req,'policy.denied',{ sessionId:req.sessionId,reason:'URL_BLOCKED' });
   });
   if (navigate && !result.allowed) return res.status(403).json({ error:'URL blocked by administrator',reason:result.reason });
   res.json({ ...result,...(navigate ? { serverIp:req.app.locals.config.SERVER_PUBLIC_IP } : {}) });

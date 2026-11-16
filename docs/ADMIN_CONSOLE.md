@@ -1,5 +1,7 @@
 # Admin console operations
 
+Phase 10 expands Risk & alerts into a deterministic incident queue with worker health, confidence/explanations, evidence and review history, revision conflict checks and manual account/session containment. New incident notifications use the existing tenant-authorized Socket.IO channel; reconnect recovery uses the persistent queue. Deploy migration 005 and reviewed runtime grants. See [detection operations](DETECTION_AND_RESPONSE.md) for enablement, limitations and rollback requirements.
+
 The console is served at `/admin/` by the existing Nginx deployment. It calls the versioned API on the same origin and uses authenticated Socket.IO notifications. Deployment needs a current backend and successful migration `004_admin_console.sql`. Use the usual migration task and runtime role provisioning before starting the new application. Back up the database and review the restored deployment procedure before the rollout. Migration history is forward-only, so older application images will reject a database whose recorded migration list extends beyond their build.
 
 ## Access and controls

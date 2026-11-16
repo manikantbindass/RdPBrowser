@@ -1,0 +1,24 @@
+
+> @manikantbindass/remoteshield-x-backend@1.0.0 test
+> jest --coverage --testEnvironment node --runInBand --detectOpenHandles --coverage=false
+
+PASS src/__tests__/network-source.test.js
+PASS src/__tests__/architecture.test.js
+PASS src/__tests__/app.test.js
+PASS src/__tests__/openapi.test.js
+PASS src/__tests__/enterprise.test.js
+PASS src/__tests__/detections.test.js
+PASS src/__tests__/runtime.test.js
+PASS src/__tests__/admin.test.js
+PASS src/__tests__/laila.test.js
+PASS src/__tests__/oidc-config.test.js
+PASS src/__tests__/access.test.js
+PASS src/__tests__/gateway-snapshot.test.js
+PASS src/__tests__/database-lifecycle.test.js
+PASS src/__tests__/worker.test.js
+
+Test Suites: 14 passed, 14 total
+Tests:       138 passed, 138 total
+Snapshots:   0 total
+Time:        5.873 s, estimated 7 s
+Ran all test suites.
