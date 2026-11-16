@@ -51,6 +51,7 @@ docker/docker-compose.yml
 docs/ADMIN_CONSOLE.md
 docs/ARCHITECTURE.md
 docs/ENTERPRISE_GOVERNANCE.md
+docs/IDENTITY_AND_ACCESS.md
 docs/IMPLEMENTATION_STATUS.md
 docs/INTEGRATIONS.md
 docs/PHASE03_VALIDATION.json

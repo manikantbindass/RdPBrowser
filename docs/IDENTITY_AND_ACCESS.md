@@ -1,5 +1,7 @@
 # Identity and Zero Trust access controls
 
+Phase 11 adds provider validation and activation, Okta and Entra examples, SCIM account lifecycle, group mapping and a same-origin console SSO handoff. The original JSON callback remains available. [Current enterprise setup](ENTERPRISE_GOVERNANCE.md)
+
 Phase 05 adds server-side identity/access controls within the existing Express/PostgreSQL monolith. It does not certify endpoint integrity or provide blanket Zero Trust protection. See [OpenAPI](../contracts/openapi.json), [phase report](PHASE05_REPORT.md) and [prior database role upgrade](MIGRATION_PHASE04.md).
 
 ## Upgrade and compatibility
@@ -63,7 +65,7 @@ Okta and Microsoft Entra ID are future standards-based profiles through this ada
 
 ### Client boundary
 
-The callback returns JSON local tokens to the HTTPS browser. Existing password clients/aliases still work under compatibility policy. A native-app external-browser handoff and SSO login UI are not implemented in this backend phase; do not copy tokens into redirect query strings or bundle the confidential secret into a native app to bridge that gap. Future native integration needs a reviewed short-lived, PKCE-bound local handoff/deep-link contract and secure OS storage. Browser/admin frontends also need a reviewed token storage and CSP/XSS design. No frontend SSO completion is claimed here.
+The default callback returns local tokens as JSON to the HTTPS browser. The admin console requests a separate same-origin handoff and exchanges a one-use cookie for its in-memory application session. Native apps retain their current password flows. A future native external-browser integration needs a short-lived, PKCE-bound local handoff and secure OS storage. Keep provider credentials out of native bundles and application tokens out of redirect URLs. [Console SSO workflow](ENTERPRISE_GOVERNANCE.md#configure-okta-or-microsoft-entra-id)
 
 ## Policy decision model and enforcement
 
