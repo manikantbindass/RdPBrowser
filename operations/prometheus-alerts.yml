@@ -1,0 +1,33 @@
+groups:
+  - name: remoteshield
+    rules:
+      - alert: RemoteShieldUnavailable
+        expr: up{job="remoteshield"} == 0
+        for: 2m
+        labels: {severity: critical}
+        annotations:
+          summary: RemoteShield telemetry target unavailable
+      - alert: RemoteShieldDatabaseUnavailable
+        expr: rsx_database_ready == 0
+        for: 1m
+        labels: {severity: critical}
+        annotations:
+          summary: RemoteShield database readiness failed
+      - alert: RemoteShieldHttpErrors
+        expr: sum(rate(rsx_http_requests_total{status_class="5xx"}[5m])) / clamp_min(sum(rate(rsx_http_requests_total[5m])), 0.01) > 0.05 and sum(increase(rsx_http_requests_total[5m])) > 20
+        for: 5m
+        labels: {severity: high}
+        annotations:
+          summary: More than five percent of recorded HTTP requests failed
+      - alert: RemoteShieldBackupOverdue
+        expr: time() - rsx_backup_last_success_timestamp_seconds > 90000
+        for: 5m
+        labels: {severity: high}
+        annotations:
+          summary: Successful encrypted database backup is overdue
+      - alert: RemoteShieldObserverStale
+        expr: rsx_operations_observer_fresh == 0
+        for: 3m
+        labels: {severity: high}
+        annotations:
+          summary: Host health observer stopped publishing current state

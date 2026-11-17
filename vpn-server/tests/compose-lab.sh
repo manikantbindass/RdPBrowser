@@ -100,6 +100,7 @@ printf 'nameserver 10.8.0.1\n' > "$work/resolv.conf"
 openssl req -x509 -newkey rsa:2048 -nodes -days 1 -subj "/CN=$domain" \
     -addext "subjectAltName=DNS:$domain" -keyout "$work/docker/certs/tls.key" \
     -out "$work/docker/certs/tls.crt" >"$work/tls.log" 2>&1
+chmod 0444 "$work/docker/certs/tls.key" "$work/docker/certs/tls.crt"
 printf '{"userland-proxy":false,"ip-forward-no-drop":true}\n' > "$work/daemon.json"
 dockerd --config-file "$work/daemon.json" --host "$DOCKER_HOST" \
     --data-root "$work/engine" --exec-root "$work/exec" --pidfile "$work/daemon.pid" \

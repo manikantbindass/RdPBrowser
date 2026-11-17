@@ -1,0 +1,7 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>RemoteShield X operations</title><link rel="stylesheet" href="/dashboard.css"><script defer src="/dashboard.js"></script></head>
+<body><main><header><p class="brand">RemoteShield X</p><h1>Operations</h1><p>Control-plane health and recovery status</p></header>
+<form id="connect"><label>Operations token <input id="token" type="password" autocomplete="off" required></label><button>Connect</button></form>
+<p id="message" role="status"></p><section id="snapshot" hidden aria-live="polite"><div class="toolbar"><p id="sampled"></p><button id="disconnect">Disconnect</button></div>
+<div id="cards" class="grid"></div><section><h2>Operational alerts</h2><p id="observer"></p><ul id="alerts"></ul></section>
+<section><h2>Recovery</h2><dl id="recovery"></dl></section></section></main></body></html>

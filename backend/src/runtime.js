@@ -13,10 +13,16 @@ function createRuntime({ config, logger, database }) {
   const { io, activeSessions } = attachRealtime({ server, config, logger });
   app.set('io', io); app.set('activeSessions', activeSessions);
   let stopDetector;
+  let operations;
   let stopping;
   async function start() {
     try {
       await database.initDB();
+      app.locals.databaseReady=true;
+      if (config.METRICS_ENABLED) {
+        operations=require('./operations/server').startOperations({config,app,telemetry:app.locals.telemetry,database,logger});
+        await operations.ready;
+      }
       if (config.ANOMALY_DETECTION_ENABLED) stopDetector = require('../../security/anomaly-detector/detector').startAnomalyDetector(io, logger, config);
       await new Promise((resolve, reject) => {
         server.once('error', reject);
@@ -34,12 +40,12 @@ function createRuntime({ config, logger, database }) {
   }
   async function shutdown() {
     app.locals.draining=true;
-    if (stopDetector) { await stopDetector(); stopDetector = undefined; }
-    const timeout = setTimeout(() => server.closeAllConnections(), 5000); timeout.unref();
+    const timeout = setTimeout(() => server.closeAllConnections(), config.SHUTDOWN_GRACE_MS); timeout.unref();
     try {
+      if (stopDetector) { await stopDetector(); stopDetector = undefined; }
       await new Promise((resolve, reject) => io.close(err => err && err.code !== 'ERR_SERVER_NOT_RUNNING' ? reject(err) : resolve()));
       await database.close();
-    } finally { clearTimeout(timeout); }
+    } finally {clearTimeout(timeout);app.locals.telemetry.close();if (operations) await operations.close();}
   }
   return { app, server, io, start, stop };
 }

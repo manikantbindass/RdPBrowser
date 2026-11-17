@@ -1,0 +1,14 @@
+[Unit]
+Description=RemoteShield encrypted database backup
+Requires=docker.service
+After=docker.service
+[Service]
+Type=oneshot
+UMask=0077
+ExecStart=/usr/bin/python3 /opt/remoteshield/operations/manage.py backup /opt/remoteshield-production
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+PrivateTmp=true
+ProtectHome=true
+NoNewPrivileges=true

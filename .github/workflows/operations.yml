@@ -1,0 +1,56 @@
+name: Deployment and recovery
+on:
+  pull_request:
+    branches: [main]
+    paths: ['backend/**', 'contracts/**', 'security/**', 'admin-dashboard/**', 'docker/**', 'nginx/**', 'operations/**', 'infrastructure/**', '.github/workflows/operations.yml']
+  push:
+    branches: [codex/remoteshield-enterprise-completion]
+    paths: ['backend/**', 'contracts/**', 'security/**', 'admin-dashboard/**', 'docker/**', 'nginx/**', 'operations/**', 'infrastructure/**', '.github/workflows/operations.yml']
+permissions:
+  contents: read
+jobs:
+  isolated-compose:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          sudo apt-get update
+          sudo apt-get install -y age shellcheck
+          shellcheck operations/tests/lab.sh
+          python3 -m py_compile operations/manage.py operations/tests/scenarios.py
+          python3 -m unittest discover -s operations/tests -p 'test_*.py' -v
+      - name: Build immutable fixture releases
+        run: |
+          docker pull postgres:15-alpine@sha256:aae6554de426ae1990f1a939ff183a0299146cf7142a6f4c379c3357af9cc2d8
+          docker build --build-arg APP_REVISION=phase12-a -f docker/Dockerfile.backend -t remoteshield-backend:phase12-a .
+          docker build --build-arg APP_REVISION=phase12-b -f docker/Dockerfile.backend -t remoteshield-backend:phase12-b .
+          docker build -f docker/Dockerfile.nginx -t remoteshield-nginx:phase12 .
+          docker save -o /tmp/rsx-images.tar remoteshield-backend:phase12-a remoteshield-backend:phase12-b remoteshield-nginx:phase12 postgres:15-alpine@sha256:aae6554de426ae1990f1a939ff183a0299146cf7142a6f4c379c3357af9cc2d8
+      - name: Real deployment and recovery in private network namespace
+        run: |
+          set -o pipefail
+          sudo bash operations/tests/lab.sh /tmp/rsx-images.tar | tee operations-evidence.jsonl
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: operations-evidence
+          path: operations-evidence.jsonl
+      - name: Documented development override
+        run: sudo bash operations/tests/lab.sh /tmp/rsx-images.tar development
+  infrastructure-plan:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: infrastructure/digitalocean
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.14.0'
+      - run: terraform fmt -check -recursive
+      - run: terraform init -backend=false -input=false -lockfile=readonly
+      - run: terraform validate
+      - name: Mocked plans without cloud credentials
+        run: terraform test

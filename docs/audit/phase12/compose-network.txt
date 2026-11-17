@@ -1,0 +1,60 @@
+[#] ip link add dev wg0 type wireguard
+[#] wg addconf wg0 /dev/fd/63
+[#] ip -4 address add 10.8.0.2/32 dev wg0
+[#] ip -6 address add fd42:5253:5800::2/128 dev wg0
+[#] ip link set mtu 1420 up dev wg0
+unbound-checkconf: no errors in /etc/unbound/rsx-compose.conf
+Docker Engine 29.9.3
+Docker Compose version v5.6.1
+Loaded image: remoteshield-backend:phase12-a
+Loaded image: remoteshield-backend:phase12-b
+Loaded image: remoteshield-nginx:phase12
+Loaded image ID: sha256:aae6554de426ae1990f1a939ff183a0299146cf7142a6f4c379c3357af9cc2d8
+ Network remoteshield_control Creating 
+ Network remoteshield_control Creating 
+ Network remoteshield_database Creating 
+ Volume remoteshield_postgres_data Creating 
+ Volume remoteshield_postgres_data Creating 
+ Network remoteshield_database Creating 
+ Volume remoteshield_postgres_data Created 
+ Volume remoteshield_postgres_data Created 
+ Network remoteshield_database Created 
+ Network remoteshield_database Created 
+ Container remoteshield-postgres-1 Creating 
+ Network remoteshield_control Created 
+ Network remoteshield_control Created 
+ Container remoteshield-postgres-1 Created 
+ Container remoteshield-migrate-1 Creating 
+ Container remoteshield-migrate-1 Created 
+ Container remoteshield-backend-1 Creating 
+ Container remoteshield-backend-1 Created 
+ Container remoteshield-nginx-1 Creating 
+ Container remoteshield-nginx-1 Created 
+ Container remoteshield-postgres-1 Starting 
+ Container remoteshield-postgres-1 Started 
+ Container remoteshield-postgres-1 Waiting 
+ Container remoteshield-postgres-1 Healthy 
+ Container remoteshield-migrate-1 Starting 
+ Container remoteshield-migrate-1 Started 
+ Container remoteshield-migrate-1 Waiting 
+ Container remoteshield-migrate-1 Exited 
+ Container remoteshield-backend-1 Starting 
+ Container remoteshield-backend-1 Started 
+ Container remoteshield-backend-1 Waiting 
+ Container remoteshield-backend-1 Healthy 
+ Container remoteshield-nginx-1 Starting 
+ Container remoteshield-nginx-1 Started 
+ Container remoteshield-migrate-1 Waiting 
+ Container remoteshield-backend-1 Waiting 
+ Container remoteshield-nginx-1 Waiting 
+ Container remoteshield-postgres-1 Waiting 
+ Container remoteshield-backend-1 Healthy 
+ Container remoteshield-postgres-1 Healthy 
+ Container remoteshield-migrate-1 Exited 
+ Container remoteshield-nginx-1 Healthy 
+PASS actual Compose TLS edge preserves WireGuard source and overwrites spoofed forwarding
+PASS control hostname resolves and reaches the Compose edge through tunnel DNS
+PASS migrated PostgreSQL readiness and Socket.IO handshake through Compose
+PASS off-tunnel and direct container access denied
+PASS recreated gateway reloads its peer registry and existing Compose edge reconnects
+PASS revoked peer cannot reach the running Compose edge after gateway recreation

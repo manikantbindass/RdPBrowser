@@ -1,5 +1,20 @@
 # Phase 01 defect register
 
+## Phase 12 operational disposition
+
+| Severity | Component / issue | Impact | Remediation / status |
+|---|---|---|---|
+| High | Production container environments contained database and signing secrets | Inspect/config output could expose credentials | Scoped `_FILE` sources, separate migrator/runtime mounts and protected host directories; file-source negative tests and container/log inspection |
+| High | No executable encrypted backup/restore or artifact rollback | Outages could require untested destructive recovery | Encrypted custom dumps/config archives, fresh-target restoration, integrity/history checks, preflighted immutable rollback and isolated recovery drills |
+| High | Historical backup can reactivate revoked access | Old sessions, provisioning tokens, devices and identities regain trust | Recovery activation transaction revokes sessions/credentials/devices, disables directory/SSO settings and locks users; operator reconciliation required |
+| Medium | Edge root privileges, unbounded runtime resources/logs | Compromise and load/disk exhaustion have excessive scope | UID101 edge, read-only app filesystems, dropped capabilities, CPU/memory/PID/tmpfs and rotated-log limits |
+| Medium | Backend replacement leaves stale Nginx upstream address | Deployment/restart may create sustained 502 failures | Zoned upstream with Docker DNS re-resolution; forced-address-change drill |
+| Medium | Missing operational metrics and durable host alert state | DB failure, stale backups and certificate/disk risks can be missed | Authenticated private telemetry/dashboard, bounded labels, sampled spans, observer/timers and optional Prometheus rules |
+| Medium | Cloud, offsite-copy and notification acceptance absent | Local success cannot establish production durability or paging | Open: authorized Ubuntu VPS acceptance, independent backup copy/retention monitoring, external paging and full host/gateway recovery rehearsal |
+| High | Existing GeoIP maintenance-chain advisories | Dependency review/replacement remains a rollout gate | Open: Phase12 `npm audit --omit=dev` retains one high and one moderate finding; no analyzer/advisory bypass introduced |
+
+See [Phase 12 report](PHASE12_REPORT.md), [operations](OPERATIONS.md) and [recovery](DISASTER_RECOVERY.md). Historical baseline findings below retain their original context.
+
 ## Phase 10 detection disposition
 
 | Severity | Component / issue | Impact | Remediation / status |

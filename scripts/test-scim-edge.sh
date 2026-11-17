@@ -23,8 +23,8 @@ cleanup() {
 trap cleanup EXIT
 openssl req -new -x509 -newkey rsa:2048 -nodes -days 1 -subj /CN=scim.fixture.test -addext subjectAltName=DNS:scim.fixture.test \
   -keyout "$work/tls.key" -out "$work/tls.crt" >"$work/cert.log" 2>&1
-sed -e 's/backend:3000/127.0.0.1:16300/' -e 's/listen 443 ssl;/listen 127.0.0.1:16443 ssl;/' \
-  -e 's/listen 127.0.0.1:80;/listen 127.0.0.1:16080;/' -e "s/\${SCIM_DOMAIN}/scim.fixture.test/g" \
+sed -e 's/backend:3000/127.0.0.1:16300/' -e 's/listen 8443 ssl;/listen 127.0.0.1:16443 ssl;/' \
+  -e 's/listen 127.0.0.1:8080;/listen 127.0.0.1:16080;/' -e "s/\${SCIM_DOMAIN}/scim.fixture.test/g" \
   -e "s@/etc/nginx/certs/@$work/@g" "$root/nginx/scim.conf.template" > "$work/scim.conf"
 cat > "$work/nginx.conf" <<EOF
 worker_processes 1;

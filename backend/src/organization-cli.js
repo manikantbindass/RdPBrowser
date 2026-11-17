@@ -1,8 +1,8 @@
 'use strict';
 async function main() {
-  const { loadEnvironment,loadConfig }=require('./config');loadEnvironment();
-  if (!process.env.MIGRATION_DATABASE_URL) throw new Error('Operator migration credentials required');
-  const config=loadConfig({...process.env,DATABASE_URL:process.env.MIGRATION_DATABASE_URL});
+  const { loadEnvironment }=require('./config');loadEnvironment();
+  if (!process.env.MIGRATION_DATABASE_URL && !process.env.MIGRATION_DATABASE_URL_FILE) throw new Error('Operator migration credentials required');
+  const config=require('./db/config').loadDatabaseConfig();
   const database=require('./db/db');database.configure(config,require('./logging').createLogger(config));
   try {
     const { verifyMigrations }=require('./db/migrations');await verifyMigrations(database.getPool());

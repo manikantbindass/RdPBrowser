@@ -1,12 +1,22 @@
 name: remoteshield
+x-logging: &service-logging
+  driver: local
+  options:
+    max-size: '10m'
+    max-file: '5'
 services:
   postgres:
     image: postgres:15-alpine@sha256:aae6554de426ae1990f1a939ff183a0299146cf7142a6f4c379c3357af9cc2d8
     restart: unless-stopped
+    logging: *service-logging
+    mem_limit: 1536m
+    cpus: '1.5'
+    pids_limit: 256
+    stop_grace_period: 60s
     environment:
       POSTGRES_DB: remoteshield_db
       POSTGRES_USER: remoteshield
-      POSTGRES_PASSWORD: ${DB_PASS:?Run setup-dev.mjs or configure docker/.env}
+      POSTGRES_PASSWORD: ${DB_PASS:-}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks: [database]
@@ -16,12 +26,18 @@ services:
       timeout: 3s
       retries: 20
   migrate:
-    image: remoteshield-backend:local
+    image: ${BACKEND_IMAGE:-remoteshield-backend:local}
     build:
       context: ..
       dockerfile: docker/Dockerfile.backend
     command: [node, src/db/migrate.js]
     restart: 'no'
+    logging: *service-logging
+    mem_limit: 512m
+    cpus: '1.0'
+    pids_limit: 128
+    security_opt: ['no-new-privileges:true']
+    cap_drop: [ALL]
     depends_on:
       postgres:
         condition: service_healthy
@@ -29,12 +45,12 @@ services:
       NODE_ENV: ${NODE_ENV:-production}
       HOST: 0.0.0.0
       PORT: '3000'
-      DATABASE_URL: postgresql://remoteshield:${DB_PASS:?DB_PASS required}@postgres:5432/remoteshield_db
-      DB_RUNTIME_PASSWORD: ${DB_RUNTIME_PASS:?Set a distinct random runtime DB password; see MIGRATION_PHASE04}
+      DATABASE_URL: postgresql://remoteshield:${DB_PASS:-}@postgres:5432/remoteshield_db
+      DB_RUNTIME_PASSWORD: ${DB_RUNTIME_PASS:-}
       DB_SSL_MODE: ${DB_SSL_MODE:-disable}
       DB_NETWORK_TRUSTED: ${DB_NETWORK_TRUSTED:-false}
-      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET required}
-      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?JWT_REFRESH_SECRET required}
+      JWT_SECRET: ${JWT_SECRET:-}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-}
       VPN_REQUIRED: ${VPN_REQUIRED:-true}
       VPN_SUBNET: ${VPN_SUBNET:-10.8.0.0/24}
       VPN_SUBNETS: ${VPN_SUBNETS:-}
@@ -51,23 +67,28 @@ services:
       LOG_LEVEL: info
       REGISTRATION_ENABLED: ${REGISTRATION_ENABLED:-false}
       AUTH_RATE_LIMIT_MAX: ${AUTH_RATE_LIMIT_MAX:-20}
+      RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-100}
       OIDC_STATE_KEY: ''
       OIDC_PROVIDERS_FILE: ''
       ANOMALY_ORGANIZATION_IDS: ${ANOMALY_ORGANIZATION_IDS:-00000000-0000-4000-8000-000000000001}
     networks: [database]
   backend:
-    image: remoteshield-backend:local
+    image: ${BACKEND_IMAGE:-remoteshield-backend:local}
     build:
       context: ..
       dockerfile: docker/Dockerfile.backend
     restart: unless-stopped
+    logging: *service-logging
+    mem_limit: 768m
+    cpus: '1.0'
+    pids_limit: 128
     stop_grace_period: 30s
     depends_on:
       migrate:
         condition: service_completed_successfully
     environment:
       <<: *backend-environment
-      DATABASE_URL: postgresql://remoteshield_app:${DB_RUNTIME_PASS:?Runtime DB password required}@postgres:5432/remoteshield_db
+      DATABASE_URL: postgresql://remoteshield_app:${DB_RUNTIME_PASS:-}@postgres:5432/remoteshield_db
       DB_RUNTIME_PASSWORD: ''
       OIDC_STATE_KEY: ${OIDC_STATE_KEY:-}
       OIDC_PROVIDERS_FILE: ${OIDC_PROVIDERS_FILE:-}
@@ -75,25 +96,38 @@ services:
       SCIM_PUBLIC_BASE_URL: ${SCIM_PUBLIC_BASE_URL:-}
       SCIM_RATE_LIMIT_MAX: ${SCIM_RATE_LIMIT_MAX:-200}
       VPN_PEER_STATUS_FILE: ${VPN_PEER_STATUS_FILE:-}
+      DB_POOL_MAX: ${DB_POOL_MAX:-20}
+      DEPLOYMENT_ENV: ${DEPLOYMENT_ENV:-development}
+      NODE_OPTIONS: --max-old-space-size=384
     networks: [control, database]
     expose: ['3000']
     init: true
     security_opt: ['no-new-privileges:true']
     cap_drop: [ALL]
   nginx:
+    image: ${EDGE_IMAGE:-remoteshield-nginx:local}
     build:
       context: ..
       dockerfile: docker/Dockerfile.nginx
     restart: unless-stopped
+    logging: *service-logging
+    mem_limit: 128m
+    cpus: '0.25'
+    pids_limit: 64
+    stop_grace_period: 15s
     depends_on:
       backend:
         condition: service_healthy
-    ports: ['${CONTROL_BIND_IPV4:-10.8.0.1}:443:443']
+    ports: ['${CONTROL_BIND_IPV4:-10.8.0.1}:443:8443']
     environment:
       DOMAIN: ${DOMAIN:?DOMAIN required}
       NGINX_ENVSUBST_FILTER: DOMAIN
     volumes:
-      - ./certs:/etc/nginx/certs:ro
+      - ./certs/tls.crt:/etc/nginx/certs/tls.crt:ro
+      - ./certs/tls.key:/etc/nginx/certs/tls.key:ro
+    security_opt: ['no-new-privileges:true']
+    cap_drop: [ALL]
+    tmpfs: ['/tmp:rw,noexec,nosuid,size=32m,mode=1777']
     networks:
       control:
         ipv4_address: 172.20.0.10

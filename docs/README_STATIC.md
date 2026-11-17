@@ -133,7 +133,7 @@ docker compose --env-file docker/.env -f docker/docker-compose.yml -f docker/com
 
 The local stack sequences PostgreSQL, migrations, backend readiness and Nginx. Development ports bind loopback: backend 3001, admin 8180 and PostgreSQL 5432. The profile explicitly disables the API VPN source filter; it is not a production security setup.
 
-Production uses the base Compose file with reviewed secrets, a deliberate DB trust model, actual TLS certificates and verified ingress addresses. Read the [migration/recovery guide](MIGRATION_PHASE02.md) before mapping existing data volumes. Never delete volumes as routine recovery.
+Production and staging use the base Compose file plus `docker/compose.production.yml`, scoped file secrets, resource limits, actual TLS certificates and verified ingress addresses. The [deployment runbook](OPERATIONS.md) covers immutable releases, private metrics and local alerting; the [recovery guide](DISASTER_RECOVERY.md) covers encrypted backups and schema-aware rollback. Read the earlier [data migration guide](MIGRATION_PHASE02.md) before mapping existing volumes. Never delete volumes as routine recovery.
 
 Production Compose publishes HTTPS at the WireGuard IPv4 address. Provision the Linux gateway first, then enroll each device with its own key. The network guide covers the dedicated Linux firewall, DNS and IPv6 policies, platform requirements and recovery. [Network protection](NETWORK_PROTECTION.md)
 

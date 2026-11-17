@@ -1,0 +1,10 @@
+name                 = "remoteshield-production"
+region               = "blr1"
+size                 = "s-2vcpu-4gb"
+environment          = "production"
+ssh_key_fingerprints = ["REPLACE_WITH_REGISTERED_SSH_KEY_FINGERPRINT"]
+admin_public_key     = "ssh-ed25519 REPLACE_WITH_PUBLIC_KEY operator"
+admin_cidrs          = ["203.0.113.10/32"]
+vpn_client_cidrs     = ["0.0.0.0/0", "::/0"]
+scim_source_cidrs    = []
+enable_provider_backups = false

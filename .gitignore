@@ -65,6 +65,14 @@ Thumbs.db
 coverage/
 .nyc_output/
 .local-tests/
+.deployment/
+**/.terraform/
+**/terraform.tfstate*
+**/*.tfplan
+**/*.tfvars
+**/secrets/
+**/backups/
+**/__pycache__/
 admin-dashboard/playwright-report/
 admin-dashboard/test-results/
 

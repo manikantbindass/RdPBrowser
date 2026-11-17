@@ -1,0 +1,28 @@
+#cloud-config
+package_update: true
+packages:
+  - docker.io
+  - docker-compose-v2
+  - wireguard
+  - nftables
+  - unbound
+  - age
+  - python3
+  - git
+  - curl
+  - openssl
+users:
+  - default
+  - name: rsxops
+    groups: [sudo]
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    shell: /bin/bash
+    ssh_authorized_keys:
+      - ${admin_public_key}
+ssh_pwauth: false
+disable_root: true
+runcmd:
+  - [systemctl, enable, --now, docker]
+  - [mkdir, -p, /opt/remoteshield]
+  - [chmod, '0755', /opt/remoteshield]
+final_message: RemoteShield host packages installed. Follow operations setup for gateway, secrets and deployment.

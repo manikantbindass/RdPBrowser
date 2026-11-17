@@ -1,0 +1,11 @@
+[Unit]
+Description=RemoteShield operational health observer
+Requires=docker.service
+After=docker.service
+[Service]
+Type=oneshot
+UMask=0077
+ExecStart=/usr/bin/python3 /opt/remoteshield/operations/manage.py observe /opt/remoteshield-production
+PrivateTmp=true
+ProtectHome=true
+NoNewPrivileges=true

@@ -1,5 +1,10 @@
 FROM nginx:1.28-alpine@sha256:a8b39bd9cf0f83869a2162827a0caf6137ddf759d50a171451b335cecc87d236
+RUN rm -f /etc/nginx/conf.d/default.conf
+COPY docker/nginx-runtime.conf /etc/nginx/nginx.conf
+COPY --chmod=755 docker/19-runtime-directories.sh /docker-entrypoint.d/19-runtime-directories.sh
 COPY nginx/nginx.conf.template /etc/nginx/templates/default.conf.template
 COPY admin-dashboard/index.html admin-dashboard/styles.css admin-dashboard/app.js admin-dashboard/api.js admin-dashboard/components.js admin-dashboard/views.js admin-dashboard/governance.js /var/www/remoteshield/admin-dashboard/
-EXPOSE 80 443
-HEALTHCHECK --interval=10s --timeout=3s --retries=6 CMD wget -qO- http://127.0.0.1/health || exit 1
+ENV NGINX_ENVSUBST_OUTPUT_DIR=/tmp/conf.d
+USER 101:101
+EXPOSE 8080 8443
+HEALTHCHECK --interval=10s --timeout=3s --retries=6 CMD wget -qO- http://127.0.0.1:8080/health || exit 1

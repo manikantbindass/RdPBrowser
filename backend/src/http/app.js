@@ -15,22 +15,28 @@ const { requestContext, errorHandler } = require('./errors');
 function createApp({ config, logger, database }) {
   const app = express();
   app.locals.config = config;
+  app.locals.telemetry=require('../operations/telemetry').createTelemetry(config,logger);
   app.set('logger', logger);
   if (config.trustedProxies.length) {
     const trust = require('proxy-addr').compile(config.trustedProxies);
     app.set('trust proxy', (address, hop) => hop === 0 && trust(address));
   }
   app.use(requestContext);
+  app.use(app.locals.telemetry.middleware);
   app.use((req, res, next) => {
     const start = process.hrtime.bigint();
     res.on('finish', () => {
       logger.info({ event: 'http.completed', requestId: req.requestId, method: req.method,
-        path: req.route?.path || 'unmatched', status: res.statusCode, durationMs: Number(process.hrtime.bigint() - start) / 1e6 });
+        path: req.route?.path || 'unmatched', status: res.statusCode,traceId:req.trace?.traceId,spanId:req.trace?.spanId,durationMs: Number(process.hrtime.bigint() - start) / 1e6 });
       if ([401,403].includes(res.statusCode)) logger.warn({ event:'access.denied',requestId:req.requestId,status:res.statusCode,resource:req.route?.path || 'unmatched' });
     });
     next();
   });
   app.use(helmet());
+  app.use((req,res,next)=>{
+    if (app.locals.draining && !['/health','/ready'].includes(req.path)) return res.status(503).json({error:'Server shutting down',code:'NOT_READY'});
+    next();
+  });
   app.use((req, res, next) => {
     if (!config.trustedProxies.length) {
       delete req.headers['x-forwarded-for']; delete req.headers['x-forwarded-host']; delete req.headers['x-forwarded-proto'];
@@ -52,8 +58,8 @@ function createApp({ config, logger, database }) {
   app.get('/health', (req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString(), service: 'RemoteShield X Backend' }));
   app.get('/ready', async (req, res) => {
     if (app.locals.draining) return res.status(503).json({ error:'Server shutting down',code:'NOT_READY' });
-    try { await database.checkReady(); res.json({ status: 'ready' }); }
-    catch { res.status(503).json({ error: 'Database or schema unavailable', code: 'NOT_READY' }); }
+    try { await database.checkReady();app.locals.databaseReady=true;res.json({ status: 'ready' }); }
+    catch {app.locals.databaseReady=false;res.status(503).json({ error: 'Database or schema unavailable', code: 'NOT_READY' });}
   });
   app.get('/api/v1/meta', (req, res) => res.json({ apiVersion: '1', service: 'RemoteShield X', trafficEnforcement: 'external', experimentalSsh: config.SSH_ENABLED }));
   app.use((req, res, next) => {

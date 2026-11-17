@@ -1,0 +1,26 @@
+nginx: the configuration file /tmp/tmp.KgGdnc/nginx.conf syntax is ok
+nginx: configuration file /tmp/tmp.KgGdnc/nginx.conf test is successful
+[#] ip link add dev wg0 type wireguard
+[#] wg addconf wg0 /dev/fd/63
+[#] ip -4 address add 10.8.0.2/32 dev wg0
+[#] ip -6 address add fd42:5253:5800::2/128 dev wg0
+[#] ip link set mtu 1420 up dev wg0
+PASS gateway, IPv4 and IPv6 NAT egress
+PASS TLS edge overwrites forwarding, preserves peer IP and denies off-tunnel access
+PASS tunnel DNS over UDP and TCP, external DNS and unapproved port blocked
+PASS DNS outage with no direct fallback
+PASS remote tunnel loss and recovery with client interface still up
+[#] ip link delete dev wg0
+[#] ip link add dev wg0 type wireguard
+[#] wg addconf wg0 /dev/fd/63
+[#] ip -4 address add 10.8.0.2/32 dev wg0
+[#] ip -6 address add fd42:5253:5800::2/128 dev wg0
+[#] ip link set mtu 1420 up dev wg0
+PASS tunnel removal, IPv4/IPv6 kill switch and reconnect
+[#] ip link add dev wg0 type wireguard
+[#] wg addconf wg0 /dev/fd/63
+[#] ip -4 address add 10.8.0.3/32 dev wg0
+[#] ip -6 address add fd42:5253:5800::3/128 dev wg0
+[#] ip link set mtu 1420 up dev wg0
+PASS unauthorized peer, key rotation, status and immediate revocation
+PASS underlay packet capture: 129 WireGuard UDP packets, zero unexpected IP packets (ICMPv6 and WireGuard port-unreachable replies excluded)

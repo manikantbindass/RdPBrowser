@@ -1,5 +1,9 @@
 # Phase 01 roadmap and recovery plan
 
+## Phase 12 operational acceptance gates
+
+Use the [deployment](OPERATIONS.md) and [disaster recovery](DISASTER_RECOVERY.md) runbooks. The isolated lab establishes executable Compose, failure, encrypted restore and compatible-artifact rollback behavior; the [report](PHASE12_REPORT.md) records results. Remaining operator gates are an authorized Ubuntu VPS acceptance, offsite-copy monitoring/retention, external paging, independent security review, agreed workload/RTO/RPO and full replacement-host/gateway recovery. No horizontal scaling, PITR, multi-region failover or paid provisioning is claimed. Preserve existing client release/provider acceptance gates below.
+
 ## Phase 11 implementation and deployment gates
 
 OIDC setup and console handoff, SCIM users/groups, directory lifecycle, policy assignments, access reviews, posture and evidence export are implemented. Verify provider-specific setup, claims and deprovisioning in controlled Okta and Entra tenants. Evaluate provisioning/review capacity, retention and evidence handling for the intended deployment. Optional webhook transport remains a documented signing/retry design. [Phase 11 operations](ENTERPRISE_GOVERNANCE.md)

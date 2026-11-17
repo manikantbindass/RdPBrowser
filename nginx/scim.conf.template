@@ -1,18 +1,23 @@
 # Dedicated public SCIM ingress. Deliberately excludes admin, OIDC, API and WebSocket paths.
-upstream scim_control { server backend:3000; }
+resolver 127.0.0.11 valid=5s ipv6=off;
+resolver_timeout 2s;
+upstream scim_control { zone scim_control 64k; server backend:3000 resolve; }
 server {
-    listen 127.0.0.1:80;
+    listen 127.0.0.1:8080;
     access_log off;
     location = /health { return 204; }
     location / { return 404; }
 }
 server {
-    listen 443 ssl;
+    listen 8443 ssl;
     server_name ${SCIM_DOMAIN};
     server_tokens off;
     ssl_certificate /etc/nginx/certs/tls.crt;
     ssl_certificate_key /etc/nginx/certs/tls.key;
     ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_session_tickets off;
+    ssl_session_cache shared:SCIMTLS:10m;
+    proxy_connect_timeout 3s;
     client_max_body_size 32k;
     access_log off;
     error_log /dev/stderr crit;

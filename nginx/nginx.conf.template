@@ -1,21 +1,29 @@
 # Container control-plane TLS edge. WireGuard/OS enforce application traffic routing.
-upstream control_api { server backend:3000; }
+resolver 127.0.0.11 valid=5s ipv6=off;
+resolver_timeout 2s;
+upstream control_api { zone control_api 64k; server backend:3000 resolve; }
 log_format rsx_control '$remote_addr [$time_local] "$request_method $uri $server_protocol" $status $body_bytes_sent';
 server {
-    listen 80;
+    listen 8080;
     server_name ${DOMAIN};
     access_log /var/log/nginx/access.log rsx_control;
-    location = /health { proxy_pass http://control_api; }
-    location / { return 301 https://$host$request_uri; }
+    location = /health { return 204; }
+    location / { return 301 https://${DOMAIN}$request_uri; }
 }
 server {
-    listen 443 ssl;
+    listen 8443 ssl;
     server_name ${DOMAIN};
     server_tokens off;
     access_log /var/log/nginx/access.log rsx_control;
     ssl_certificate /etc/nginx/certs/tls.crt;
     ssl_certificate_key /etc/nginx/certs/tls.key;
     ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_session_tickets off;
+    ssl_session_cache shared:TLS:10m;
+    ssl_session_timeout 10m;
+    proxy_connect_timeout 3s;
+    proxy_read_timeout 75s;
+    proxy_send_timeout 15s;
     allow 10.8.0.0/24;
     deny all;
     client_max_body_size 10k;

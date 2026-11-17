@@ -19,7 +19,7 @@ function getPool() {
   if (!pool) {
     pool = new Pool({ connectionString: config.DATABASE_URL,
       ssl: config.DB_SSL_MODE === 'verify-full' ? { rejectUnauthorized: true, ...(config.DB_SSL_CA_FILE ? { ca: fs.readFileSync(config.DB_SSL_CA_FILE, 'utf8') } : {}) } : false,
-      max: 20, idleTimeoutMillis: 30000, connectionTimeoutMillis: 2000, statement_timeout: 15000 });
+      max: config.DB_POOL_MAX || 20, idleTimeoutMillis: 30000, connectionTimeoutMillis: 2000, statement_timeout: 15000 });
     pool.on('error', () => logger?.error({ event: 'database.pool_error' }));
   }
   return pool;
@@ -41,7 +41,7 @@ async function transaction(fn) {
   } catch (err) { await client.query('ROLLBACK'); throw err; }
   finally { client.release(); }
 }
-async function query(text, params) { return transaction(client => client.query(text, params)); }
+async function query(text, params) { return require('../operations/trace').databaseSpan(()=>transaction(client => client.query(text, params))); }
 async function getClient() { return getPool().connect(); }
 async function assertRuntimeRole(pool) {
   const { rows } = await pool.query('SELECT rolsuper,rolbypassrls,rolcreaterole,rolcreatedb FROM pg_roles WHERE rolname=current_user');

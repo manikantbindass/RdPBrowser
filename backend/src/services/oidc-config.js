@@ -25,7 +25,7 @@ function loadProviders(file,env) {
           Joi.string().guid().validate(issuer.pathname.split('/')[1]).error)) throw new Error('Use an exact Entra tenant issuer');
       if (issuer.username || issuer.password || issuer.hash || issuer.search || redirect.username || redirect.password || redirect.hash || redirect.search ||
           redirect.pathname!==`/api/v1/auth/oidc/${provider.id}/callback`) throw new Error('Invalid provider URL');
-      const secret=env[provider.clientSecretEnv];
+      const secret=require('./secret-files').secretValue(env,provider.clientSecretEnv);
       if (!secret || secret.length<16 || /CHANGE_ME|placeholder/i.test(secret)) throw new Error('Provider secret missing');
       return Object.freeze({ ...provider,clientSecret:secret });
     });

@@ -1,0 +1,12 @@
+# Optional existing Prometheus collector. Mount metrics credentials read-only.
+global:
+  scrape_interval: 15s
+scrape_configs:
+  - job_name: remoteshield
+    static_configs:
+      - targets: ['backend:9090']
+    authorization:
+      type: Bearer
+      credentials_file: /run/secrets/metrics_token
+rule_files:
+  - /etc/prometheus/remoteshield-alerts.yml

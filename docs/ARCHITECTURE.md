@@ -1,6 +1,6 @@
 # RemoteShield X architecture
 
-Phase 11 keeps OIDC, directory provisioning, access reviews and evidence exports in the existing PostgreSQL-backed control plane. A separately bound optional TLS listener exposes only the SCIM prefix. The console continues through the control boundary. Owner-only organization lifecycle commands use explicit tenant criteria. [ADR 0007](adr/0007-directory-governance.md)
+Phase 12 retains the single-VPS control plane with scoped file secrets, non-root edge, isolated operational telemetry, encrypted recovery workflows and schema-aware artifact rollback. WireGuard identity/routing remains separate stateful infrastructure. [ADR 0008](adr/0008-single-vps-operations.md) and [operations](OPERATIONS.md) define these boundaries. OIDC, directory provisioning, access reviews and evidence exports remain in the existing PostgreSQL-backed control plane. [ADR 0007](adr/0007-directory-governance.md)
 
 Phase 10 adds a deterministic detection boundary within the same deployable: HTTP observations → tenant-scoped minimal signals → bounded versioned worker → deduplicated incidents/evidence → authorized review and manual response. It does not participate in packet forwarding. PostgreSQL transactions, advisory locks, RLS and append-only runtime grants define persistence boundaries. See [ADR 0006](adr/0006-deterministic-detection.md) and [detection flows, APIs and limitations](DETECTION_AND_RESPONSE.md).
 
@@ -114,6 +114,6 @@ flowchart LR
   Env[Validated process configuration] --> API
 ```
 
-Local override publishes PostgreSQL5432, backend3001 and Nginx8180 only on127.0.0.1. Production base publishes only Nginx80/443. Nginx cannot directly reach PostgreSQL's private network. Compose uses health and migration completion dependencies; probes use installed Node, not missing curl. Images use tested digests, backend/root module layout is preserved in /app, and .dockerignore excludes secrets/caches. Production certificates, source topology, least-privilege DB roles and routing still need deployment review.
+Local override publishes PostgreSQL5432, backend3001 and Nginx8180 only on127.0.0.1. Production binds HTTPS443 at the VPN IPv4 address, forwarding to non-root Nginx8443; private operations9091 binds loopback. Optional SCIM has a separate ingress. Nginx cannot directly reach PostgreSQL's private network. Compose uses health and migration completion dependencies. Production adds scoped file secrets, read-only filesystems, resource/log limits and checksummed deployment/rollback preflight. Docker DNS re-resolution supports backend address replacement. A reviewed TLS certificate, independent offsite backups and gateway recovery remain deployment responsibilities.
 
 See LOCAL_DEVELOPMENT.md for executable setup/checks, MIGRATION_PHASE02.md for compatibility/cutover, INTEGRATIONS.md for extension ports, and adr/0001–0005 for decisions/tradeoffs.

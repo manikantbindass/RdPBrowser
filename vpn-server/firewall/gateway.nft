@@ -27,7 +27,7 @@ table inet rsx_gateway {
         type filter hook forward priority -5; policy accept;
         iifname != "wg0" ct direction original ct status dnat ct original ip daddr 10.8.0.1 counter drop
         iifname "wg0" ct state invalid counter drop
-        iifname "wg0" oifname "br-rsx-control" ip saddr 10.8.0.0/24 ct status dnat ct original ip daddr 10.8.0.1 tcp dport 443 accept
+        iifname "wg0" oifname "br-rsx-control" ip saddr 10.8.0.0/24 ip daddr 172.20.0.10 ct status dnat ct original ip daddr 10.8.0.1 ct original proto-dst 443 tcp dport { 443, 8443 } accept
         iifname "wg0" oifname "wg0" counter drop
         iifname "wg0" ip daddr @private4 counter drop
         iifname "wg0" ip6 daddr @private6 counter drop

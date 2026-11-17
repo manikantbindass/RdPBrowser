@@ -1,5 +1,9 @@
 # Phase 01 verified feature inventory
 
+## Phase 12 deployment and reliability update
+
+Production/staging Compose profiles add scoped file secrets, a non-root TLS edge, read-only application filesystems and bounded resources/logs. The backend exposes authenticated private metrics, sampled request/database spans and an operational dashboard. Host tooling supplies health/backup/certificate/disk alert transitions, encrypted DB/configuration backups, fresh-target restoration, restored-identity revocation and schema-compatible artifact rollback. A DigitalOcean single-VPS target has mocked plan tests; no cloud resources are provisioned. [Phase 12 report](PHASE12_REPORT.md) records actual verification and production acceptance limits. [Operations](OPERATIONS.md) · [Disaster recovery](DISASTER_RECOVERY.md)
+
 ## Phase 11 enterprise governance update
 
 Migration 006 adds scoped directory credentials, SCIM users/groups, group roles and URL policy assignment, provider activation and console SSO, access reviews, audited evidence exports, device posture and operator organization lifecycle. Local signed protocol fixtures, PostgreSQL, Chrome and isolated ingress verification cover the implemented boundaries. Live provider acceptance and deployed governance processes remain open. [Phase 11 report](PHASE11_REPORT.md) · [Integration setup](ENTERPRISE_GOVERNANCE.md)

@@ -1,14 +1,15 @@
 'use strict';
-const { loadEnvironment, loadConfig } = require('../config');
+const { loadEnvironment } = require('../config');
+const { loadDatabaseConfig } = require('./config');
 const { createLogger } = require('../logging');
 const database = require('./db');
 const { migrate } = require('./migrations');
 async function main() {
-  loadEnvironment(); const config = loadConfig({ ...process.env, DATABASE_URL:process.env.MIGRATION_DATABASE_URL || process.env.DATABASE_URL }); const logger = createLogger(config);
+  loadEnvironment(); const config = loadDatabaseConfig(); const logger = createLogger(config);
   database.configure(config, logger);
   try {
     logger.info({ event: 'migrations.applied', versions: await migrate(database.getPool()) });
-    if (process.env.DB_RUNTIME_PASSWORD) await require('./provision').provision(database.getPool(),{ password:process.env.DB_RUNTIME_PASSWORD });
+    if (config.DB_RUNTIME_PASSWORD) await require('./provision').provision(database.getPool(),{ password:config.DB_RUNTIME_PASSWORD });
   }
   finally { await database.close(); }
 }

@@ -13,6 +13,15 @@ const definitions = {
   DB_SSL_MODE: Joi.string().valid('disable', 'verify-full').default('disable'),
   DB_SSL_CA_FILE: Joi.string().allow('').default(''),
   DB_NETWORK_TRUSTED: Joi.boolean().default(false),
+  DB_POOL_MAX: Joi.number().integer().min(1).max(50).default(20),
+  DEPLOYMENT_ENV: Joi.string().valid('development','staging','production').default('development'),
+  SHUTDOWN_GRACE_MS: Joi.number().integer().min(2000).max(25000).default(20000),
+  METRICS_ENABLED: Joi.boolean().default(false),
+  METRICS_PORT: Joi.number().integer().min(1).max(65535).default(9090),
+  METRICS_TOKEN: Joi.string().pattern(/^[A-Za-z0-9_-]{32,256}$/).allow('').default(''),
+  OPERATIONS_STATUS_DIRECTORY: Joi.string().allow('').default(''),
+  TRACE_SAMPLE_RATE: Joi.number().min(0).max(1).default(0.1),
+  APP_REVISION: Joi.string().pattern(/^[A-Za-z0-9._-]{1,80}$/).default('development'),
   JWT_SECRET: Joi.string().min(32).required(),
   JWT_REFRESH_SECRET: Joi.string().min(32).required(),
   JWT_EXPIRES_IN: Joi.string().pattern(/^[1-9]\d*[smhd]$/).default('8h'),
@@ -50,10 +59,14 @@ const definitions = {
 };
 
 function loadConfig(env = process.env) {
+  env = require('./services/secret-files').secretEnvironment(env,['DATABASE_URL','JWT_SECRET','JWT_REFRESH_SECRET','OIDC_STATE_KEY','METRICS_TOKEN']);
   const { value, error } = Joi.object(definitions).unknown(true).validate(env, { abortEarly: false });
   if (error) throw new Error(`Invalid configuration keys: ${[...new Set(error.details.map(d => d.path[0]))].join(', ')}`);
   const config = Object.fromEntries(Object.keys(definitions).map(key => [key, value[key]]));
   const invalid = [];
+  if (config.METRICS_ENABLED && (config.METRICS_TOKEN.length<32 || /CHANGE_ME|placeholder/i.test(config.METRICS_TOKEN))) invalid.push('METRICS_TOKEN');
+  if (config.METRICS_ENABLED && config.METRICS_PORT===config.PORT) invalid.push('METRICS_PORT');
+  if (config.OPERATIONS_STATUS_DIRECTORY && !path.isAbsolute(config.OPERATIONS_STATUS_DIRECTORY)) invalid.push('OPERATIONS_STATUS_DIRECTORY');
   if (config.SCIM_PUBLIC_BASE_URL) {
     const base=new URL(config.SCIM_PUBLIC_BASE_URL);
     if (base.username || base.password || base.hash || base.search || base.pathname!=='/scim/v2') invalid.push('SCIM_PUBLIC_BASE_URL');

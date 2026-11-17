@@ -1,3 +1,17 @@
+# Only runtime source and build instructions enter either image context.
+**
+!backend/
+!backend/**
+!contracts/
+!contracts/**
+!security/
+!security/**
+!nginx/
+!nginx/**
+!admin-dashboard/
+!admin-dashboard/**
+!docker/
+!docker/**
 .git
 .local-tests/
 **/node_modules
@@ -14,3 +28,12 @@ docs/audit
 **/*.jks
 **/key.properties
 docker/certs
+**/secrets
+**/backups
+.deployment
+infrastructure
+operations
+android
+desktop
+assets
+.github

@@ -1,0 +1,4 @@
+nginx: the configuration file /tmp/tmp.ElAbBA/nginx.conf syntax is ok
+nginx: configuration file /tmp/tmp.ElAbBA/nginx.conf test is successful
+PASS SCIM HTTPS routing, TLS verification, trusted header overwrite and authorization forwarding
+PASS public SCIM listener denies control, admin, health and traversal paths
