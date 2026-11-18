@@ -1,11 +1,6 @@
 name: Network packet checks
 on:
-  pull_request:
-    branches: [main]
-    paths: ['vpn-server/**', 'nginx/*.template', 'scripts/test-scim-edge.sh', '.github/workflows/network.yml']
-  push:
-    branches: [codex/remoteshield-enterprise-completion]
-    paths: ['vpn-server/**', 'nginx/*.template', 'scripts/test-scim-edge.sh', '.github/workflows/network.yml']
+  workflow_call:
 permissions:
   contents: read
 jobs:
@@ -13,7 +8,9 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
       - run: |
           sudo apt-get update
           sudo apt-get install -y wireguard-tools nftables unbound dnsutils tcpdump nginx openssl

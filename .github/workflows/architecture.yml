@@ -1,9 +1,6 @@
 name: Architecture baseline
 on:
-  pull_request:
-    branches: [main]
-  push:
-    branches: [codex/remoteshield-enterprise-completion]
+  workflow_call:
 permissions:
   contents: read
 jobs:
@@ -23,24 +20,31 @@ jobs:
           --health-interval=3s --health-timeout=3s --health-retries=20
     defaults:
       run:
+        shell: bash
         working-directory: backend
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '24'
           cache: npm
           cache-dependency-path: backend/package-lock.json
       - run: npm ci
       - run: npm run lint
+      - name: Validate backend JavaScript and package inputs
+        run: |
+          git ls-files -z -- '*.js' '*.cjs' | xargs -0 -r -n 1 node --check
+          npm pack --dry-run --json > "$RUNNER_TEMP/backend-package.json"
       - name: Deterministic rules and synthetic evaluation
         run: |
           node node_modules/eslint/bin/eslint.js ../security/anomaly-detector --config .eslintrc.cjs --max-warnings 0
           node ../scripts/evaluate-detections.cjs
       - run: node ../scripts/build-openapi.cjs
       - run: git diff --exit-code -- ../contracts/openapi.json
-      - run: npm test -- --runInBand --detectOpenHandles
-      - run: npm run test:integration
+      - run: npm test -- --runInBand --detectOpenHandles --json --outputFile="$RUNNER_TEMP/backend-unit.json"
+      - run: npm run test:integration -- --json --outputFile="$RUNNER_TEMP/backend-integration.json"
         env:
           INTEGRATION_DATABASE_URL: postgresql://remoteshield:ci_database_only@127.0.0.1:5432/remoteshield_phase02_test
       - name: Console components and API client
@@ -56,20 +60,33 @@ jobs:
           npm ci --prefix ../desktop
           npm run build --prefix ../desktop
           npx playwright install --with-deps chromium
-          npm run test:browser
-          npm run test:desktop-ui
+          PLAYWRIGHT_JSON_OUTPUT_FILE="$RUNNER_TEMP/admin-browser.json" npm run test:browser -- --reporter=json
+          PLAYWRIGHT_JSON_OUTPUT_FILE="$RUNNER_TEMP/desktop-web.json" npm run test:desktop-ui -- --reporter=json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: backend-and-browser-test-results
+          path: |
+            ${{ runner.temp }}/backend-package.json
+            ${{ runner.temp }}/backend-unit.json
+            ${{ runner.temp }}/backend-integration.json
+            ${{ runner.temp }}/admin-browser.json
+            ${{ runner.temp }}/desktop-web.json
+          retention-days: 14
   security-static:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '24'
       - run: npm ci --prefix backend --ignore-scripts
       - name: Static security analysis
         working-directory: backend
         run: node node_modules/eslint/bin/eslint.js src --ext .js --config security.eslintrc.cjs --format json --output-file security-eslint.json --max-warnings 0
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
           name: security-lint

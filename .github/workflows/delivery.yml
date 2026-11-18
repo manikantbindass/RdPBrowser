@@ -1,0 +1,299 @@
+name: Versioned delivery
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+defaults:
+  run:
+    shell: bash
+concurrency:
+  group: delivery-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    name: Validate release tag and source
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      tag: ${{ steps.metadata.outputs.tag }}
+      version: ${{ steps.metadata.outputs.version }}
+      channel: ${{ steps.metadata.outputs.channel }}
+      androidCode: ${{ steps.metadata.outputs.androidCode }}
+      commit: ${{ steps.metadata.outputs.commit }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - id: metadata
+        run: |
+          python3 scripts/release/manifest.py version "$GITHUB_REF_NAME"
+          test "$(git rev-parse "$GITHUB_REF^{commit}")" = "$(git rev-parse HEAD)"
+          printf 'commit=%s\n' "$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+  admission:
+    name: Check release protections
+    needs: prepare
+    if: needs.prepare.outputs.channel != 'preview'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+      attestations: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_COMMIT: ${{ needs.prepare.outputs.commit }}
+          RELEASE_CHANNEL: ${{ needs.prepare.outputs.channel }}
+          RELEASE_VERSION: ${{ needs.prepare.outputs.version }}
+        run: bash scripts/release/protection.sh
+  quality:
+    needs: prepare
+    uses: ./.github/workflows/ci.yml
+  desktop:
+    name: Bundle ${{ matrix.target }}
+    needs: [prepare, admission, quality]
+    if: ${{ !cancelled() && needs.prepare.result == 'success' && (needs.prepare.outputs.channel == 'preview' || (needs.admission.result == 'success' && needs.quality.result == 'success')) }}
+    environment: ${{ needs.prepare.outputs.channel == 'preview' && 'release-verification' || 'release-signing' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {target: windows-x64, os: windows-2022}
+          - {target: linux-x64, os: ubuntu-22.04}
+          - {target: macos-universal, os: macos-latest}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    env:
+      BUNDLE_TARGET: ${{ matrix.target }}
+      RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
+      RELEASE_VERSION: ${{ needs.prepare.outputs.version }}
+      RELEASE_CHANNEL: ${{ needs.prepare.outputs.channel }}
+      REMOTESHIELD_SERVER: ${{ vars.REMOTESHIELD_SERVER }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+      - uses: dtolnay/rust-toolchain@39008827e6b4319a349e9a42dfc90579dd25f1ca
+        with:
+          toolchain: stable
+      - if: runner.os == 'macOS'
+        run: rustup target add x86_64-apple-darwin aarch64-apple-darwin
+      - if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libxdo-dev libayatana-appindicator3-dev librsvg2-dev libssl-dev patchelf
+      - run: npm ci --prefix desktop
+      - name: Import Windows code signing certificate
+        if: runner.os == 'Windows' && env.RELEASE_CHANNEL != 'preview'
+        shell: pwsh
+        env:
+          WINDOWS_CERTIFICATE: ${{ secrets.WINDOWS_CERTIFICATE }}
+          WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
+        run: ./scripts/release/windows-sign.ps1 import
+      - name: Package desktop application
+        if: runner.os != 'macOS' || env.RELEASE_CHANNEL == 'preview'
+        run: |
+          python=python3
+          if [[ "$RUNNER_OS" == Windows ]]; then python=python; fi
+          "$python" scripts/release/desktop.py "$BUNDLE_TARGET" "$RELEASE_TAG" "$RELEASE_VERSION" "$RELEASE_CHANNEL"
+      - name: Sign and notarize macOS bundle
+        if: runner.os == 'macOS' && env.RELEASE_CHANNEL != 'preview'
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ vars.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
+        run: python3 scripts/release/desktop.py "$BUNDLE_TARGET" "$RELEASE_TAG" "$RELEASE_VERSION" "$RELEASE_CHANNEL"
+      - name: Sign Linux bundles
+        if: runner.os == 'Linux' && env.RELEASE_CHANNEL != 'preview'
+        env:
+          LINUX_SIGNING_KEY: ${{ secrets.LINUX_SIGNING_KEY }}
+          LINUX_SIGNING_PASSPHRASE: ${{ secrets.LINUX_SIGNING_PASSPHRASE }}
+          LINUX_SIGNING_FINGERPRINT: ${{ vars.LINUX_SIGNING_FINGERPRINT }}
+        run: bash scripts/release/linux-sign.sh
+      - name: Remove imported Windows certificate
+        if: always() && runner.os == 'Windows' && env.RELEASE_CHANNEL != 'preview'
+        shell: pwsh
+        run: ./scripts/release/windows-sign.ps1 cleanup
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: payload-${{ matrix.target }}-${{ github.run_attempt }}
+          path: release-payload/
+          compression-level: 0
+          retention-days: ${{ env.RELEASE_CHANNEL == 'preview' && 30 || 90 }}
+          if-no-files-found: error
+  android:
+    name: Bundle Android APKs
+    needs: [prepare, admission, quality]
+    if: ${{ !cancelled() && needs.prepare.result == 'success' && (needs.prepare.outputs.channel == 'preview' || (needs.admission.result == 'success' && needs.quality.result == 'success')) }}
+    environment: ${{ needs.prepare.outputs.channel == 'preview' && 'release-verification' || 'release-signing' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    env:
+      RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
+      RELEASE_VERSION: ${{ needs.prepare.outputs.version }}
+      RELEASE_CHANNEL: ${{ needs.prepare.outputs.channel }}
+      ANDROID_CODE: ${{ needs.prepare.outputs.androidCode }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/android-toolchain
+      - working-directory: android
+        run: flutter pub get --enforce-lockfile
+      - name: Build disposable-key preview APKs
+        if: env.RELEASE_CHANNEL == 'preview'
+        run: bash scripts/release/android.sh
+      - name: Build and verify distribution APKs
+        if: env.RELEASE_CHANNEL != 'preview'
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_SIGNING_SHA256: ${{ vars.ANDROID_SIGNING_SHA256 }}
+          ANDROID_MIN_VERSION_CODE: ${{ vars.ANDROID_MIN_VERSION_CODE }}
+          SERVER_URL: ${{ vars.ANDROID_SERVER_URL }}
+        run: bash scripts/release/android.sh
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: payload-android-${{ github.run_attempt }}
+          path: release-payload/
+          compression-level: 0
+          retention-days: ${{ env.RELEASE_CHANNEL == 'preview' && 30 || 90 }}
+          if-no-files-found: error
+  containers:
+    name: Package Docker images and SBOMs
+    needs: [prepare, admission, quality]
+    if: ${{ !cancelled() && needs.prepare.result == 'success' && (needs.prepare.outputs.channel == 'preview' || (needs.admission.result == 'success' && needs.quality.result == 'success')) }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - env:
+          SOURCE_COMMIT: ${{ needs.prepare.outputs.commit }}
+          RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
+          RELEASE_CHANNEL: ${{ needs.prepare.outputs.channel }}
+        run: bash scripts/release/containers.sh
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: payload-containers-${{ github.run_attempt }}
+          path: release-payload/
+          compression-level: 0
+          retention-days: ${{ needs.prepare.outputs.channel == 'preview' && 30 || 90 }}
+          if-no-files-found: error
+  assemble:
+    name: Assemble and attest complete payload
+    needs: [prepare, desktop, android, containers]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    env:
+      RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
+      SOURCE_COMMIT: ${{ needs.prepare.outputs.commit }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          pattern: payload-*-${{ github.run_attempt }}
+          path: downloaded
+      - run: |
+          python3 scripts/release/manifest.py collect downloaded release-dist "$RELEASE_TAG" "$SOURCE_COMMIT" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT"
+          python3 scripts/release/manifest.py verify release-dist "$RELEASE_TAG" "$SOURCE_COMMIT"
+      - uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
+        with:
+          subject-path: release-dist/release-manifest.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release-evidence-${{ env.RELEASE_TAG }}-${{ github.run_attempt }}
+          path: |
+            release-dist/release-manifest.json
+            release-dist/SHA256SUMS.txt
+            release-dist/*.cdx.json
+            release-dist/image-identities.json
+          if-no-files-found: error
+          retention-days: 90
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release-payload-${{ env.RELEASE_TAG }}-${{ github.run_attempt }}
+          path: release-dist/
+          compression-level: 0
+          retention-days: ${{ needs.prepare.outputs.channel == 'preview' && 30 || 90 }}
+          if-no-files-found: error
+  rehearsal:
+    name: Verify preview artifacts independently
+    needs: [prepare, assemble, quality]
+    if: ${{ !cancelled() && needs.prepare.outputs.channel == 'preview' && needs.assemble.result == 'success' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      attestations: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
+      SOURCE_COMMIT: ${{ needs.prepare.outputs.commit }}
+      QUALITY_RESULT: ${{ needs.quality.result }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: release-payload-${{ env.RELEASE_TAG }}-${{ github.run_attempt }}
+          path: release-dist
+      - run: |
+          python3 scripts/release/manifest.py verify release-dist "$RELEASE_TAG" "$SOURCE_COMMIT"
+          gh attestation verify release-dist/release-manifest.json --repo "$GITHUB_REPOSITORY" \
+            --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/delivery.yml" --source-ref "$GITHUB_REF"
+          for service in backend edge; do
+            docker load -i "release-dist/remoteshield-$service-$RELEASE_TAG-linux-amd64.tar.gz"
+            expected=$(jq -er --arg service "$service" '.[$service]' release-dist/image-identities.json)
+            test "$(docker image inspect "remoteshield-$service:$RELEASE_TAG" --format '{{.Id}}')" = "$expected"
+          done
+          printf 'Preview artifact verification passed. Required quality gate result was %s.\n' "$QUALITY_RESULT" >> "$GITHUB_STEP_SUMMARY"
+  publish:
+    name: Publish verified release
+    needs: [prepare, admission, quality, assemble]
+    if: needs.prepare.outputs.channel != 'preview'
+    environment: release-publication
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    permissions:
+      contents: write
+      attestations: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
+      RELEASE_VERSION: ${{ needs.prepare.outputs.version }}
+      RELEASE_CHANNEL: ${{ needs.prepare.outputs.channel }}
+      SOURCE_COMMIT: ${{ needs.prepare.outputs.commit }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: release-payload-${{ env.RELEASE_TAG }}-${{ github.run_attempt }}
+          path: release-dist
+      - run: bash scripts/release/publish.sh
