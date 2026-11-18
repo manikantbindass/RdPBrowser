@@ -1,0 +1,33 @@
+{"protocolVersion":"0.1.1","runnerVersion":null,"pid":33948,"type":"start","time":0}
+{"suite":{"id":0,"platform":"vm","path":"R:/android/test/browser_policy_test.dart"},"type":"suite","time":3}
+{"test":{"id":1,"name":"loading R:/android/test/browser_policy_test.dart","suiteID":0,"groupIDs":[],"metadata":{"skip":false,"skipReason":null},"line":null,"column":null,"url":null},"type":"testStart","time":7}
+{"suite":{"id":2,"platform":"vm","path":"R:/android/test/session_test.dart"},"type":"suite","time":23}
+{"test":{"id":3,"name":"loading R:/android/test/session_test.dart","suiteID":2,"groupIDs":[],"metadata":{"skip":false,"skipReason":null},"line":null,"column":null,"url":null},"type":"testStart","time":30}
+{"count":2,"time":31,"type":"allSuites"}
+
+[{"event":"test.startedProcess","params":{"vmServiceUri":null}}]
+
+[{"event":"test.startedProcess","params":{"vmServiceUri":null}}]
+{"testID":1,"result":"success","skipped":false,"hidden":true,"type":"testDone","time":29372}
+{"group":{"id":4,"suiteID":0,"parentID":null,"name":"","metadata":{"skip":false,"skipReason":null},"testCount":3,"line":null,"column":null,"url":null},"type":"group","time":29384}
+{"test":{"id":5,"name":"control plane requires an exact HTTPS origin outside local debug","suiteID":0,"groupIDs":[4],"metadata":{"skip":false,"skipReason":null},"line":7,"column":3,"url":"file:///R:/android/test/browser_policy_test.dart"},"type":"testStart","time":29389}
+{"testID":3,"result":"success","skipped":false,"hidden":true,"type":"testDone","time":29440}
+{"group":{"id":6,"suiteID":2,"parentID":null,"name":"","metadata":{"skip":false,"skipReason":null},"testCount":6,"line":null,"column":null,"url":null},"type":"group","time":29441}
+{"test":{"id":7,"name":"session gates browsing on local VPN, server policy, and foreground","suiteID":2,"groupIDs":[6],"metadata":{"skip":false,"skipReason":null},"line":43,"column":3,"url":"file:///R:/android/test/session_test.dart"},"type":"testStart","time":29441}
+{"testID":5,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":29468}
+{"test":{"id":8,"name":"browser rejects unsafe addresses and saves sanitized history","suiteID":0,"groupIDs":[4],"metadata":{"skip":false,"skipReason":null},"line":26,"column":3,"url":"file:///R:/android/test/browser_policy_test.dart"},"type":"testStart","time":29470}
+{"testID":8,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":29486}
+{"test":{"id":9,"name":"policy checks require exact ordered affirmative decisions","suiteID":0,"groupIDs":[4],"metadata":{"skip":false,"skipReason":null},"line":48,"column":3,"url":"file:///R:/android/test/browser_policy_test.dart"},"type":"testStart","time":29487}
+{"testID":9,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":29508}
+{"testID":7,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":29596}
+{"test":{"id":10,"name":"policy refresh closes browsing when an open address is denied","suiteID":2,"groupIDs":[6],"metadata":{"skip":false,"skipReason":null},"line":78,"column":3,"url":"file:///R:/android/test/session_test.dart"},"type":"testStart","time":29597}
+{"testID":10,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":29616}
+{"test":{"id":11,"name":"a stored refresh rotates once and a revoked session stays closed","suiteID":2,"groupIDs":[6],"metadata":{"skip":false,"skipReason":null},"line":111,"column":3,"url":"file:///R:/android/test/session_test.dart"},"type":"testStart","time":29616}
+{"testID":11,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":29649}
+{"test":{"id":12,"name":"preference writes retain their original account scope","suiteID":2,"groupIDs":[6],"metadata":{"skip":false,"skipReason":null},"line":160,"column":3,"url":"file:///R:/android/test/session_test.dart"},"type":"testStart","time":29650}
+{"testID":12,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":29682}
+{"test":{"id":13,"name":"a missing VPN shows Android settings and no bypass","suiteID":2,"groupIDs":[6],"metadata":{"skip":false,"skipReason":null},"line":174,"column":5,"url":"package:flutter_test/src/widget_tester.dart","root_line":176,"root_column":3,"root_url":"file:///R:/android/test/session_test.dart"},"type":"testStart","time":29683}
+{"testID":13,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":32214}
+{"test":{"id":14,"name":"a populated bookmarks dialog scrolls on a small screen","suiteID":2,"groupIDs":[6],"metadata":{"skip":false,"skipReason":null},"line":174,"column":5,"url":"package:flutter_test/src/widget_tester.dart","root_line":198,"root_column":3,"root_url":"file:///R:/android/test/session_test.dart"},"type":"testStart","time":32215}
+{"testID":14,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":33860}
+{"success":true,"type":"done","time":33980}

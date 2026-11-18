@@ -1,0 +1,122 @@
+{
+  "backend-unit": {
+    "numTotalTestSuites": 16,
+    "numPassedTestSuites": 16,
+    "numTotalTests": 156,
+    "numPassedTests": 156,
+    "numFailedTests": 0,
+    "numPendingTests": 0,
+    "numTodoTests": 0
+  },
+  "database": {
+    "numTotalTestSuites": 5,
+    "numPassedTestSuites": 5,
+    "numTotalTests": 48,
+    "numPassedTests": 48,
+    "numFailedTests": 0,
+    "numPendingTests": 0,
+    "numTodoTests": 0
+  },
+  "admin-browser": {
+    "startTime": "2026-11-18T06:24:51.911Z",
+    "duration": 58485.537,
+    "expected": 9,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "desktop-ui": {
+    "startTime": "2026-11-17T15:13:05.065Z",
+    "duration": 8605.79,
+    "expected": 3,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "flutter-test": {
+    "passes": 9,
+    "fails": 0,
+    "skipped": 0,
+    "status": "PASS"
+  },
+  "flutter-integration": {
+    "passes": 1,
+    "fails": 0,
+    "skipped": 0,
+    "status": "PASS"
+  },
+  "concurrent-recovery": {
+    "status": "FAIL",
+    "limits": {
+      "minimumRequests": 300,
+      "minimumConcurrency": 10,
+      "maximumErrors": 0,
+      "minimumRequestsPerSecond": 20,
+      "p95Milliseconds": 1000,
+      "p99Milliseconds": 2000,
+      "maximumRestoreSeconds": 60,
+      "maximumActivationSeconds": 90
+    },
+    "measurements": {
+      "requests": 300,
+      "concurrency": 10,
+      "seconds": 9.341900483000018,
+      "requestsPerSecond": 32.11337998578843,
+      "latencyMs": {
+        "p50": 203.36341000006541,
+        "p95": 677.515319000122,
+        "p99": 1171.2873690000833
+      },
+      "errors": 0,
+      "restoreSeconds": 39.13039562200004,
+      "activationSeconds": 127.19878452499995,
+      "databaseRecoverySeconds": 0.6160036190000255,
+      "backendCrashRecoverySeconds": 19.066382710000084,
+      "dnsRecoverySeconds": 0.06428356000003532,
+      "backendMemoryLimitBytes": 805306368,
+      "host": "5.15.153.1-microsoft-standard-WSL2"
+    },
+    "scope": "Small isolated fixture; shared-runner regression gate, not capacity certification"
+  },
+  "final-recovery": {
+    "status": "PASS",
+    "limits": {
+      "minimumRequests": 300,
+      "minimumConcurrency": 10,
+      "maximumErrors": 0,
+      "minimumRequestsPerSecond": 20,
+      "p95Milliseconds": 1000,
+      "p99Milliseconds": 2000,
+      "maximumRestoreSeconds": 60,
+      "maximumActivationSeconds": 90
+    },
+    "measurements": {
+      "requests": 300,
+      "concurrency": 10,
+      "seconds": 4.485243179000008,
+      "requestsPerSecond": 66.88600551350383,
+      "latencyMs": {
+        "p50": 111.59409100014273,
+        "p95": 341.1324500000319,
+        "p99": 528.9399579999099
+      },
+      "errors": 0,
+      "restoreSeconds": 16.938536744999965,
+      "activationSeconds": 31.380105228000048,
+      "databaseRecoverySeconds": 0.5436421130000326,
+      "backendCrashRecoverySeconds": 4.606531163,
+      "dnsRecoverySeconds": 0.008054896000203371,
+      "backendMemoryLimitBytes": 805306368,
+      "host": "5.15.153.1-microsoft-standard-WSL2"
+    },
+    "scope": "Small isolated fixture; shared-runner regression gate, not capacity certification"
+  },
+  "concurrent-database": {
+    "passes": 16,
+    "fails": 32,
+    "observed": [
+      "fixture connection timeouts",
+      "detection scan exceeded existing 15-second limit"
+    ]
+  }
+}

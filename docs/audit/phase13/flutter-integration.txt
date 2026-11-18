@@ -1,0 +1,16 @@
+16
+36
+{"protocolVersion":"0.1.1","runnerVersion":null,"pid":5732,"type":"start","time":0}
+{"suite":{"id":0,"platform":"vm","path":"R:/android/integration_test/platform_test.dart"},"type":"suite","time":3}
+{"test":{"id":1,"name":"loading R:/android/integration_test/platform_test.dart","suiteID":0,"groupIDs":[],"metadata":{"skip":false,"skipReason":null},"line":null,"column":null,"url":null},"type":"testStart","time":7}
+{"count":1,"time":20,"type":"allSuites"}
+√ Built build\app\outputs\flutter-apk\app-debug.apk
+
+[{"event":"test.startedProcess","params":{"vmServiceUri":"http://127.0.0.1:50602/[REDACTED_VM_SERVICE]/"}}]
+{"testID":1,"result":"success","skipped":false,"hidden":true,"type":"testDone","time":277689}
+{"group":{"id":2,"suiteID":0,"parentID":null,"name":"","metadata":{"skip":false,"skipReason":null},"testCount":1,"line":null,"column":null,"url":null},"type":"group","time":277695}
+{"test":{"id":3,"name":"Android native channels and managed VPN guard","suiteID":0,"groupIDs":[2],"metadata":{"skip":false,"skipReason":null},"line":174,"column":5,"url":"package:flutter_test/src/widget_tester.dart"},"type":"testStart","time":277697}
+{"testID":3,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":283851}
+{"test":{"id":4,"name":"(tearDownAll)","suiteID":0,"groupIDs":[2],"metadata":{"skip":false,"skipReason":null},"line":50,"column":5,"url":"package:integration_test/integration_test.dart"},"type":"testStart","time":283852}
+{"testID":4,"result":"success","skipped":false,"hidden":true,"type":"testDone","time":283875}
+{"success":true,"type":"done","time":285364}

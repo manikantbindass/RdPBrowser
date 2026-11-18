@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "records": [
+    {"commit": "99ed1ce5b46592928a16b01f5244952d15a1d480", "run": 44250943777, "job": "wireguard-namespaces", "status": "PASS"},
+    {"commit": "99ed1ce5b46592928a16b01f5244952d15a1d480", "run": 44250943815, "job": "contracts-and-postgres", "status": "PASS"},
+    {"commit": "99ed1ce5b46592928a16b01f5244952d15a1d480", "run": 44250943815, "job": "security-static", "status": "FAIL", "reason": "Static findings require triage"},
+    {"commit": "99ed1ce5b46592928a16b01f5244952d15a1d480", "run": 44250943808, "job": "desktop Windows, macOS and Linux matrix", "status": "PASS"},
+    {"commit": "041e4b0e15f675a9bd1ca8db8d29de90a333ad8a", "run": 44251746089, "job": "isolated-compose", "status": "PASS"},
+    {"commit": "041e4b0e15f675a9bd1ca8db8d29de90a333ad8a", "run": 44251746089, "job": "infrastructure-plan", "status": "PASS"},
+    {"commit": "041e4b0e15f675a9bd1ca8db8d29de90a333ad8a", "run": 44251746089, "job": "image-security", "status": "FAIL", "reason": "Container vulnerabilities remain"},
+    {"commit": "041e4b0e15f675a9bd1ca8db8d29de90a333ad8a", "run": 44251746197, "job": "Security - Vulnerability Scan", "status": "FAIL", "reason": "Source security findings remain"},
+    {"commit": "041e4b0e15f675a9bd1ca8db8d29de90a333ad8a", "run": 44251746197, "jobId": 134624200854, "job": "Android - APK Build", "status": "PASS", "artifacts": ["armeabi-v7a", "arm64-v8a", "x86_64"], "signing": "disposable verification key", "verification": ["Flutter analyze", "Flutter tests", "signature verification", "16 KiB APK alignment"]}
+  ]
+}

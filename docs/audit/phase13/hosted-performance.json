@@ -1,0 +1,33 @@
+{
+  "status": "PASS",
+  "limits": {
+    "minimumRequests": 300,
+    "minimumConcurrency": 10,
+    "maximumErrors": 0,
+    "minimumRequestsPerSecond": 20,
+    "p95Milliseconds": 1000,
+    "p99Milliseconds": 2000,
+    "maximumRestoreSeconds": 60,
+    "maximumActivationSeconds": 90
+  },
+  "measurements": {
+    "requests": 300,
+    "concurrency": 10,
+    "seconds": 1.3739027230000147,
+    "requestsPerSecond": 218.35607061388492,
+    "latencyMs": {
+      "p50": 35.21631400002434,
+      "p95": 77.89942200000155,
+      "p99": 142.6609969999788
+    },
+    "errors": 0,
+    "restoreSeconds": 0.6042046419999849,
+    "activationSeconds": 17.507514576000005,
+    "databaseRecoverySeconds": 0.522651097999983,
+    "backendCrashRecoverySeconds": 1.1743942040000093,
+    "dnsRecoverySeconds": 0.006150882000014235,
+    "backendMemoryLimitBytes": 805306368,
+    "host": "7.0.0-1014-aws"
+  },
+  "scope": "Small isolated fixture; shared-runner regression gate, not capacity certification"
+}
