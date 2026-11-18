@@ -12,10 +12,11 @@ async function scanOrganization(config) {
     const opened = [];
     let capacity = false;
     for (const rule of rules) {
+      // Keep the transaction timestamp at PostgreSQL precision for both window bounds.
       const result = await query(`SELECT s.* FROM detection_signals s WHERE event_type=ANY($1::text[])
-        AND created_at>=$2::timestamptz-($3::int*INTERVAL '1 second') AND created_at<=$2
-        AND NOT EXISTS(SELECT 1 FROM detection_evidence e WHERE e.rule_id=$4 AND e.signal_id=s.id)
-        ORDER BY created_at,id LIMIT $5`, [rule.events, now, rule.window, rule.id, MAX_SIGNALS + 1]);
+        AND created_at>=NOW()-($2::int*INTERVAL '1 second') AND created_at<=NOW()
+        AND NOT EXISTS(SELECT 1 FROM detection_evidence e WHERE e.rule_id=$3 AND e.signal_id=s.id)
+        ORDER BY created_at,id LIMIT $4`, [rule.events, rule.window, rule.id, MAX_SIGNALS + 1]);
       if (result.rows.length > MAX_SIGNALS) capacity = true;
       for (const hit of evaluate(rule, result.rows.slice(0, MAX_SIGNALS), new Date(now).getTime())) {
         const candidate = randomUUID();

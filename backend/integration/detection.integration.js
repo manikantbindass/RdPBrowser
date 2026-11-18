@@ -171,8 +171,13 @@ test('password-device changes, server URL denials and refresh reuse feed the eng
 });
 test('retention removes minimal raw signals but retains evidence',async () => {
   const req={ app:{ locals:{ config } },ip:'192.0.2.1',requestId:randomUUID(),user:{ sub:member } };
-  await withTenant(orgA,() => observe(req,'client.vpn_bypass',{ trust:'client_report' }));
-  const [alert]=await scan();
+  const opened=await withTenant(orgA,() => db.transaction(async () => {
+    // The observation and scan share a PostgreSQL transaction timestamp.
+    await observe(req,'client.vpn_bypass',{ trust:'client_report' });
+    return scanOrganization(config);
+  }));
+  expect(opened).toHaveLength(1);
+  const [alert]=opened;
   await pool.query("UPDATE detection_signals SET created_at=NOW()-INTERVAL '8 days'"); await scan();
   expect((await pool.query('SELECT * FROM detection_signals')).rows).toEqual([]);
   expect((await pool.query('SELECT * FROM detection_evidence WHERE incident_id=$1',[alert.id])).rows).toHaveLength(1);
