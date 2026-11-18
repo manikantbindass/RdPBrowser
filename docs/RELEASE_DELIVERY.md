@@ -12,6 +12,8 @@ The `Pull request validation` workflow runs for pull requests into `main` and pu
 
 Use an annotated tag. Before the RC, commit the `## [2.5.0]` changelog entry, review the exact source SHA on `main` and record the deployment health and rollback expectations. Push one tag at a time. Give each new source candidate a new RC or preview number. To retry the same source and tag after infrastructure failure, rerun **all jobs**. Artifacts include the run attempt to prevent a retry from mixing outputs. Review any leftover draft before intervening. Keep released tags immutable.
 
+Apply this process once `main` includes the delivery workflows. A tag on an older commit can trigger that commit’s legacy release workflow. Preview packaging starts after tag validation, while signed packaging requires both quality and protection checks.
+
 Desktop installers and APK `versionName` use the numeric core version. The Android base code is `major × 1,000,000 + minor × 10,000 + patch × 100 + sequence`. The candidate sequence ranges from 1 to 98 and stable uses 99. Flutter adds 1,000, 2,000 and 4,000 for ARM32, ARM64 and x86-64 split APKs. Record the highest distributed base code in `ANDROID_MIN_VERSION_CODE`. Keep the same APK variant for in-place upgrades, or check that the incoming APK’s actual `versionCode` exceeds the installed one before changing variants. Use a separate test device or profile for preview APKs. The preview signing key cannot upgrade a distribution-signed installation.
 
 ## Repository settings and credentials
@@ -27,6 +29,8 @@ Desktop installers and APK `versionName` use the numeric core version. The Andro
 | macOS universal DMG | `APPLE_CERTIFICATE` (base64 Developer ID P12), `APPLE_CERTIFICATE_PASSWORD`, `APPLE_ID`, `APPLE_PASSWORD` (app-specific) | `APPLE_SIGNING_IDENTITY`, `APPLE_TEAM_ID` |
 | Linux x64 DEB, AppImage and archive | `LINUX_SIGNING_KEY` (armored secret key), `LINUX_SIGNING_PASSPHRASE` | `LINUX_SIGNING_FINGERPRINT` (uppercase fingerprint) |
 | Android universal and split APKs | `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEY_ALIAS`, `ANDROID_STORE_PASSWORD`, `ANDROID_KEY_PASSWORD` | `ANDROID_SIGNING_SHA256` (lowercase certificate hash without separators), `ANDROID_MIN_VERSION_CODE`, `ANDROID_SERVER_URL` (HTTPS origin) |
+
+When migrating the old Android workflow, recreate `KEYSTORE_BASE64`, `KEY_ALIAS`, `STORE_PASSWORD` and `KEY_PASSWORD` under their `ANDROID_`-prefixed names in the `release-signing` environment using the approved credential store. Preserve the signer identity for upgrades. The Tauri updater private key from the previous CI workflow is distinct from the platform installer certificates.
 
 The Windows job verifies an Authenticode signature, expected signer and timestamp. The macOS job verifies the app signature and stapled notarization. Linux detaches OpenPGP signatures and verifies them before upload. Android verifies its signing certificate, numeric build identity and zip alignment. Certificate accounts, hardware-backed signer requirements, operating-system install testing and Tauri updater signing require separate verification. No desktop updater feed is configured by this pipeline.
 
@@ -48,9 +52,11 @@ For a preview, use `gh run download RUN_ID --name release-payload-TAG-ATTEMPT --
 
 Load each `remoteshield-*-linux-amd64.tar.gz` with `docker load -i PATH`. Compare `docker image inspect IMAGE --format '{{.Id}}'` with `image-identities.json` before registering the images in the deployment inventory. Release archives supply `remoteshield-backend:TAG` and `remoteshield-edge:TAG`. Use their verified IDs or separately recorded registry digests in the Compose rollout. Review the versioned database migrations and current backup before deploying. Check readiness, the expected revision, TLS and the critical login path after promotion. See [Phase 12 operations](PHASE12_REPORT.md) for the isolated Compose deployment and restore procedures.
 
+For signed client promotion, verify an install and upgrade on each supported platform using the intended signing identity. Check MSI handling of the same core version when moving from RC to stable, the Android APK version code of the installed variant, and the macOS Gatekeeper result. Record the installer and target OS versions in the release review.
+
 ## Rollback
 
-Pause rollouts if verification, readiness or critical smoke tests fail. Use the retained previous release and the operations deployment state to restore the known-good backend and edge images. Check migration compatibility before resuming service. When a downgrade is incompatible, use the tested database restore procedure with the pre-release backup and record the recovery point. Android can reject a lower `versionCode` and a different signing identity. For a broadly deployed client regression, build a new higher version with the corrected source and the approved signing identity. Leave the original tag and manifest intact for investigation.
+Pause rollouts if verification, readiness or critical smoke tests fail. Use the retained previous release and its verified images. With the correct deployment directory and environment, run `python3 operations/manage.py rollback /srv/remoteshield --environment production`. The command reads `previous.json` and checks image availability and schema compatibility. When a downgrade is incompatible, follow the [database restore procedure](DISASTER_RECOVERY.md) with the pre-release backup and record the recovery point. Check readiness, revision, TLS and the login path after rollback. Android can reject a lower `versionCode` and a different signing identity. For a broadly deployed client regression, build a new higher version with the corrected source and the approved signing identity. Leave the original tag and manifest intact for investigation.
 
 GitHub publishes all finalized assets from a draft only after verifying the actual uploaded digests. If publication fails, inspect the draft and failed step. Registry promotion is a separate operator action. The pipeline does not update an image `latest` alias or publish the backend to npm.
 
