@@ -40,7 +40,7 @@ for filename in ['filesystem-scan.json', 'remoteshield-backend-scan.json', 'remo
                                      'severityCounts': dict(Counter(item['severity'] for item in [*advisories, *config]))}
 path = args.scans / 'gitleaks.json'
 if path.is_file():
-    candidates = [{'rule': row['RuleID'], 'file': current_source(row['File']), 'line': row['StartLine']} for row in read(path)]
+    candidates = [{'rule': row['RuleID'], 'file': current_source(row['File']), 'line': row['StartLine']} for row in read(path) or []]
     summary['sources']['gitleaks.json'] = {'status': 'FAIL' if candidates else 'PASS', 'candidates': candidates}
 else:
     summary['sources']['gitleaks.json'] = {'status': 'BLOCKED', 'reason': 'Scanner report missing'}

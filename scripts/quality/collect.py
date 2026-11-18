@@ -4,8 +4,7 @@ from collections import Counter
 import hashlib
 import json
 from pathlib import Path
-import shutil
-from run import catalog
+from run import catalog,redact
 
 parser=argparse.ArgumentParser(description=__doc__)
 parser.add_argument('captures',nargs='+')
@@ -27,10 +26,16 @@ for key,row in checks.items():
     if row['status']=='SKIPPED':continue
     source=Path(row['capture'])/row.get('log','missing')
     if not source.is_file():parser.error(f'Missing log for executed check {key}')
-    target=out/(key+'.log')
-    if target.resolve()!=source.resolve():shutil.copyfile(source,target)
-    if hashlib.sha256(target.read_bytes()).hexdigest()!=row['logSha256']:
+    original=source.read_bytes()
+    original_hash=hashlib.sha256(original).hexdigest()
+    if original_hash!=row['logSha256']:
         parser.error(f'Evidence hash differs for {key}')
+    target=out/(key+'.log')
+    published=('\n'.join(line.rstrip() for line in redact(original.decode('utf8',errors='replace')).splitlines()).rstrip()+'\n').encode()
+    if target.resolve()==source.resolve():parser.error('Choose a publication directory separate from the captures')
+    target.write_bytes(published)
+    row['sourceLogSha256']=original_hash
+    row['logSha256']=hashlib.sha256(published).hexdigest()
 report={'schemaVersion':1,'checks':checks,'summary':dict(Counter(row['status'] for row in checks.values())),
         'accepted':all(row['status']=='PASS' for row in checks.values())}
 (out/'results.json').write_bytes((json.dumps(report,indent=2)+'\n').encode())

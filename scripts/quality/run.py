@@ -12,6 +12,7 @@ import subprocess
 import time
 
 ROOT = Path(__file__).resolve().parents[2]
+REPORT_FILES = {'backend-unit':('backend-jest.json',), 'database':('database-jest.json','admin-playwright.json')}
 
 
 def catalog():
@@ -48,6 +49,30 @@ def redact(text):
     return re.sub(r'eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+','[REDACTED_JWT]',text)
 
 
+def test_report_problem(check, out, output):
+    """A successful process must also have executed its required assertions."""
+    def read_report(name):
+        return json.loads((out/name).read_text(encoding='utf-8-sig'))
+
+    try:
+        if check in ('backend-unit','database'):
+            report=read_report('backend-jest.json' if check=='backend-unit' else 'database-jest.json')
+            if not report['numPassedTests'] or report['numFailedTests'] or report['numPendingTests'] or report['numTodoTests']:
+                return 'Jest reported zero passes or unexpected test statuses'
+        if check in ('desktop-ui','database'):
+            stats=(json.loads(output) if check=='desktop-ui' else read_report('admin-playwright.json'))['stats']
+            if not stats['expected'] or stats['unexpected'] or stats['skipped'] or stats['flaky']:
+                return 'Playwright reported zero passes or unexpected test statuses'
+        if check in ('flutter-test','flutter-integration'):
+            records=[json.loads(line) for line in output.splitlines() if line.startswith('{')]
+            cases=[row for row in records if row.get('type')=='testDone' and not row.get('hidden')]
+            if not cases or any(row.get('skipped') or row.get('result')!='success' for row in cases):
+                return 'Flutter reported zero passes or unexpected test statuses'
+    except (ValueError, KeyError, OSError):
+        return 'Expected machine-readable test report missing or invalid'
+    return None
+
+
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--select',default='all',help='Comma-separated check IDs, or all')
@@ -82,14 +107,21 @@ def main():
         if missing:
             row.update(status='BLOCKED',reason='Missing prerequisite: '+', '.join(missing),exitCode=None)
         else:
+            for filename in REPORT_FILES.get(check['id'],()):
+                (out/filename).unlink(missing_ok=True)
             env={**os.environ,'RSX_QUALITY_OUTPUT':str(out)}
             scratch=ROOT/'.local-tests/quality-tmp';scratch.mkdir(parents=True,exist_ok=True)
             env.update(TEMP=str(scratch),TMP=str(scratch),TMPDIR=str(scratch))
             env['npm_config_cache']=str(scratch/'npm-cache')
+            if argv[0]=='wsl':
+                forwarded='RSX_QUALITY_OUTPUT/p:RSX_QUALITY_IMAGES:RSX_SCANNER_DIRECTORY'
+                env['WSLENV']=':'.join(filter(None,[env.get('WSLENV'),forwarded]))
             try:
                 process=subprocess.run(argv,cwd=ROOT/check['cwd'],env=env,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,timeout=check['timeout'])
                 output=redact(process.stdout.decode('utf8',errors='replace'))
                 row.update(status='PASS' if process.returncode==0 else 'BLOCKED' if process.returncode==77 else 'FAIL',exitCode=process.returncode)
+                if row['status']=='PASS' and (problem:=test_report_problem(check['id'],out,output)):
+                    row.update(status='FAIL',reason=problem)
             except subprocess.TimeoutExpired as error:
                 output=redact((error.stdout or b'').decode('utf8',errors='replace'))
                 row.update(status='FAIL',reason='Execution deadline exceeded',exitCode=None)

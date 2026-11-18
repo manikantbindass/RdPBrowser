@@ -26,6 +26,17 @@ class AcceptanceTests(unittest.TestCase):
         self.assertNotIn('private-value',sanitized)
         self.assertNotIn('eyJfixture',sanitized)
 
+    def test_machine_report_requires_executed_cases_without_skips(self):
+        with tempfile.TemporaryDirectory() as folder:
+            output=Path(folder)
+            report=output/'backend-jest.json'
+            base={'numPassedTests':1,'numFailedTests':0,'numPendingTests':0,'numTodoTests':0}
+            for change in ({'numPassedTests':0},{'numPendingTests':1},{'numFailedTests':1}):
+                report.write_text(json.dumps({**base,**change}))
+                self.assertIsNotNone(quality.test_report_problem('backend-unit',output,''))
+            report.write_text(json.dumps(base))
+            self.assertIsNone(quality.test_report_problem('backend-unit',output,''))
+
     def test_load_gate_rejects_errors_latency_and_missing_completion(self):
         sample={'requests':300,'concurrency':10,'errors':0,'requestsPerSecond':100,'latencyMs':{'p95':150,'p99':200},'restoreSeconds':10,'activationSeconds':30}
         with tempfile.TemporaryDirectory() as folder:

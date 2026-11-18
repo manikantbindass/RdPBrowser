@@ -45,7 +45,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version: '24'
 
       - name: Install backend dependencies
         run: npm ci
@@ -303,20 +303,28 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Node audit (backend)
-        run: npm ci --ignore-scripts && npm audit --audit-level=high
-        working-directory: backend
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
 
       - name: Install checksum-pinned security scanners
         run: bash scripts/quality/install-scanners.sh "$RUNNER_TEMP/rsx-scanners"
 
+      - name: Node audit (backend)
+        run: npm ci --ignore-scripts && npm audit --audit-level=high --json > npm-audit.json
+        working-directory: backend
+
       - name: Scan source and secrets
         if: success() || failure()
         run: |
+          mkdir "$RUNNER_TEMP/rsx-source"
+          git archive HEAD | tar -xf - -C "$RUNNER_TEMP/rsx-source"
+          test -f "$RUNNER_TEMP/rsx-source/backend/package-lock.json"
           result=0
-          "$RUNNER_TEMP/rsx-scanners/gitleaks" dir . --redact=100 --report-format json --report-path gitleaks.json || result=1
-          "$RUNNER_TEMP/rsx-scanners/trivy" fs --scanners vuln,misconfig --severity HIGH,CRITICAL --exit-code 1 --format json --output trivy-results.json . || result=1
+          "$RUNNER_TEMP/rsx-scanners/gitleaks" dir "$RUNNER_TEMP/rsx-source" --redact=100 --report-format json --report-path gitleaks.json || result=1
+          "$RUNNER_TEMP/rsx-scanners/trivy" fs --scanners vuln,misconfig --severity HIGH,CRITICAL --exit-code 1 --format json --output trivy-results.json "$RUNNER_TEMP/rsx-source" || result=1
           exit "$result"
       - name: Upload security evidence
         uses: actions/upload-artifact@v4
@@ -325,6 +333,7 @@ jobs:
           path: |
             gitleaks.json
             trivy-results.json
+            backend/npm-audit.json
         if: always()
 
 # ═══════════════════════════════════════════════════════════════════
@@ -394,7 +403,7 @@ jobs:
       - name: Setup Node.js with GitHub Packages registry
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version: '24'
           registry-url: 'https://npm.pkg.github.com'
           scope: '@manikantbindass'
 

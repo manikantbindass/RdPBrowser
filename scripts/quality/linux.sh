@@ -2,7 +2,7 @@
 set -euo pipefail
 repo=$(cd -- "$(dirname -- "$0")/../.." && pwd)
 cd "$repo"
-out=${RSX_QUALITY_LINUX_OUTPUT:-"$repo/.quality-results"}
+out=${RSX_QUALITY_OUTPUT:-"$repo/.quality-results"}
 mkdir -p "$out"
 case "${1:-}" in
 native)

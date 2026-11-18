@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "RemoteShield X — Secure Gateway Backend Server with WireGuard VPN enforcement, JWT auth, and real-time admin dashboard",
   "main": "src/index.js",
+  "engines": { "node": ">=24" },
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",

@@ -1,6 +1,6 @@
 # Quality verification
 
-Run the catalog from the repository root with Python 3.10 or later. Install each Node project's locked dependencies with `npm ci` and fetch the Rust lockfile before offline Rust tests. Use Node 22 in CI. The Windows reference setup uses PowerShell 7, a disposable PostgreSQL 15 binary distribution, Chrome or Playwright Chromium, Rust and the Flutter 3.38.9 toolchain. Existing CI workflows run their native toolchains independently.
+Run the catalog from the repository root with Python 3.10 or later. Install each Node project's locked dependencies with `npm ci` and use `cargo fetch --locked` before offline Rust tests. Use Node 24 to match the backend CI and container. The Windows reference setup uses PowerShell 7, a disposable PostgreSQL 15 binary distribution, Chrome or Playwright Chromium, Rust and the Flutter 3.38.9 toolchain. Existing CI workflows run their native toolchains independently.
 
 ```powershell
 python scripts/quality/run.py --list
