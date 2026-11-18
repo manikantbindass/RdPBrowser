@@ -1,5 +1,9 @@
 # Phase 01 verified feature inventory
 
+## Phase 13 automated quality update
+
+The verification catalog records functional, platform, packet, performance and security checks with machine-readable status and evidence. New desktop UI checks cover keyboard focus, accessibility, narrow layout and the native authentication boundary. The release acceptance gates and unverified platform coverage are recorded in the [Phase 13 report](PHASE13_REPORT.md) and [quality instructions](QUALITY_VERIFICATION.md).
+
 ## Phase 12 deployment and reliability update
 
 Production/staging Compose profiles add scoped file secrets, a non-root TLS edge, read-only application filesystems and bounded resources/logs. The backend exposes authenticated private metrics, sampled request/database spans and an operational dashboard. Host tooling supplies health/backup/certificate/disk alert transitions, encrypted DB/configuration backups, fresh-target restoration, restored-identity revocation and schema-compatible artifact rollback. A DigitalOcean single-VPS target has mocked plan tests; no cloud resources are provisioned. [Phase 12 report](PHASE12_REPORT.md) records actual verification and production acceptance limits. [Operations](OPERATIONS.md) · [Disaster recovery](DISASTER_RECOVERY.md)

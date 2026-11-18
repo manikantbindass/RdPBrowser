@@ -18,6 +18,8 @@ fi
 umask 077
 work=$(mktemp -d)
 mount -t tmpfs -o mode=0755 tmpfs /run
+unset XDG_RUNTIME_DIR
+export TMPDIR="$work"
 mount -t tmpfs -o mode=0755 tmpfs /etc/unbound
 ip link set lo up
 export DOCKER_HOST=unix://$work/docker.sock

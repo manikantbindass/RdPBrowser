@@ -115,7 +115,7 @@ start edge python3 "$base/tests/observer.py" 127.0.0.1 3000 forwarded
 openssl req -x509 -newkey rsa:2048 -nodes -days 1 -subj /CN=gateway.phase08.test \
     -addext subjectAltName=DNS:gateway.phase08.test -keyout "$work/tls.key" -out "$work/tls.crt" \
     >> "$work/services.log" 2>&1
-sed -e "s/\${DOMAIN}/gateway.phase08.test/g" -e 's/backend:3000/127.0.0.1:3000/' \
+sed -e "s/\${DOMAIN}/gateway.phase08.test/g" -e 's/backend:3000 resolve/127.0.0.1:3000/' \
     -e 's/listen 8080;/listen 172.20.0.10:80;/' -e 's/listen 8443 ssl;/listen 172.20.0.10:443 ssl;/' \
     -e "s@/etc/nginx/certs/@$work/@" "$base/../nginx/nginx.conf.template" > "$work/edge.conf"
 cat > "$work/nginx.conf" <<EOF

@@ -1,5 +1,9 @@
 # Phase 01 roadmap and recovery plan
 
+## Phase 13 release gates
+
+Review the [quality report](PHASE13_REPORT.md) before release. Reconcile the static and secret scanner candidates, address remaining high and critical dependency findings, and verify signed native artifacts and supported physical devices separately. Keep the small dataset load thresholds tied to the measured test environment.
+
 ## Phase 12 operational acceptance gates
 
 Use the [deployment](OPERATIONS.md) and [disaster recovery](DISASTER_RECOVERY.md) runbooks. The isolated lab establishes executable Compose, failure, encrypted restore and compatible-artifact rollback behavior; the [report](PHASE12_REPORT.md) records results. Remaining operator gates are an authorized Ubuntu VPS acceptance, offsite-copy monitoring/retention, external paging, independent security review, agreed workload/RTO/RPO and full replacement-host/gateway recovery. No horizontal scaling, PITR, multi-region failover or paid provisioning is claimed. Preserve existing client release/provider acceptance gates below.

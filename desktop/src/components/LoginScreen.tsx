@@ -57,7 +57,7 @@ const LoginScreen: React.FC<Props> = ({ onLogin }) => {
   };
 
   return (
-    <div className="login-screen animate-fade">
+    <main className="login-screen">
       <div className="glass login-card">
         <div className="login-header">
           <span className="login-logo">🛡️</span>
@@ -93,7 +93,7 @@ const LoginScreen: React.FC<Props> = ({ onLogin }) => {
           </div>
           <div><label className="login-label" htmlFor="rs-organization">Organization ID (optional)</label><input id="rs-organization" className="input" value={organizationId} onChange={e=>setOrganizationId(e.target.value)} autoComplete="organization" placeholder="Default organization when empty"/></div>
 
-          {error && <div className="login-error">⚠️ {error}</div>}
+          {error && <div className="login-error" role="alert">⚠️ {error}</div>}
 
           <button id="rs-login-btn" type="submit" className="btn btn-primary" disabled={loading} style={{ width: '100%', justifyContent: 'center', padding: '12px' }}>
             {loading
@@ -110,7 +110,7 @@ const LoginScreen: React.FC<Props> = ({ onLogin }) => {
           </p>
         </div>
       </div>
-    </div>
+    </main>
   );
 };
 

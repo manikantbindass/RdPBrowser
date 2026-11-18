@@ -53,5 +53,23 @@ jobs:
         env:
           INTEGRATION_DATABASE_URL: postgresql://remoteshield:ci_database_only@127.0.0.1:5432/remoteshield_phase02_test
         run: |
+          npm ci --prefix ../desktop
+          npm run build --prefix ../desktop
           npx playwright install --with-deps chromium
           npm run test:browser
+  security-static:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --prefix backend --ignore-scripts
+      - name: Static security analysis
+        working-directory: backend
+        run: node node_modules/eslint/bin/eslint.js src --ext .js --config security.eslintrc.cjs --format json --output-file security-eslint.json --max-warnings 0
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-lint
+          path: backend/security-eslint.json

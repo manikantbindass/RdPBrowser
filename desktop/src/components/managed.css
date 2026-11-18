@@ -177,6 +177,7 @@
 
 /* Phase 06 shared identity surface */
 .login-screen {
+  --text-muted: #a4b7d0;
   background: #080f1e !important;
   color: #e8f1ff !important;
 }

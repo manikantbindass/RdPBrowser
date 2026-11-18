@@ -19,6 +19,9 @@ fi
 umask 077
 work=$(mktemp -d)
 mount -t tmpfs -o mode=0755 tmpfs /run
+# runc may inherit a runner TMPDIR beneath /run/user, hidden by the private mount.
+unset XDG_RUNTIME_DIR
+export TMPDIR="$work"
 ip link set lo up
 ip address add 10.8.0.1/32 dev lo
 export DOCKER_HOST=unix://$work/docker.sock

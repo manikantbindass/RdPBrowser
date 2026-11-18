@@ -65,6 +65,8 @@ Thumbs.db
 coverage/
 .nyc_output/
 .local-tests/
+.quality-results/
+/.quality-*/
 .deployment/
 **/.terraform/
 **/terraform.tfstate*

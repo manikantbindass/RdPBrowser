@@ -19,6 +19,7 @@ describe('Validated configuration', () => {
     { CORS_ORIGINS: 'http://localhost:5173/admin' }, { TRUST_PROXY_CIDRS: 'true' },
     { DB_SSL_MODE: 'insecure' }, { JWT_EXPIRES_IN: 'forever' }, { JWT_EXPIRES_IN: '0s' },
     { DATABASE_URL: 'postgresql://user:password@localhost/test?sslmode=no-verify' },
+    { ALLOWED_COUNTRIES:'US,,GB' },{ ALLOWED_COUNTRIES:'US,gb' },{ ALLOWED_COUNTRIES:'A'.repeat(2048) },
   ])('rejects invalid configuration without values: %p', override => {
     expect(() => loadConfig({ ...env, ...override })).toThrow('Invalid configuration keys:');
   });

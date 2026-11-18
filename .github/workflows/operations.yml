@@ -9,6 +9,27 @@ on:
 permissions:
   contents: read
 jobs:
+  image-security:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build exact runtime images for scanning
+        run: |
+          docker build -f docker/Dockerfile.backend -t rsx-backend:quality .
+          docker build -f docker/Dockerfile.nginx -t rsx-edge:quality .
+      - run: bash scripts/quality/install-scanners.sh "$RUNNER_TEMP/scanners"
+      - name: Scan both images without suppressing findings
+        run: |
+          result=0
+          "$RUNNER_TEMP/scanners/trivy" image --scanners vuln --severity HIGH,CRITICAL --exit-code 1 --format json --output backend-image.json rsx-backend:quality || result=1
+          "$RUNNER_TEMP/scanners/trivy" image --scanners vuln --severity HIGH,CRITICAL --exit-code 1 --format json --output edge-image.json rsx-edge:quality || result=1
+          exit "$result"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: image-security
+          path: '*-image.json'
   isolated-compose:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
@@ -17,6 +38,7 @@ jobs:
       - run: |
           sudo apt-get update
           sudo apt-get install -y age shellcheck
+          python3 -m unittest discover -s scripts/quality -p 'test_*.py' -v
           shellcheck operations/tests/lab.sh
           python3 -m py_compile operations/manage.py operations/tests/scenarios.py
           python3 -m unittest discover -s operations/tests -p 'test_*.py' -v
@@ -31,6 +53,7 @@ jobs:
         run: |
           set -o pipefail
           sudo bash operations/tests/lab.sh /tmp/rsx-images.tar | tee operations-evidence.jsonl
+          python3 scripts/quality/performance.py operations-evidence.jsonl
       - uses: actions/upload-artifact@v4
         if: always()
         with:

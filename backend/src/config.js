@@ -50,7 +50,7 @@ const definitions = {
   ANOMALY_ORGANIZATION_IDS: Joi.string().default('00000000-0000-4000-8000-000000000001'),
   SSH_ENABLED: Joi.boolean().default(false),
   GEO_RESTRICTION_ENABLED: Joi.boolean().default(false),
-  ALLOWED_COUNTRIES: Joi.string().pattern(/^[A-Z]{2}(,[A-Z]{2})*$/).default('IN,US,GB'),
+  ALLOWED_COUNTRIES: Joi.string().max(1024).custom((value,helpers)=>value.split(',').every(code=>/^[A-Z]{2}$/.test(code)) ? value : helpers.error('any.invalid')).default('IN,US,GB'),
   LOG_LEVEL: Joi.string().valid('error', 'warn', 'info', 'debug').default('info'),
   REGISTRATION_ENABLED: Joi.boolean().default(false),
   AUTH_RATE_LIMIT_MAX: Joi.number().integer().min(1).max(1000).default(20),
