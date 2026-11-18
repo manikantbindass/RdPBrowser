@@ -63,7 +63,7 @@ def inventory(folder, metadata, commit):
         unexpected = sorted({path.name for path in payload}-set(expected))
         raise ValueError(f'Artifact inventory differs. Missing: {missing}. Unexpected: {unexpected}')
     entries = []
-    for path in sorted(payload):
+    for path in sorted(payload, key=lambda entry: entry.name):
         if not NAME.fullmatch(path.name) or path.is_symlink() or not path.is_file() or path.stat().st_size == 0:
             raise ValueError(f'Invalid payload file: {path.name}')
         if path.name.endswith('.cdx.json'):

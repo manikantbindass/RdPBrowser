@@ -44,6 +44,9 @@ class ReleaseTests(unittest.TestCase):
         self.assemble()
         manifest = verify(self.output, self.tag, self.commit)
         self.assertEqual(len(manifest['artifacts']), 16)
+        names = [artifact['name'] for artifact in manifest['artifacts']]
+        self.assertEqual(names, sorted(names))
+        self.assertTrue(names[0].startswith('RemoteShield-'))
         self.assertEqual((manifest['runId'], manifest['runAttempt']), (42, 2))
         self.assertEqual(manifest['signing'], 'verification-only')
         self.assertIn(hash_file(self.output / 'release-manifest.json'),
