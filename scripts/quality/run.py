@@ -46,6 +46,7 @@ def catalog():
 
 def redact(text):
     text=re.sub(r'(?i)(postgres(?:ql)?://[^:/\s]+:)[^@\s]+@',r'\1[REDACTED]@',text)
+    text=re.sub(r'(https?://(?:127\.0\.0\.1|localhost):\d+/)[A-Za-z0-9_-]{8,}={1,2}/',r'\1[REDACTED_VM_SERVICE]/',text)
     return re.sub(r'eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+','[REDACTED_JWT]',text)
 
 

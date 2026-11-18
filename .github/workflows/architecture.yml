@@ -57,6 +57,7 @@ jobs:
           npm run build --prefix ../desktop
           npx playwright install --with-deps chromium
           npm run test:browser
+          npm run test:desktop-ui
   security-static:
     runs-on: ubuntu-24.04
     steps:
