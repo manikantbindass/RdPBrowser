@@ -49,3 +49,30 @@ The final [code-only PR validation run](https://github.com/manikantbindass/RdPBr
 Required work before stable distribution includes remediation of the blocking security findings, configuring approved signing credentials, merging the reviewed workflow, registering the required PR gate on `main`, and verifying a published signed RC from the same source as the stable tag. No stable tag was pushed. The changes are on `codex/remoteshield-enterprise-completion` and the existing [draft PR #3](https://github.com/manikantbindass/RdPBrowser/pull/3).
 
 [Machine-readable validation results](audit/phase14/validation.json) · [Changed files](audit/phase14/changed-files.txt)
+
+## Security gate follow-up
+
+The [baseline PR scan](https://github.com/manikantbindass/RdPBrowser/actions/runs/44385464372) identified seven high-severity findings inside the backend image’s bundled npm installation and three in the unused Nginx XSLT library. The backend keeps npm in the build stage and copies the Node runtime and production dependencies into a digest-pinned Alpine image. The first slim edge scan exposed five advisories in Nginx 1.30.6 itself. The final edge uses digest-pinned Nginx 1.30.7 slim. Startup checks retain UIDs 1001 and 101 and verify the removed packages are absent. [Official Node container guidance](https://github.com/nodejs/docker-node/blob/main/docs/BestPractices.md#smaller-images-without-npmyarn) · [Nginx security advisories](https://nginx.org/en/security_advisories.html)
+
+The desktop uses Vite 8.3.8 and React plugin 6.3.0 with the previous browser targets. The npm audit reports zero high or critical findings and one moderate `fflate` finding. Reqwest 0.12.28 removes the affected `rustls-webpki` 0.101 branch. Tauri updater 2.14.1 supports ZIP 9. The lockfile uses the fixed ZIP 9.0.5 patch and its compatible `libc` update. The existing updater capability grants are unchanged. [Vite 8 migration guide](https://vite.dev/guide/migration.html) · [Published updater crate](https://crates.io/crates/tauri-plugin-updater/2.14.1)
+
+All 28 historical audit matches were SHA-256 values verified against public Git blobs. The scanner applies an exception only to the exact reviewed checksum line in its original evidence file and only to the generic API key rule. Backend and SCIM test fixtures now generate their credentials per run. Gitleaks found zero matches on the reviewed snapshot and caught a synthetic replacement in the same approved field. [Verified digest inputs](audit/phase14/verified-public-hashes.json) · [Gitleaks rule configuration](https://github.com/gitleaks/gitleaks#configuration)
+
+The [follow-up PR run](https://github.com/manikantbindass/RdPBrowser/actions/runs/44484220465) scanned commit `8d0f7da776aa63317b5cad7e84071e62f4114ca6`.
+
+| Gate evidence | Before | After |
+| --- | --- | --- |
+| Gitleaks stock rules with reviewed digest exceptions | 30 candidates | 0 findings |
+| Desktop npm audit at high or critical severity | 5 | 0 |
+| Trivy source dependency vulnerabilities at high or critical severity | 3 | 0 |
+| Trivy runtime images at high or critical severity | Backend 7, edge 3 | Backend 0, edge 0 |
+| Trivy Terraform misconfigurations | 5 critical | 5 critical |
+| Backend static analyzer | 52 findings | 52 findings |
+
+The local production frontend build passed three desktop state tests and three Chrome scenarios. Windows Rust formatting, six tests and Clippy passed against the final lockfile. The backend authentication fixture passed all ten tests. Both images built in a dedicated Linux guest. The isolated runtime checks passed, as did local Trivy scans of the final images. The hosted image security job passed its startup checks and scans. [Hosted image verification](https://github.com/manikantbindass/RdPBrowser/actions/runs/44484220465/job/135423559226)
+
+Terraform still flags public WireGuard and ICMP ingress and broad TCP, UDP and ICMP egress. The current single-VPS topology permits roaming clients and gateway egress. Changing those rules requires an approved deployment policy and packet verification on that topology. The backend analyzer still reports 25 nonliteral filesystem paths and 27 dynamic object accesses. Those findings remain blocking and require per-site review. The protected signing environment lists zero secrets. [DigitalOcean firewall configuration](../infrastructure/digitalocean/main.tf)
+
+Ten hosted PR jobs passed. They include Windows, Linux and Intel macOS native checks, 156 backend unit tests, 48 PostgreSQL integration tests, nine admin Chrome scenarios, three desktop Chrome scenarios, nine Flutter tests, the isolated packet suite and 35 real Compose deployment and recovery assertions. The required quality gate failed on the two outstanding scan jobs. [Hosted PR result](https://github.com/manikantbindass/RdPBrowser/actions/runs/44484220465)
+
+The artifact-only `v2.5.0-preview.4` delivered all 16 entries from the patched source, including installers for Windows, Linux and universal macOS, four Android APKs, both Docker images and CycloneDX SBOMs. GitHub verified the release manifest’s provenance, all hashes and both reloaded image identities in a separate job. Local GitHub CLI verification also passed for the manifest and exact tag. The preview’s aggregate status correctly reported failure for the remaining scan findings. The latest published stable version remained `v2.4.0`. [Independent verification job](https://github.com/manikantbindass/RdPBrowser/actions/runs/44484271833/job/135432691439) · [Preview payload](https://github.com/manikantbindass/RdPBrowser/actions/runs/44484271833/artifacts/14510333454) · [SBOM and checksums](https://github.com/manikantbindass/RdPBrowser/actions/runs/44484271833/artifacts/14510478932) · [Machine-readable remediation results](audit/phase14/security-remediation.json)

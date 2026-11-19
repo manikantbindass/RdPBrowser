@@ -2,6 +2,8 @@
 
 The `Pull request validation` workflow runs for pull requests into `main` and pushes to `main` and `develop`. Require its **Required quality gate** in the repository ruleset once that job is present on `main`. The gate requires every reusable suite, Flutter analysis and tests, dependency and secret scans, and workflow validation to succeed. A skipped, failed or cancelled prerequisite blocks signed delivery. Test pull requests with fork credentials disabled and use ordinary `pull_request` events.
 
+The Vite 8 desktop build requires Node 22.12 or later. The Tauri updater requires at least Rust 1.90, and the Linux build needs the D-Bus development package alongside the existing WebKit dependencies. The backend build and runtime use Node 24.
+
 ## Versions and inputs
 
 | Tag | Outputs | Admission |

@@ -1,0 +1,412 @@
+{
+  "schemaVersion": 1,
+  "previousRun": "https://github.com/manikantbindass/RdPBrowser/actions/runs/44385464372",
+  "pullRequest": {
+    "conclusion": "failure",
+    "event": "pull_request",
+    "headSha": "8d0f7da776aa63317b5cad7e84071e62f4114ca6",
+    "id": 44484220465,
+    "jobs": [
+      {
+        "conclusion": "success",
+        "id": 135423558503,
+        "name": "android",
+        "status": "completed",
+        "url": "https://github.com/manikantbindass/RdPBrowser/actions/runs/44484220465/job/135423558503"
+      },
+      {
+        "conclusion": "success",
+        "id": 135423558774,
+        "name": "Workflow and release tooling",
+        "status": "completed",
+        "url": "https://github.com/manikantbindass/RdPBrowser/actions/runs/44484220465/job/135423558774"
+      },
+      {
+        "conclusion": "failure",
+        "id": 135423558890,
+        "name": "dependency-and-secrets",
+        "status": "completed",
+        "url": "https://github.com/manikantbindass/RdPBrowser/actions/runs/44484220465/job/135423558890"
+      },
+      {
+        "conclusion": "success",
+        "id": 135423558916,
+        "name": "backend / contracts-and-postgres",
+        "status": "completed",
+        "url": "https://github.com/manikantbindass/RdPBrowser/actions/runs/44484220465/job/135423558916"
+      },
+      {
+        "conclusion": "success",
+        "id": 135423558924,
+        "name": "desktop / desktop (windows-latest)",
+        "status": "completed",
+        "url": "https://github.com/manikantbindass/RdPBrowser/actions/runs/44484220465/job/135423558924"
+      },
+      {
+        "conclusion": "failure",
+        "id": 135423559012,
+        "name": "backend / security-static",
+        "status": "completed",
+        "url": "https://github.com/manikantbindass/RdPBrowser/actions/runs/44484220465/job/135423559012"
+      },
+      {
+        "conclusion": "success",
+        "id": 135423559055,
+        "name": "containers / isolated-compose",
+        "status": "completed",
+        "url": "https://github.com/manikantbindass/RdPBrowser/actions/runs/44484220465/job/135423559055"
+      },
+      {
+        "conclusion": "success",
+        "id": 135423559109,
+        "name": "desktop / desktop (macos-15-intel)",
+        "status": "completed",
+        "url": "https://github.com/manikantbindass/RdPBrowser/actions/runs/44484220465/job/135423559109"
+      },
+      {
+        "conclusion": "success",
+        "id": 135423559112,
+        "name": "network / wireguard-namespaces",
+        "status": "completed",
+        "url": "https://github.com/manikantbindass/RdPBrowser/actions/runs/44484220465/job/135423559112"
+      },
+      {
+        "conclusion": "success",
+        "id": 135423559185,
+        "name": "containers / infrastructure-plan",
+        "status": "completed",
+        "url": "https://github.com/manikantbindass/RdPBrowser/actions/runs/44484220465/job/135423559185"
+      },
+      {
+        "conclusion": "success",
+        "id": 135423559189,
+        "name": "desktop / desktop (ubuntu-22.04)",
+        "status": "completed",
+        "url": "https://github.com/manikantbindass/RdPBrowser/actions/runs/44484220465/job/135423559189"
+      },
+      {
+        "conclusion": "success",
+        "id": 135423559226,
+        "name": "containers / image-security",
+        "status": "completed",
+        "url": "https://github.com/manikantbindass/RdPBrowser/actions/runs/44484220465/job/135423559226"
+      },
+      {
+        "conclusion": "failure",
+        "id": 135427436107,
+        "name": "Required quality gate",
+        "status": "completed",
+        "url": "https://github.com/manikantbindass/RdPBrowser/actions/runs/44484220465/job/135427436107"
+      }
+    ],
+    "status": "completed",
+    "url": "https://github.com/manikantbindass/RdPBrowser/actions/runs/44484220465"
+  },
+  "scans": {
+    "gitleaksFindings": 0,
+    "npm": {
+      "backend": {
+        "info": 0,
+        "low": 0,
+        "moderate": 2,
+        "high": 0,
+        "critical": 0,
+        "total": 2
+      },
+      "desktop": {
+        "info": 0,
+        "low": 0,
+        "moderate": 1,
+        "high": 0,
+        "critical": 0,
+        "total": 1
+      },
+      "admin-dashboard": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      }
+    },
+    "sourceVulnerabilities": [],
+    "sourceMisconfigurations": [
+      {
+        "id": "DIG-0001",
+        "target": "infrastructure/digitalocean/main.tf",
+        "line": 43,
+        "severity": "CRITICAL"
+      },
+      {
+        "id": "DIG-0001",
+        "target": "infrastructure/digitalocean/main.tf",
+        "line": 55,
+        "severity": "CRITICAL"
+      },
+      {
+        "id": "DIG-0003",
+        "target": "infrastructure/digitalocean/main.tf",
+        "line": 60,
+        "severity": "CRITICAL"
+      },
+      {
+        "id": "DIG-0003",
+        "target": "infrastructure/digitalocean/main.tf",
+        "line": 65,
+        "severity": "CRITICAL"
+      },
+      {
+        "id": "DIG-0003",
+        "target": "infrastructure/digitalocean/main.tf",
+        "line": 69,
+        "severity": "CRITICAL"
+      }
+    ],
+    "imageVulnerabilityCounts": {
+      "backend": 0,
+      "edge": 0
+    },
+    "backendStaticFindings": {
+      "security/detect-non-literal-fs-filename": 25,
+      "security/detect-object-injection": 27
+    }
+  },
+  "functional": {
+    "backend-unit": {
+      "passed": 156,
+      "failed": 0
+    },
+    "backend-integration": {
+      "passed": 48,
+      "failed": 0
+    },
+    "admin-browser": {
+      "passed": 9,
+      "failed": 0
+    },
+    "desktop-web": {
+      "passed": 3,
+      "failed": 0
+    },
+    "flutter": {
+      "passed": 9,
+      "machineRecords": 29,
+      "nonJsonLines": 4
+    },
+    "operations": {
+      "passed": 35,
+      "hostNetworkModified": false,
+      "cloudResourcesCreated": false
+    }
+  },
+  "local": {
+    "gitleaksReplacementDetected": true,
+    "nativeWindowsRustTests": 6,
+    "imageStartup": "passed",
+    "verifiedPublicDigests": 28,
+    "lint": "passed",
+    "desktopStateTests": 3,
+    "backendFixtureTests": 10,
+    "desktopBrowserTests": 3
+  },
+  "productionSigningSecretCount": 0,
+  "preview": {
+    "conclusion": "failure",
+    "event": "push",
+    "headSha": "8d0f7da776aa63317b5cad7e84071e62f4114ca6",
+    "id": 44484271833,
+    "jobs": [
+      {
+        "conclusion": "success",
+        "id": 135423732013,
+        "name": "Validate release tag and source",
+        "status": "completed",
+        "url": "https://github.com/manikantbindass/RdPBrowser/actions/runs/44484271833/job/135423732013"
+      },
+      {
+        "conclusion": "success",
+        "id": 135423844011,
+        "name": "package-preview / Bundle linux-x64",
+        "status": "completed",
+        "url": "https://github.com/manikantbindass/RdPBrowser/actions/runs/44484271833/job/135423844011"
+      },
+      {
+        "conclusion": "success",
+        "id": 135423844073,
+        "name": "package-preview / Package Docker images and SBOMs",
+        "status": "completed",
+        "url": "https://github.com/manikantbindass/RdPBrowser/actions/runs/44484271833/job/135423844073"
+      },
+      {
+        "conclusion": "success",
+        "id": 135423844109,
+        "name": "package-preview / Bundle Android APKs",
+        "status": "completed",
+        "url": "https://github.com/manikantbindass/RdPBrowser/actions/runs/44484271833/job/135423844109"
+      },
+      {
+        "conclusion": "success",
+        "id": 135423844129,
+        "name": "quality / android",
+        "status": "completed",
+        "url": "https://github.com/manikantbindass/RdPBrowser/actions/runs/44484271833/job/135423844129"
+      },
+      {
+        "conclusion": "failure",
+        "id": 135423844130,
+        "name": "quality / dependency-and-secrets",
+        "status": "completed",
+        "url": "https://github.com/manikantbindass/RdPBrowser/actions/runs/44484271833/job/135423844130"
+      },
+      {
+        "conclusion": "success",
+        "id": 135423844160,
+        "name": "package-preview / Bundle macos-universal",
+        "status": "completed",
+        "url": "https://github.com/manikantbindass/RdPBrowser/actions/runs/44484271833/job/135423844160"
+      },
+      {
+        "conclusion": "success",
+        "id": 135423844193,
+        "name": "quality / Workflow and release tooling",
+        "status": "completed",
+        "url": "https://github.com/manikantbindass/RdPBrowser/actions/runs/44484271833/job/135423844193"
+      },
+      {
+        "conclusion": "success",
+        "id": 135423844216,
+        "name": "quality / network / wireguard-namespaces",
+        "status": "completed",
+        "url": "https://github.com/manikantbindass/RdPBrowser/actions/runs/44484271833/job/135423844216"
+      },
+      {
+        "conclusion": "success",
+        "id": 135423844269,
+        "name": "quality / backend / contracts-and-postgres",
+        "status": "completed",
+        "url": "https://github.com/manikantbindass/RdPBrowser/actions/runs/44484271833/job/135423844269"
+      },
+      {
+        "conclusion": "success",
+        "id": 135423844332,
+        "name": "quality / desktop / desktop (macos-15-intel)",
+        "status": "completed",
+        "url": "https://github.com/manikantbindass/RdPBrowser/actions/runs/44484271833/job/135423844332"
+      },
+      {
+        "conclusion": "success",
+        "id": 135423844347,
+        "name": "quality / containers / image-security",
+        "status": "completed",
+        "url": "https://github.com/manikantbindass/RdPBrowser/actions/runs/44484271833/job/135423844347"
+      },
+      {
+        "conclusion": "success",
+        "id": 135423844386,
+        "name": "quality / desktop / desktop (ubuntu-22.04)",
+        "status": "completed",
+        "url": "https://github.com/manikantbindass/RdPBrowser/actions/runs/44484271833/job/135423844386"
+      },
+      {
+        "conclusion": "success",
+        "id": 135423844417,
+        "name": "quality / containers / infrastructure-plan",
+        "status": "completed",
+        "url": "https://github.com/manikantbindass/RdPBrowser/actions/runs/44484271833/job/135423844417"
+      },
+      {
+        "conclusion": "success",
+        "id": 135423844429,
+        "name": "quality / containers / isolated-compose",
+        "status": "completed",
+        "url": "https://github.com/manikantbindass/RdPBrowser/actions/runs/44484271833/job/135423844429"
+      },
+      {
+        "conclusion": "success",
+        "id": 135423844438,
+        "name": "package-preview / Bundle windows-x64",
+        "status": "completed",
+        "url": "https://github.com/manikantbindass/RdPBrowser/actions/runs/44484271833/job/135423844438"
+      },
+      {
+        "conclusion": "success",
+        "id": 135423844448,
+        "name": "quality / desktop / desktop (windows-latest)",
+        "status": "completed",
+        "url": "https://github.com/manikantbindass/RdPBrowser/actions/runs/44484271833/job/135423844448"
+      },
+      {
+        "conclusion": "failure",
+        "id": 135423844680,
+        "name": "quality / backend / security-static",
+        "status": "completed",
+        "url": "https://github.com/manikantbindass/RdPBrowser/actions/runs/44484271833/job/135423844680"
+      },
+      {
+        "conclusion": "skipped",
+        "id": 135423846347,
+        "name": "Check release protections",
+        "status": "completed",
+        "url": "https://github.com/manikantbindass/RdPBrowser/actions/runs/44484271833/job/135423846347"
+      },
+      {
+        "conclusion": "failure",
+        "id": 135427048305,
+        "name": "quality / Required quality gate",
+        "status": "completed",
+        "url": "https://github.com/manikantbindass/RdPBrowser/actions/runs/44484271833/job/135427048305"
+      },
+      {
+        "conclusion": "skipped",
+        "id": 135427126090,
+        "name": "package-distribution",
+        "status": "completed",
+        "url": "https://github.com/manikantbindass/RdPBrowser/actions/runs/44484271833/job/135427126090"
+      },
+      {
+        "conclusion": "success",
+        "id": 135432303790,
+        "name": "Assemble and attest complete payload",
+        "status": "completed",
+        "url": "https://github.com/manikantbindass/RdPBrowser/actions/runs/44484271833/job/135432303790"
+      },
+      {
+        "conclusion": "success",
+        "id": 135432691439,
+        "name": "Verify preview artifacts independently",
+        "status": "completed",
+        "url": "https://github.com/manikantbindass/RdPBrowser/actions/runs/44484271833/job/135432691439"
+      },
+      {
+        "conclusion": "skipped",
+        "id": 135432694845,
+        "name": "Publish verified release",
+        "status": "completed",
+        "url": "https://github.com/manikantbindass/RdPBrowser/actions/runs/44484271833/job/135432694845"
+      }
+    ],
+    "status": "completed",
+    "url": "https://github.com/manikantbindass/RdPBrowser/actions/runs/44484271833",
+    "tag": "v2.5.0-preview.4",
+    "attestedManifestSha256": "8566e0cca52fcd46abeec41147b52a1cc4b1425599155b1bb6889d696572c02d",
+    "artifactCount": 16,
+    "retainedBundles": [
+      {
+        "digest": "sha256:9afd043a8a832946c8cd6225b89d86bff48d2e98bf1d2134593ef3350c06e3dd",
+        "expires_at": "2027-02-17T08:02:26Z",
+        "id": 14510478932,
+        "name": "release-evidence-v2.5.0-preview.4-1",
+        "size_in_bytes": 69009
+      },
+      {
+        "digest": "sha256:8918c9be10eacecf7b75c3fb07e054944945aba4a031a45d2c9736362e651d0d",
+        "expires_at": "2026-12-19T08:21:39Z",
+        "id": 14510333454,
+        "name": "release-payload-v2.5.0-preview.4-1",
+        "size_in_bytes": 462973221
+      }
+    ]
+  },
+  "latestPublishedRelease": "v2.4.0"
+}
