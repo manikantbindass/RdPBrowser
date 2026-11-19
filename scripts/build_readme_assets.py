@@ -24,6 +24,7 @@ CYAN = "#58e7f3"
 BLUE = "#2788ff"
 WHITE = "#f1f7ff"
 MUTED = "#adc3db"
+HERO_STAGES = ('Enroll the device', 'Evaluate access', 'Open the approved site')
 
 
 def svg_document(width, height, title, description, content):
@@ -59,27 +60,27 @@ def write_vectors():
     logo += label(100, 73, 'Remote access. Explicit control.', 17, MUTED)
     (OUT / 'remoteshield-logo.svg').write_text(svg_document(460, 96, 'RemoteShield X', 'Original shield and lock mark. Remote access. Explicit control.', logo), encoding='utf8', newline='\n')
 
-    graph = label(42, 52, 'Control decisions. Separate enforcement.', 31, WHITE, 600)
-    graph += label(42, 84, 'Current modular architecture · not a network-protection certification', 18, MUTED)
+    graph = label(42, 52, 'RemoteShield X system architecture', 31, WHITE, 600)
+    graph += label(42, 84, 'Application authorization and packet routing have separate responsibilities.', 18, MUTED)
     graph += label(42, 132, 'CONTROL PLANE', 15, CYAN, 600)
     graph += box(42, 158, 280, 'Clients', ['Desktop · Android · Admin', 'Independent runtime boundaries'])
     graph += box(400, 158, 350, 'Nginx + backend', ['Versioned API · session checks', 'Config · policy decisions · events'])
-    graph += box(830, 158, 328, 'PostgreSQL', ['Users · sessions · legacy rules', 'Explicit migration history'])
+    graph += box(830, 158, 328, 'PostgreSQL', ['Organizations · sessions · policy', 'Tenant-scoped rows and events'])
     graph += arrow(324, 214, 397, 214) + arrow(752, 214, 827, 214)
     graph += '<path d="M42 316H1158" stroke="#244364" stroke-dasharray="5 8"/>'
     graph += label(42, 355, 'NETWORK / NATIVE ENFORCEMENT', 15, CYAN, 600)
     graph += box(42, 382, 280, 'Native + OS policy', ['WebView navigation · firewall', 'Routing · DNS · IPv4 / IPv6'])
     graph += box(400, 382, 350, 'WireGuard + VPS', ['Tunnel · routing / NAT', 'Separate privileged deployment'])
-    graph += box(830, 382, 328, 'Destination', ['Website traffic flows here', 'Not through the policy API'])
+    graph += box(830, 382, 328, 'Destination', ['Website responds to the WebView', 'Through the configured OS route'])
     graph += arrow(324, 438, 397, 438) + arrow(752, 438, 827, 438)
     graph += arrow(180, 272, 180, 378, True)
-    graph += label(202, 302, 'decision ≠ enforcement', 16, MUTED)
-    graph += label(42, 547, 'Solid arrows: intended data flow. Dashed arrow: policy advice. Native/network guarantees remain unverified.', 17, MUTED)
+    graph += label(202, 302, 'Navigation decision', 16, MUTED)
+    graph += label(42, 547, 'The lower lane shows a managed WireGuard deployment. Control requests can also travel over that tunnel.', 17, MUTED)
     (OUT / 'architecture.svg').write_text(svg_document(1200, 584, 'RemoteShield X architecture', 'A control plane of clients, Nginx/backend and PostgreSQL is separate from native OS policy, WireGuard/VPS and destination website traffic. Policy decisions do not prove enforcement.', graph), encoding='utf8', newline='\n')
 
-    flow = label(42, 52, 'Security is a chain of explicit checks.', 31, WHITE, 600)
-    flow += label(42, 84, 'Implemented control checks and the remaining native / network verification boundary', 18, MUTED)
-    steps = [('01', 'Validate configuration', 'Reject invalid production settings'), ('02', 'Authenticate the session', 'Token + active session + role gates'), ('03', 'Evaluate policy', 'Control-plane allow / deny decision'), ('04', 'Enforce and measure', 'Native / OS / tunnel work remains')]
+    flow = label(42, 52, 'From sign-in to a navigation decision', 31, WHITE, 600)
+    flow += label(42, 84, 'The backend checks live access state for the requested URL.', 18, MUTED)
+    steps = [('01', 'Admit the source', 'Use the configured edge and VPN source rules'), ('02', 'Authenticate the session', 'Check identity, organization, account and session'), ('03', 'Evaluate the request', 'Apply device requirements and assigned URL policy'), ('04', 'Record the result', 'Associate the decision with a request ID')]
     for i, (number, heading, description) in enumerate(steps):
         y = 127+i*98
         flow += f'<circle cx="68" cy="{y+24}" r="23" fill="{PANEL}" stroke="{CYAN}"/>'
@@ -88,10 +89,10 @@ def write_vectors():
         flow += label(112, y+52, description, 18, MUTED)
         if i < 3:
             flow += arrow(68, y+50, 68, y+72, i == 2)
-    flow += box(715, 139, 435, 'Observe and correlate', ['Structured errors + request IDs', 'Migration / readiness checks'])
-    flow += box(715, 310, 435, 'Open security work', ['Refresh rotation · tenant isolation', 'Device trust · DNS / tunnel failure'], '#f6cc78')
-    flow += label(42, 552, 'A successful API response, health check or UI VPN indicator is not a security attestation.', 18, MUTED)
-    (OUT / 'security-workflow.svg').write_text(svg_document(1200, 590, 'Security workflow and open boundaries', 'Configuration validation, session authentication and policy decisions precede native enforcement. Native, tunnel, DNS and trust verification remain incomplete; logs and readiness are observations.', flow), encoding='utf8', newline='\n')
+    flow += box(715, 139, 435, 'Allow', ['The native WebView opens the site', 'The OS controls routing and DNS'])
+    flow += box(715, 310, 435, 'Deny', ['The client blocks the requested page', 'The admin can review recorded decisions'], '#f6cc78')
+    flow += label(42, 552, 'Application revocation and WireGuard peer revocation are separate operator actions.', 18, MUTED)
+    (OUT / 'security-workflow.svg').write_text(svg_document(1200, 590, 'RemoteShield X navigation security workflow', 'The backend checks source, session, device and URL policy, then records the decision. The WebView loads allowed pages and blocks denied navigation. Routing and DNS are separately managed.', flow), encoding='utf8', newline='\n')
 
     for name, left, right in [('badge-status', 'STATUS', 'Experimental'), ('badge-stack', 'STACK', 'Tauri 2 / Flutter / Node'), ('badge-contracts', 'API', 'v1 + legacy aliases')]:
         width = 350 if name == 'badge-stack' else 292
@@ -111,21 +112,28 @@ def gradient(size):
 
 def hero_base(regular, bold):
     canvas = gradient((1280, 520)).convert('RGBA')
-    art = Image.open(SOURCE / 'brand-art.png').convert('RGB').resize((760, 428), Image.Resampling.LANCZOS).convert('RGBA')
+    art = Image.open(SOURCE / 'brand-art.png').convert('RGB').resize((735, 428), Image.Resampling.LANCZOS).convert('RGBA')
     mask = Image.new('L', art.size, 255)
     draw_mask = ImageDraw.Draw(mask)
     for x in range(65):
         draw_mask.line((x, 0, x, 427), fill=round(255*x/64))
+    for x in range(art.width-30, art.width):
+        opacity = round(255*(art.width-1-x)/29)
+        draw_mask.line((x, 0, x, 427), fill=opacity)
     canvas.paste(art, (520, 48), mask)
     draw = ImageDraw.Draw(canvas)
-    draw.rounded_rectangle((60, 72, 130, 76), radius=2, fill=CYAN)
-    draw.text((60, 105), 'OPEN ARCHITECTURE / CLEAR BOUNDARIES', font=regular(13), fill=CYAN)
-    draw.text((56, 157), 'RemoteShield X', font=bold(55), fill=WHITE)
-    draw.text((60, 247), 'Remote access.', font=regular(30), fill=WHITE)
-    draw.text((60, 291), 'Explicit control.', font=regular(30), fill=CYAN)
-    draw.line((60, 375, 432, 375), fill='#244364', width=1)
-    draw.text((60, 399), 'Tauri 2  /  Flutter  /  Node.js', font=regular(17), fill=MUTED)
-    draw.text((60, 479), 'Conceptual artwork. See verified feature status below.', font=regular(12), fill=MUTED)
+    draw.rounded_rectangle((58, 36, 1222, 414), radius=22, outline='#254263', width=2)
+    draw.rounded_rectangle((88, 78, 138, 82), radius=2, fill=CYAN)
+    draw.text((88, 105), 'MANAGED BROWSER / DESKTOP + ANDROID', font=bold(16), fill=CYAN)
+    draw.text((83, 153), 'RemoteShield X', font=bold(64), fill=WHITE)
+    draw.text((88, 249), 'Secure access starts with', font=regular(32), fill=WHITE)
+    draw.text((88, 291), 'an explicit decision.', font=bold(32), fill=CYAN)
+    draw.text((88, 357), 'Identity  /  Device trust  /  URL policy', font=regular(20), fill=MUTED)
+    for index, stage in enumerate(HERO_STAGES):
+        x = 58 + index*396
+        draw.rounded_rectangle((x, 431, x+372, 502), radius=12, fill=PANEL, outline='#254263', width=2)
+        draw.text((x+16, 453), f'{index+1:02}', font=bold(19), fill=CYAN)
+        draw.text((x+54, 450), stage, font=bold(23), fill=WHITE)
     return canvas
 
 
@@ -135,15 +143,28 @@ def hero_frame(base, phase):
     canvas = base.copy()
     glow = Image.new('RGBA', canvas.size)
     draw = ImageDraw.Draw(glow)
-    alpha = round(24+10*math.sin(2*math.pi*phase))
-    draw.ellipse((848, 119, 1100, 379), outline=(88, 231, 243, alpha), width=3)
-    for start, end, offset in [(754, 860, 0), (1162, 1078, .5)]:
-        for shift in [0, .5]:
-            t = (phase+offset+shift) % 1
-            x = start+(end-start)*t
-            a = round(235*math.sin(math.pi*t)**2)
-            draw.ellipse((x-5, 286, x+5, 296), fill=(88, 231, 243, a))
-    canvas = Image.alpha_composite(canvas, glow.filter(ImageFilter.GaussianBlur(4)))
+    stage = min(int(phase*3), 2)
+    step = phase*3 - stage
+    pulse = math.sin(math.pi*step)**2
+    cyan = (88, 231, 243)
+    blue = (77, 169, 255)
+    if stage == 1:
+        angle = 360*step
+        draw.arc((821, 110, 1081, 374), angle, angle+92, fill=(*cyan, round(200*pulse)), width=4)
+        draw.arc((811, 100, 1091, 384), angle+180, angle+240, fill=(*blue, round(155*pulse)), width=3)
+    else:
+        lanes = [(749, 846, 286), (1143, 1056, 288)]
+        for start, end, y in lanes:
+            if stage == 2:
+                start, end = end, start
+            x = start+(end-start)*step
+            color = cyan if stage == 0 else blue
+            draw.line((start, y, x, y), fill=(*color, round(125*pulse)), width=4)
+            draw.ellipse((x-7, y-7, x+7, y+7), fill=(*color, round(250*pulse)))
+    x = 58 + 396*stage
+    draw.rounded_rectangle((x, 431, x+372, 502), radius=12, outline=(*cyan, round(190*pulse)), width=3)
+    draw.line((x+14, 492, x+14+344*step, 492), fill=(*cyan, round(220*pulse)), width=3)
+    canvas = Image.alpha_composite(canvas, glow.filter(ImageFilter.GaussianBlur(6)))
     canvas = Image.alpha_composite(canvas, glow)
     return canvas.convert('RGB')
 
@@ -267,6 +288,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--font-regular', default='C:/Windows/Fonts/segoeui.ttf')
     parser.add_argument('--font-bold', default='C:/Windows/Fonts/segoeuib.ttf')
+    parser.add_argument('--rebuild-captures', action='store_true', help='Re-encode the archived desktop and admin JPEGs as PNGs')
     args = parser.parse_args()
     for font in [args.font_regular, args.font_bold]:
         if not Path(font).is_file():
@@ -277,13 +299,12 @@ def main():
     write_vectors()
     export_animation('remoteshield-hero', hero_base(regular, bold), hero_frame, 100, 70)
     export_animation('remoteshield-footer', footer_base(regular, bold), footer_frame, 80, 60)
-    export_animation('remoteshield-access-flow', access_base(regular, bold), access_frame, 80, 75)
-    export_animation('remoteshield-network-boundary', network_base(regular, bold), network_frame, 80, 75)
-    for name in ['desktop', 'admin']:
-        capture = SOURCE / f'{name}-capture.jpg'
-        if capture.is_file():
-            target = 'desktop-browser.png' if name == 'desktop' else 'admin-dashboard.png'
-            Image.open(capture).convert('RGB').save(OUT / target, optimize=True)
+    export_animation('remoteshield-access-flow', access_base(regular, bold), access_frame, 80, 70)
+    export_animation('remoteshield-network-boundary', network_base(regular, bold), network_frame, 80, 70)
+    if args.rebuild_captures:
+        for name, target in [('desktop', 'desktop-browser.png'), ('admin', 'admin-dashboard.png')]:
+            with Image.open(SOURCE / f'{name}-capture.jpg') as capture:
+                capture.convert('RGB').save(OUT / target, optimize=True)
     manifest = {'generator': 'scripts/build_readme_assets.py', 'fontInputs': {}, 'assets': {}}
     for key, font in [('regular', args.font_regular), ('bold', args.font_bold)]:
         manifest['fontInputs'][key] = {'name': Path(font).name, 'sha256': hashlib.sha256(Path(font).read_bytes()).hexdigest()}

@@ -1,25 +1,32 @@
 <picture>
   <source media="(prefers-reduced-motion: reduce)" srcset="assets/readme/remoteshield-hero.webp">
-  <img src="assets/readme/remoteshield-hero.gif" alt="RemoteShield X. A conceptual shield connects desktop and Android clients." width="1280">
+  <img src="assets/readme/remoteshield-hero.gif" alt="RemoteShield X managed browser. A laptop and phone connect to a shield. The loop highlights device enrollment, access evaluation, and opening an approved site." width="1280">
 </picture>
 
 # RemoteShield X
 
-**Managed browsing and tenant-scoped access for remote teams.**
+**Managed browsing with explicit access decisions for remote teams.**
 
 [![Project status](assets/readme/badge-status.svg)](docs/ROADMAP.md) [![Technology stack](assets/readme/badge-stack.svg)](docs/ARCHITECTURE.md) [![API compatibility](assets/readme/badge-contracts.svg)](docs/API_REFERENCE.md)
 
-RemoteShield X lets an organization manage browser sessions, device enrollment, URL policy and security events from one console. A Node.js control plane handles identity and records decisions. Native WebViews load permitted pages. An independently managed WireGuard deployment and operating-system policy control how packets leave managed devices.
+RemoteShield X gives organizations a managed desktop and Android browser, an administration console, and an API that decides which users, devices, and sessions can open a URL. Administrators can assign policies, review access decisions, and revoke access from the same console. Organizations that need an enforced network path can deploy the separate WireGuard gateway and configure routing, DNS, and firewall policy on managed devices.
 
 [Static, reduced-motion edition](docs/README_STATIC.md) · [Getting started](docs/GETTING_STARTED.md) · [Technical report](output/pdf/RemoteShield-X-Technical-Report.pdf) · [PowerPoint briefing](docs/deliverables/RemoteShield-X-Company-Briefing.pptx)
 
-The [Phase 15 deliverable validation record](docs/deliverables/README.md) documents asset, link, command and rendering checks.
+[Architecture](#architecture) · [Security workflow](#security-workflow) · [Screenshots](#real-application-captures) · [Local setup](#platform-and-setup) · [Downloads](#published-application-downloads) · [Verification](#verification-and-release-gates)
 
 ## What RemoteShield X is
 
-RemoteShield X is an enterprise-oriented managed browser and access-control project. It combines browser clients with an organization-aware control plane for identity, policy decisions, device enrollment, sessions, and security events. Operators may pair it with a separately managed WireGuard gateway and operating-system routing controls. Browser policy decisions and a VPN connection indicator are not proof that every device packet follows the tunnel.
+The project is built for teams that want managed access to browser based services such as internal portals and partner dashboards. A deployment consists of the browser clients, a control plane, and an administration console. Production networking adds a separately operated gateway and managed device configuration.
 
-The project targets teams that need a central view of who is enrolled, which browser destinations are allowed, and what access events were recorded. It is still undergoing security remediation and operational acceptance; review the open gates below before evaluating it for a sensitive deployment.
+| Role | Typical workflow |
+| --- | --- |
+| Team member | Sign in to the organization, complete enrollment where required, and open an approved site in the managed browser. |
+| Organization administrator | Review and approve devices, assign URL policies, inspect access decisions, and terminate an account’s sessions when needed. |
+| Infrastructure operator | Configure the TLS edge, apply database migrations, provision WireGuard peers and managed routes, and verify backup recovery. |
+| Security reviewer | Correlate a request ID with an audit record, review policy changes, and check which controls were exercised in CI or a lab. |
+
+For example, a team can assign an allow policy for a partner portal to a directory group and apply an organization-wide deny rule for a second destination. An allowed navigation opens in the native WebView. A denied navigation stops at the browser, and authorized administrators can review the recorded outcome. If a laptop is lost, the administrator can revoke the application device or session and the operator can separately revoke its WireGuard peer.
 
 ## Published application downloads
 
@@ -43,7 +50,7 @@ There is no published iOS package in this release. The `v2.5.0-preview.4` source
 
 ## Motion and visual documentation
 
-These original, repository-built loops illustrate product boundaries and workflows. They are conceptual diagrams, not a demonstration of a running security control. The four GIFs loop continuously; static WebP alternatives are linked for readers whose Markdown viewer blocks animation. The top hero honors the reduced-motion media query where the renderer supports `<picture>`; the static README is available at any time.
+The seven-second hero highlights enrollment, policy evaluation, and opening an approved site. The following loops illustrate how control requests and page traffic move through the system. They use original artwork and separate static WebP versions. Readers can switch to the [static edition](docs/README_STATIC.md) when their Markdown viewer cannot apply the reduced motion setting.
 
 ### Access decision and browser traffic boundary
 
@@ -59,7 +66,7 @@ These original, repository-built loops illustrate product boundaries and workflo
   <img src="assets/readme/remoteshield-network-boundary.gif" alt="Conceptual control-plane and optional WireGuard traffic lanes; a connected state is not packet-level proof." width="1280">
 </picture>
 
-Rebuild all illustrations and loop assets with `python scripts/build_readme_assets.py`. See [animation source, timings, and accessibility notes](assets/readme/README.md); no remote animation service is used.
+Rebuild the illustrations and loops with `python scripts/build_readme_assets.py`. [Animation source, timings, and accessibility notes](assets/readme/README.md)
 
 ## Implementation and evidence
 
@@ -78,9 +85,61 @@ The verification snapshot uses source commit `8d0f7da` and preview `v2.5.0-previ
 
 ![Control plane and independent native traffic enforcement](assets/readme/architecture.svg)
 
-Nginx terminates TLS. Express and Socket.IO handle authenticated control traffic. PostgreSQL stores organization, identity, device, session, policy and event state. A restricted runtime role and forced row-level security protect tenant data. The browser loads destination pages through the OS network stack; `/api/v1/proxy/navigate` returns an authorization decision.
+### Component responsibilities
+
+| Component | Responsibility | Implementation |
+| --- | --- | --- |
+| Desktop browser | Renders trusted app controls and opens managed pages in native WebViews. The Rust shell owns native capabilities and download handling. | Tauri 2, Rust, React, TypeScript |
+| Android browser | Restores sessions, checks the managed network path, enrolls a device key, and opens approved pages in Android WebView. | Flutter, Dart, Kotlin, Android Keystore |
+| Control plane | Authenticates users, evaluates access, publishes session and policy state, and records events. | Nginx, Node.js, Express, REST, Socket.IO |
+| Persistence | Stores organizations, users, enrolled devices, sessions, policies and events. Tenant operations use a restricted runtime role and transaction-local organization context. | PostgreSQL, SQL migrations, row-level security |
+| Admin console | Uses authorized API operations for tenant administration, policy and incident management, and evidence export. | Same-origin web UI served through Nginx |
+| Network path | Controls peer identity, DNS, routes, and forwarding according to the platform profile and the operator’s deployment. | WireGuard, OS policy, Linux nftables and Unbound |
+
+### How a navigation request moves through the system
+
+```mermaid
+sequenceDiagram
+    participant Client as Managed browser
+    participant Edge as Nginx
+    participant API as Express API
+    participant DB as PostgreSQL
+    participant Site as Destination website
+    Client->>Edge: HTTPS navigation check with session and URL
+    Edge->>API: Forward with trusted source context
+    API->>DB: Read live session, device, and assigned policy
+    DB-->>API: Return organization-scoped state
+    API-->>Client: Return allow or deny and request ID
+    alt Allowed
+        Client->>Site: Native WebView requests page through the configured OS route
+        Site-->>Client: Website response
+    else Denied
+        Client->>Client: Show the block state
+    end
+```
+
+`/api/v1/proxy/navigate` supplies a policy decision. Site content flows from the destination to the native WebView via the operating system. In a managed WireGuard deployment, control requests can also traverse the tunnel. The gateway and clients still need their own DNS, IPv4, IPv6, and tunnel failure checks.
 
 [Architecture](docs/ARCHITECTURE.md) · [API reference](docs/API_REFERENCE.md) · [Security model](docs/SECURITY_MODEL.md) · [Threat model](docs/THREAT_MODEL.md)
+
+## Security workflow
+
+![Security workflow from source admission and live session checks to an allow or deny decision](assets/readme/security-workflow.svg)
+
+1. **Admit and authenticate.** The production edge uses its configured VPN source rules. The backend validates identity and session state, and applies role or resource authorization for protected actions. Refresh tokens rotate and can be revoked as a family.
+2. **Establish device trust where required.** Enrollment registers a public key. A signed challenge proves possession of the registered private key. Administrative approval, quarantine, and revocation determine whether the enrolled device can continue using protected resources.
+3. **Apply organizational policy.** An administrator can assign URL policy to an organization, users, or directory groups. Deny rules win. When multiple nonempty allow groups apply, the destination must match each group. Policy revisions and administrative changes are recorded for review.
+4. **Respond to changes.** Administrators can terminate sessions, revoke devices, and review detections in the console. Application revocation and WireGuard peer revocation are separate actions. Check both when containing a lost device.
+
+| Control | How to evaluate it |
+| --- | --- |
+| Tenant isolation | Exercise cross-tenant denials in the API integration suite and verify the runtime role cannot bypass row-level security. |
+| Browser navigation policy | Test representative allowed URLs, denied URLs, redirects, and policy changes on the supported native clients. Callbacks cover selected navigation transitions. |
+| Device trust | Verify key possession, approval, and revocation. Client risk signals and device identifiers do not establish hardware attestation. |
+| Network enforcement | Observe actual packets on the managed OS profile during normal traffic, DNS and IPv6 checks, tunnel loss, and reconnect. |
+| Enterprise identity | Exercise issuer validation, MFA assurance, and provisioning against the intended provider. Live Okta and Entra validation and native OIDC handoff remain open. |
+
+[Security model](docs/SECURITY_MODEL.md) · [Threat model](docs/THREAT_MODEL.md) · [API operations](docs/API_REFERENCE.md)
 
 ## Real application captures
 
@@ -89,22 +148,78 @@ Nginx terminates TLS. Express and Socket.IO handle authenticated control traffic
 | ![Archived Windows Tauri debug application](assets/readme/desktop-browser.png) | ![Live admin console backed by a disposable PostgreSQL organization](assets/readme/admin-dashboard.png) |
 | Archived development capture from `ae49ba4`. Its placeholder infrastructure labels are illustrative. | Phase 09 browser acceptance fixture. Counts describe seeded lab records. |
 
-The [capture ledger](assets/readme/SCREENSHOTS.md) also records the [device inventory](assets/readme/device-management.png) and [policy revision](assets/readme/policy-management.png) views. Android evidence currently covers build, emulator boundary tests and packaging. A managed Android screenshot awaits a provisioned fixture and an approved capture method.
+| Enrolled device inventory | URL policy management |
+| --- | --- |
+| ![Admin device inventory with test enrollment records](assets/readme/device-management.png) | ![Admin policy management page showing an assigned policy revision](assets/readme/policy-management.png) |
+| Device records come from a disposable organization and include enrollment and approval state. | The browser test created, assigned, and revised this policy through the real API. |
+
+Android evidence covers builds, emulator boundary tests, and preview packaging. A managed browsing screenshot requires a provisioned WireGuard fixture, test backend, and approved capture method. [Screenshot provenance](assets/readme/SCREENSHOTS.md)
 
 ## Platform and setup
 
-Use Node 24 for the backend and shared development workflow, Python 3.10 or later for verification, and Docker Compose 2.24.4 or later in Linux-container mode. The desktop build supports Node 22.12 or later and the native Tauri prerequisites. Android uses Flutter 3.38.9, Java 17, minimum SDK 26 and compile/target SDK 36. The tested Android runtime was API 36 on an emulator. [Setup and platform requirements](docs/GETTING_STARTED.md)
+| Target | Requirements and evidence |
+| --- | --- |
+| Backend and console | Node 24, PostgreSQL 15, and Docker Compose 2.24.4 or later in Linux-container mode. |
+| Windows desktop | Rust stable, Node 22.12 or later, MSVC and WebView2. Windows x64 build and CI evidence are recorded. |
+| macOS desktop | Rust stable, Node 22.12 or later, and Xcode Command Line Tools. Intel macOS CI and a universal preview bundle are recorded. Native Apple Silicon acceptance is open. |
+| Linux desktop | Rust stable, Node 22.12 or later, WebKitGTK 4.1, and D-Bus development headers. Ubuntu 22.04 CI and Linux x64 preview bundles are recorded. |
+| Android | Flutter 3.38.9, Java 17, minimum SDK 26 and compile/target SDK 36. Runtime exercise was on an API 36 emulator. |
+
+[Full toolchain and platform requirements](docs/GETTING_STARTED.md)
 
 In a fresh checkout on the development branch:
 
 ```sh
+git clone --branch codex/remoteshield-enterprise-completion https://github.com/manikantbindass/RdPBrowser.git
+cd RdPBrowser
 node scripts/setup-dev.mjs
 npm ci --prefix backend
 npm run config:check --prefix backend
 docker compose --env-file docker/.env -f docker/docker-compose.yml -f docker/compose.dev.yml up -d --build --wait
+curl --fail --show-error http://127.0.0.1:3001/ready
 ```
 
 Open `http://127.0.0.1:8180/admin/` and check backend readiness on `127.0.0.1:3001/ready`. The local stack publishes loopback ports and permits direct API access. The setup script creates local credentials once. An operator must provision the first administrator. [Bootstrap instructions](docs/GETTING_STARTED.md)
+
+With the local stack running, start the desktop client from the repository root:
+
+```sh
+npm ci --prefix desktop
+npm run tauri:dev --prefix desktop
+```
+
+For an Android emulator, `10.0.2.2` maps back to the development host. A managed session requires its configured VPN path. [Android setup and release origin](docs/GETTING_STARTED.md)
+
+```sh
+cd android
+flutter pub get --enforce-lockfile
+flutter run --dart-define=SERVER_URL=http://10.0.2.2:3001
+```
+
+### Deploy a managed environment
+
+The supported reference topology is a single Linux VPS using Compose, a TLS edge, a private database network, and a separately configured WireGuard gateway. The migration job uses schema owner credentials. Express uses the narrower runtime role. Configure TLS and the trusted source path before onboarding users. Provision device peers and managed DNS and routing policies, then verify both browsing admission and actual gateway traffic. The local loopback profile is for development. [Deployment and recovery](docs/DEPLOYMENT.md)
+
+## Verification and release gates
+
+Run selected checks from the repository root after installing each project’s locked dependencies:
+
+```sh
+npm run lint --prefix backend
+npm test --prefix backend -- --runInBand --detectOpenHandles
+npm test --prefix desktop
+npm test --prefix admin-dashboard
+python -m unittest discover -s scripts/release
+python scripts/validate_readme.py
+```
+
+Backend database integration, Flutter, desktop native suites, and WireGuard packet tests need the fixtures and toolchains in the testing guide. A passing build establishes that the project compiled. Release acceptance also requires exercising installation, upgrades, and the intended network setup.
+
+The previous verification snapshot recorded passing platform and integration jobs. Infrastructure and backend static security findings remain open. New distribution builds also require signing credentials and protected release jobs. The release readiness checklist tracks the Android APK mismatch and the remaining review gates. [Testing](docs/TESTING.md) · [Final audit](docs/FINAL_AUDIT_REPORT.md) · [Release readiness](docs/RELEASE_READINESS_CHECKLIST.md) · [Release process](docs/RELEASE_PROCESS.md)
+
+## Roadmap
+
+The tracked work starts with clearing blocking security checks and verifying signed install and upgrade artifacts. It then includes physical Android device acceptance, live identity provider validation, per-platform packet checks, and recovery rehearsals. [Full roadmap](docs/ROADMAP.md)
 
 ## Operating RemoteShield X
 

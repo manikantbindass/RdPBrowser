@@ -12,15 +12,15 @@
   },
   "assets": {
     "admin-dashboard.png": {
-      "bytes": 146922,
-      "sha256": "bef0423245347e2d9edd93a6ebdbf9ae7a4613f9dc4b31b71b44614f1acf17f3",
-      "width": 1038,
-      "height": 838,
+      "bytes": 119637,
+      "sha256": "db633e824fc0c04de631298da95d735b66bfc766c1131108ffbb103d424dd9db",
+      "width": 1280,
+      "height": 907,
       "frames": 1
     },
     "architecture.svg": {
-      "bytes": 4800,
-      "sha256": "4813148e1dc656711e7805ad70cd20610908dc4352fd710d6b361e8318b7d389"
+      "bytes": 4806,
+      "sha256": "b58e0508f8488987a9b291733d5eb35d530a549dc36d38a54fb2804a7c33ba5c"
     },
     "badge-contracts.svg": {
       "bytes": 920,
@@ -88,8 +88,8 @@
       "frames": 1
     },
     "remoteshield-hero.gif": {
-      "bytes": 289011,
-      "sha256": "46d119cd0590570c4dc3fdcaaa3f7d179ed71d0b1610aa1522047ef5f79168bf",
+      "bytes": 431889,
+      "sha256": "18271d3d0d7ccadc1dc191a7df28fe835ce7a53baebf83110216626154fe4118",
       "width": 1280,
       "height": 520,
       "frames": 100,
@@ -97,8 +97,8 @@
       "loop": 0
     },
     "remoteshield-hero.webp": {
-      "bytes": 34520,
-      "sha256": "e5f7f398b63ec9662e83fea9462b1fdbccab23b10caca2a1c0b77b27a5ad3cbf",
+      "bytes": 43382,
+      "sha256": "1ba2d117cd66d6a4088bc9247fb933c726209c80f215c5ceaab50654a941f0dd",
       "width": 1280,
       "height": 520,
       "frames": 1
@@ -124,8 +124,8 @@
       "frames": 1
     },
     "security-workflow.svg": {
-      "bytes": 3904,
-      "sha256": "06b4986327063a855c196d6cc38fbbe13883c1f58fd734a734aeeb24cdb3ccef"
+      "bytes": 3888,
+      "sha256": "1cecb44941095d6d52c450f756140cf2a8511117fec7c90fa87cf2fbcfb4001b"
     }
   }
 }

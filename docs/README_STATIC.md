@@ -1,6 +1,8 @@
 # RemoteShield X | static edition
 
-**Managed browsing and tenant-scoped access for remote teams.**
+![RemoteShield X managed browser. Device enrollment, access evaluation, and approved site navigation.](../assets/readme/remoteshield-hero.webp)
+
+**Managed browsing with explicit access decisions for remote teams.**
 
 RemoteShield X is an in-development platform with desktop and Android clients, a tenant-scoped control plane and optional separately operated WireGuard enforcement. The control plane evaluates access decisions. Device-wide packet protection depends on operating-system routing, gateway policy and packet-level acceptance.
 
@@ -22,7 +24,13 @@ See the [complete README](../README.md) for architecture, platform setup and scr
 
 The newest published stable release listed by GitHub is [v2.4.0](https://github.com/manikantbindass/RdPBrowser/releases/tag/v2.4.0), published 2026-04-18. The release tag is unsigned, and its desktop filenames say 2.2.4. This is a historical inventory, not a verified recommendation for current source. SHA-256 values identify bytes only. See the [complete platform and package list](../README.md#published-application-downloads) and [machine-readable release snapshot](audit/phase16/release-assets-v2.4.0.json). No iOS release is published; preview source `v2.5.0-preview.4` has no associated release assets.
 
+**Avoid the v2.4.0 Android downloads.** The published ARM64 APK reports the example package `com.example.android` and a generic Flutter launcher. A corrected signed APK is pending.
+
 ## Static visual diagrams
+
+![Control plane and the separate managed network path](../assets/readme/architecture.svg)
+
+![Source admission, session validation, policy evaluation, and the allow or deny paths](../assets/readme/security-workflow.svg)
 
 ![Static access decision and native WebView flow](../assets/readme/remoteshield-access-flow.webp)
 

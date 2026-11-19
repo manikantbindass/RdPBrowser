@@ -7,18 +7,6 @@ from pathlib import Path
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
-readme = (ROOT / 'README.md').read_text(encoding='utf8')
-# Static edition preserves the full content, with rebased repository links.
-static = readme.replace('remoteshield-hero.gif', 'remoteshield-hero.webp').replace('remoteshield-footer.gif', 'remoteshield-footer.webp')
-def rebase(match):
-    prefix, target, suffix = match.groups()
-    if target.startswith(('https:', 'http:', '#', 'mailto:')):
-        return match.group(0)
-    return prefix + ('../' + target) + suffix
-static = re.sub(r'(\]\()([^\s)]+)(\))', rebase, static)
-static = re.sub(r'((?:src|srcset)=")([^"\s]+)(")', rebase, static)
-static = static.replace('](../docs/)', '](.)').replace('../docs/', '').replace('[Static edition — no animation](README_STATIC.md)', '[Animated README](../README.md)')
-(ROOT / 'docs/README_STATIC.md').write_text(static, encoding='utf8', newline='\n')
 checked = 0
 for doc in [ROOT / 'README.md', ROOT / 'docs/README_STATIC.md']:
     text = doc.read_text(encoding='utf8')
@@ -45,10 +33,15 @@ for name, item in manifest['assets'].items():
     else:
         with Image.open(path) as image:
             image.verify()
-for name, duration in [('remoteshield-hero.gif', 7000), ('remoteshield-footer.gif', 4800)]:
-    item = manifest['assets'][name]
-    assert item['durationMs'] == duration and item['loop'] == 0
+durations = {'remoteshield-hero': 7000, 'remoteshield-footer': 4800,
+             'remoteshield-access-flow': 5600, 'remoteshield-network-boundary': 5600}
+readme = (ROOT / 'README.md').read_text(encoding='utf8')
+for name, duration in durations.items():
+    animation = manifest['assets'][f'{name}.gif']
+    fallback = manifest['assets'][f'{name}.webp']
+    assert animation['durationMs'] == duration and animation['loop'] == 0
+    assert fallback['frames'] == 1 and f'srcset="assets/readme/{name}.webp"' in readme
+assert readme.count('(prefers-reduced-motion: reduce)') == len(durations)
 assert '.gif' not in (ROOT / 'docs/README_STATIC.md').read_text(), 'Static edition contains animation'
-report = {'localLinksChecked': checked, 'assetsValidated': len(manifest['assets']), 'heroDurationMs': 7000, 'footerDurationMs': 4800, 'status': 'PASS'}
-(ROOT / 'docs/PHASE03_VALIDATION.json').write_text(json.dumps(report, indent=2)+'\n', encoding='utf8', newline='\n')
+report = {'localLinksChecked': checked, 'assetsValidated': len(manifest['assets']), 'animationDurationsMs': durations, 'status': 'PASS'}
 print(json.dumps(report, indent=2))
