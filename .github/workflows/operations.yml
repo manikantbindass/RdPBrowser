@@ -15,6 +15,19 @@ jobs:
         run: |
           docker build -f docker/Dockerfile.backend -t rsx-backend:quality .
           docker build -f docker/Dockerfile.nginx -t rsx-edge:quality .
+      - name: Verify slim runtime images
+        run: |
+          docker run --rm -i --network none --entrypoint sh rsx-backend:quality -es <<'SH'
+            test "$(id -u)" = 1001
+            test ! -d /usr/local/lib/node_modules/npm
+            node --version
+          SH
+          docker run --rm -i --network none --entrypoint sh rsx-edge:quality -es <<'SH'
+            test "$(id -u)" = 101
+            if apk info -e libxslt; then exit 1; fi
+            command -v envsubst
+            nginx -v
+          SH
       - run: bash scripts/quality/install-scanners.sh "$RUNNER_TEMP/scanners"
       - name: Scan both images without suppressing findings
         run: |
