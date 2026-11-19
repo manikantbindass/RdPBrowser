@@ -183,6 +183,77 @@ def footer_frame(base, phase):
     return canvas.convert('RGB')
 
 
+def access_base(regular, bold):
+    canvas = gradient((1280, 560)).convert('RGBA')
+    draw = ImageDraw.Draw(canvas)
+    draw.text((58, 38), 'A navigation decision has a clear boundary.', font=bold(31), fill=WHITE)
+    draw.text((60, 83), 'The API evaluates policy. The native WebView requests the page.', font=regular(19), fill=MUTED)
+    cards = [(58, 'MANAGED CLIENT', 'URL + live session'), (470, 'CONTROL PLANE', 'Identity + policy'), (882, 'DESTINATION', 'OS WebView request')]
+    for x, heading, detail in cards:
+        draw.rounded_rectangle((x, 174, x+340, 340), radius=14, fill=PANEL, outline='#244364', width=2)
+        draw.text((x+22, 202), heading, font=bold(17), fill=CYAN if x != 882 else WHITE)
+        draw.text((x+22, 247), detail, font=regular(21), fill=WHITE)
+    draw.line((398, 256, 465, 256), fill='#244364', width=4)
+    draw.line((810, 256, 877, 256), fill='#244364', width=4)
+    draw.line((398, 301, 877, 301), fill='#244364', width=3)
+    draw.text((58, 406), 'POLICY REQUEST', font=bold(14), fill=CYAN)
+    draw.line((58, 441, 602, 441), fill='#244364', width=3)
+    draw.text((652, 406), 'SITE REQUEST THROUGH THE OPERATING SYSTEM', font=bold(14), fill=CYAN)
+    draw.line((652, 441, 1220, 441), fill='#244364', width=3)
+    draw.text((58, 507), 'Conceptual flow only. A policy response does not proxy site traffic or prove device-wide enforcement.', font=regular(15), fill=MUTED)
+    return canvas
+
+
+def access_frame(base, phase):
+    phase %= 1.0
+    canvas = base.copy()
+    glow = Image.new('RGBA', canvas.size)
+    draw = ImageDraw.Draw(glow)
+    # Request and page traffic use separate lanes to expose the control/data boundary.
+    for x1, x2, y, offset, color in [(398, 465, 256, 0, (39,136,255)), (810, 877, 256, .33, (88,231,243)), (58, 602, 441, .5, (88,231,243)), (652, 1220, 441, .75, (39,136,255))]:
+        t = (phase+offset) % 1.0
+        x = x1+(x2-x1)*t
+        alpha = round(255*math.sin(math.pi*t)**2)
+        draw.ellipse((x-8,y-8,x+8,y+8),fill=(*color,alpha))
+    canvas = Image.alpha_composite(canvas, glow.filter(ImageFilter.GaussianBlur(8)))
+    canvas = Image.alpha_composite(canvas, glow)
+    return canvas.convert('RGB')
+
+
+def network_base(regular, bold):
+    canvas = gradient((1280, 620)).convert('RGBA')
+    draw = ImageDraw.Draw(canvas)
+    draw.text((58, 38), 'Control and packet paths stay distinct.', font=bold(31), fill=WHITE)
+    draw.text((60, 83), 'WireGuard is an optional, separately operated network layer.', font=regular(19), fill=MUTED)
+    draw.text((60, 142), 'CONTROL PLANE', font=bold(15), fill=CYAN)
+    draw.text((60, 359), 'OPTIONAL NETWORK PATH', font=bold(15), fill=CYAN)
+    for y, nodes in [(184, [(58,'Client'),(470,'API + policy'),(882,'PostgreSQL')]), (401, [(58,'Managed device'),(470,'WireGuard gateway'),(882,'Internet egress')])]:
+        for x, label_text in nodes:
+            draw.rounded_rectangle((x,y,x+340,y+112),radius=12,fill=PANEL,outline='#244364',width=2)
+            draw.text((x+20,y+42),label_text,font=bold(21),fill=WHITE)
+        draw.line((398,y+56,465,y+56),fill='#244364',width=4)
+        draw.line((810,y+56,877,y+56),fill='#244364',width=4)
+    draw.line((228, 300, 228, 354), fill='#244364', width=3)
+    draw.text((250, 317), 'policy state', font=regular(14), fill=MUTED)
+    draw.text((58, 564), 'A connected indicator is not packet proof. Validate routes, DNS, IPv6 and tunnel-loss behavior per OS.', font=regular(15), fill=MUTED)
+    return canvas
+
+
+def network_frame(base, phase):
+    phase %= 1.0
+    canvas = base.copy()
+    overlay = Image.new('RGBA', canvas.size)
+    draw = ImageDraw.Draw(overlay)
+    for y, x1, x2, offset, color in [(240,398,465,0,(39,136,255)),(240,810,877,.25,(39,136,255)),(457,398,465,.5,(88,231,243)),(457,810,877,.75,(88,231,243))]:
+        t=(phase+offset)%1.0
+        x=x1+(x2-x1)*t
+        alpha=round(255*math.sin(math.pi*t)**2)
+        draw.ellipse((x-8,y-8,x+8,y+8),fill=(*color,alpha))
+    canvas=Image.alpha_composite(canvas,overlay.filter(ImageFilter.GaussianBlur(8)))
+    canvas=Image.alpha_composite(canvas,overlay)
+    return canvas.convert('RGB')
+
+
 def export_animation(name, base, render, count, duration):
     first = render(base, 0)
     assert ImageChops.difference(first, render(base, 1)).getbbox() is None, 'Loop endpoints must match exactly'
@@ -206,6 +277,8 @@ def main():
     write_vectors()
     export_animation('remoteshield-hero', hero_base(regular, bold), hero_frame, 100, 70)
     export_animation('remoteshield-footer', footer_base(regular, bold), footer_frame, 80, 60)
+    export_animation('remoteshield-access-flow', access_base(regular, bold), access_frame, 80, 75)
+    export_animation('remoteshield-network-boundary', network_base(regular, bold), network_frame, 80, 75)
     for name in ['desktop', 'admin']:
         capture = SOURCE / f'{name}-capture.jpg'
         if capture.is_file():

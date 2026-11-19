@@ -46,7 +46,7 @@ ref=(ROOT/'docs/API_REFERENCE.md').read_text(encoding='utf-8')
 catalogue=set(re.findall(r'^\| `(GET|POST|PUT|PATCH|DELETE|OPTIONS|HEAD)` \| `([^`]+)` \|',ref,re.M))
 if contract!=catalogue:raise SystemExit(f'OpenAPI catalogue mismatch missing={sorted(contract-catalogue)} extra={sorted(catalogue-contract)}')
 # Asset integrity covers requested README animations and capture files.
-assets=['assets/readme/remoteshield-hero.gif','assets/readme/remoteshield-footer.gif','assets/readme/remoteshield-hero.webp','assets/readme/remoteshield-logo.svg','assets/readme/architecture.svg','assets/readme/security-workflow.svg','assets/readme/desktop-browser.png','assets/readme/admin-dashboard.png','assets/readme/device-management.png','assets/readme/policy-management.png']
+assets=['assets/readme/remoteshield-hero.gif','assets/readme/remoteshield-footer.gif','assets/readme/remoteshield-hero.webp','assets/readme/remoteshield-access-flow.gif','assets/readme/remoteshield-access-flow.webp','assets/readme/remoteshield-network-boundary.gif','assets/readme/remoteshield-network-boundary.webp','assets/readme/remoteshield-logo.svg','assets/readme/architecture.svg','assets/readme/security-workflow.svg','assets/readme/desktop-browser.png','assets/readme/admin-dashboard.png','assets/readme/device-management.png','assets/readme/policy-management.png']
 ledger=(ROOT/'assets/readme/SCREENSHOTS.md').read_text(encoding='utf-8-sig')
 if 'android-browser.png' not in ledger or 'requires a provisioned' not in ledger: raise SystemExit('Android screenshot blocker is not documented in the capture ledger')
 asset_report=[]
@@ -66,7 +66,8 @@ for rel in assets:
    if ext=='.gif':
     duration=sum((im.seek(i) or im.info.get('duration',0)) for i in range(im.n_frames));loop=im.info.get('loop')
     dim.update({'duration_ms':duration,'loop':loop})
-    if loop!=0 or (p.name=='remoteshield-hero.gif' and duration!=7000) or (p.name=='remoteshield-footer.gif' and duration!=4800):raise SystemExit('animation timing or loop mismatch: '+rel)
+    expected={'remoteshield-hero.gif':7000,'remoteshield-footer.gif':4800,'remoteshield-access-flow.gif':5600,'remoteshield-network-boundary.gif':5600}.get(p.name)
+    if loop!=0 or (expected is not None and duration!=expected):raise SystemExit('animation timing or loop mismatch: '+rel)
  asset_report.append({'path':rel,'bytes':len(b),'sha256':hashlib.sha256(b).hexdigest(),'dimensions':dim})
 # Verify PDF and PPTX structure at the file level.
 pdf=ROOT/'output/pdf/RemoteShield-X-Technical-Report.pdf';ppt=ROOT/'docs/deliverables/RemoteShield-X-Company-Briefing.pptx'
@@ -80,7 +81,7 @@ with zipfile.ZipFile(ppt) as z:
 arch=(ROOT/'docs/ARCHITECTURE.md').read_text(encoding='utf-8-sig')
 if arch.count('```mermaid')<2 or arch.count('```')%2:raise SystemExit('architecture diagrams missing or Markdown fences unbalanced')
 readme=(ROOT/'README.md').read_text(encoding='utf-8-sig')
-if 'prefers-reduced-motion' not in readme or 'remoteshield-hero.webp' not in readme or 'remoteshield-footer.webp' not in readme:raise SystemExit('README reduced-motion static fallbacks missing')
+if 'prefers-reduced-motion' not in readme or any(f'assets/readme/{name}.webp' not in readme for name in ['remoteshield-hero','remoteshield-footer','remoteshield-access-flow','remoteshield-network-boundary']):raise SystemExit('README reduced-motion static fallbacks missing')
 report={'status':'pass','markdown_files':len([f for f in md if f.exists()]),'relative_links_checked':link_count,'broken_links':len(broken),'broken_anchors':len(unresolved_anchors),'openapi_operations':len(contract),'catalogue_operations':len(catalogue),'required_readme_assets':asset_report,'architecture_mermaid_blocks':arch.count('```mermaid'),'android_screenshot':'not captured; blocker documented in SCREENSHOTS.md','pdf_bytes':pdf.stat().st_size,'pptx_bytes':ppt.stat().st_size,'pptx_slides':len(slides)}
 (ROOT/'docs/deliverables/validation.json').write_text(json.dumps(report,indent=2)+'\n',encoding='utf-8')
 print(json.dumps(report,indent=2))

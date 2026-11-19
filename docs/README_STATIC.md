@@ -18,6 +18,18 @@ The verified snapshot uses source `8d0f7da` and preview `v2.5.0-preview.4`. Back
 
 See the [complete README](../README.md) for architecture, platform setup and screenshots. The [API reference](API_REFERENCE.md), [architecture](ARCHITECTURE.md), [security model](SECURITY_MODEL.md) and [threat model](THREAT_MODEL.md) describe implementation boundaries.
 
+## Published application downloads
+
+The newest published stable release listed by GitHub is [v2.4.0](https://github.com/manikantbindass/RdPBrowser/releases/tag/v2.4.0), published 2026-04-18. The release tag is unsigned, and its desktop filenames say 2.2.4. This is a historical inventory, not a verified recommendation for current source. SHA-256 values identify bytes only. See the [complete platform and package list](../README.md#published-application-downloads) and [machine-readable release snapshot](audit/phase16/release-assets-v2.4.0.json). No iOS release is published; preview source `v2.5.0-preview.4` has no associated release assets.
+
+## Static visual diagrams
+
+![Static access decision and native WebView flow](../assets/readme/remoteshield-access-flow.webp)
+
+![Static control plane and optional VPN boundary](../assets/readme/remoteshield-network-boundary.webp)
+
+The complete README includes additional original looping diagrams with static WebP alternatives. These assets are conceptual and do not claim to demonstrate traffic enforcement.
+
 ## Setup and verification
 
 Follow [getting started](GETTING_STARTED.md) for local Docker Compose, desktop and Android workflows. Use [testing](TESTING.md) to reproduce scoped evidence and separate passed checks from remaining acceptance. Review [deployment](DEPLOYMENT.md), [release process](RELEASE_PROCESS.md) and [roadmap](ROADMAP.md) before a deployment decision.

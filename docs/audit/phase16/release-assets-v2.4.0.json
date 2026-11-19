@@ -1,0 +1,30 @@
+{
+  "repository": "manikantbindass/RdPBrowser",
+  "release_tag": "v2.4.0",
+  "release_url": "https://github.com/manikantbindass/RdPBrowser/releases/tag/v2.4.0",
+  "published_at": "2026-04-18T09:53:08Z",
+  "prerelease": false,
+  "tag_target_commit": "11e7d7066dc5533a9c25e42ae101559867c9faa5",
+  "tag_signature_verified": false,
+  "tag_signature_reason": "unsigned",
+  "asset_count": 9,
+  "assets": [
+    { "name": "app-arm64-v8a-release.apk", "platform": "Android ARM64", "url": "https://github.com/manikantbindass/RdPBrowser/releases/download/v2.4.0/app-arm64-v8a-release.apk", "sha256": "50a791e82f3a2aa845f2b37fe9158dbab17c879147d6306a7650df3c30f7cf18" },
+    { "name": "app-armeabi-v7a-release.apk", "platform": "Android ARMv7", "url": "https://github.com/manikantbindass/RdPBrowser/releases/download/v2.4.0/app-armeabi-v7a-release.apk", "sha256": "631ce08c1d3cd037848217ab754dd1d4b2ba7270e810193a55e71cd2f4e2eb1b" },
+    { "name": "app-x86_64-release.apk", "platform": "Android x86-64", "url": "https://github.com/manikantbindass/RdPBrowser/releases/download/v2.4.0/app-x86_64-release.apk", "sha256": "c87aa8db0a8fc12617c67240b7cb1d75aa04c2dbdc8b2d9971ebfc72bb91d33d" },
+    { "name": "RemoteShield-Linux-Arch-x86_64.tar.gz", "platform": "Linux x86-64 (Arch archive)", "url": "https://github.com/manikantbindass/RdPBrowser/releases/download/v2.4.0/RemoteShield-Linux-Arch-x86_64.tar.gz", "sha256": "9a2f9c5216e28d077f53251114252a95d98cecd2e279f34cc45dcbbf64cd7e57" },
+    { "name": "RemoteShield.X_2.2.4_amd64.AppImage", "platform": "Linux x86-64 (AppImage)", "url": "https://github.com/manikantbindass/RdPBrowser/releases/download/v2.4.0/RemoteShield.X_2.2.4_amd64.AppImage", "sha256": "6c6e29585c87f225f5eb71c17b9b599aaed322329d83b83af0ce19d58b020604" },
+    { "name": "RemoteShield.X_2.2.4_amd64.deb", "platform": "Debian/Ubuntu x86-64", "url": "https://github.com/manikantbindass/RdPBrowser/releases/download/v2.4.0/RemoteShield.X_2.2.4_amd64.deb", "sha256": "ef81523e5f7719dcf6dec362f6d53bfb78a4ae91383a177735b16154da1d2b29" },
+    { "name": "RemoteShield.X_2.2.4_universal.dmg", "platform": "macOS universal DMG", "url": "https://github.com/manikantbindass/RdPBrowser/releases/download/v2.4.0/RemoteShield.X_2.2.4_universal.dmg", "sha256": "c414a5e22c01c7b405def7afd8cc43a9fc6d837364d0f2483c930e9308136417" },
+    { "name": "RemoteShield.X_2.2.4_x64-setup.exe", "platform": "Windows x86-64 installer", "url": "https://github.com/manikantbindass/RdPBrowser/releases/download/v2.4.0/RemoteShield.X_2.2.4_x64-setup.exe", "sha256": "e4fef0d8518f05f406e0dea03c6a05688b2bf5a2656ce07fd7e61eb7af976489" },
+    { "name": "RemoteShield.X_2.2.4_x64_en-US.msi", "platform": "Windows x86-64 MSI", "url": "https://github.com/manikantbindass/RdPBrowser/releases/download/v2.4.0/RemoteShield.X_2.2.4_x64_en-US.msi", "sha256": "3b340fc9a530e0f39d782bdeb12b92d1d0212a3d3e79040c896334bd24f34c0b" }
+  ],
+  "verification_notes": [
+    "Desktop package filenames identify 2.2.4 although the release/tag is v2.4.0; the repository's current source was not demonstrated to produce these assets.",
+    "APK filenames are ABI-specific but do not embed a package version. This inventory records only their attachment to the v2.4.0 GitHub release; package metadata and APK signatures were not independently verified here.",
+    "SHA-256 values came from GitHub release asset metadata and identify bytes; they do not authenticate publisher identity.",
+    "No iOS package is attached to this release.",
+    "The source preview v2.5.0-preview.4 is not a published GitHub Release and has no release assets."
+  ],
+  "checked_at": "2026-11-19"
+}

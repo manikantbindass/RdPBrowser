@@ -15,6 +15,52 @@ RemoteShield X lets an organization manage browser sessions, device enrollment, 
 
 The [Phase 15 deliverable validation record](docs/deliverables/README.md) documents asset, link, command and rendering checks.
 
+## What RemoteShield X is
+
+RemoteShield X is an enterprise-oriented managed browser and access-control project. It combines browser clients with an organization-aware control plane for identity, policy decisions, device enrollment, sessions, and security events. Operators may pair it with a separately managed WireGuard gateway and operating-system routing controls. Browser policy decisions and a VPN connection indicator are not proof that every device packet follows the tunnel.
+
+The project targets teams that need a central view of who is enrolled, which browser destinations are allowed, and what access events were recorded. It is still undergoing security remediation and operational acceptance; review the open gates below before evaluating it for a sensitive deployment.
+
+## Published application downloads
+
+The latest published stable GitHub release currently visible is **`v2.4.0`**, published **2026-04-18**. The links below are the nine assets attached to that release, grouped by platform. They are a historical inventory: the release tag is unsigned, the desktop installer filenames identify version `2.2.4` while the tag is `v2.4.0`, and the available evidence does not establish that these packages correspond to the current audited source. SHA-256 values identify the downloaded bytes; they do not verify publisher identity or safety.
+
+| Platform | Release asset | SHA-256 |
+| --- | --- | --- |
+| Android ARM64 | [app-arm64-v8a-release.apk](https://github.com/manikantbindass/RdPBrowser/releases/download/v2.4.0/app-arm64-v8a-release.apk) | `50a791e82f3a2aa845f2b37fe9158dbab17c879147d6306a7650df3c30f7cf18` |
+| Android ARMv7 | [app-armeabi-v7a-release.apk](https://github.com/manikantbindass/RdPBrowser/releases/download/v2.4.0/app-armeabi-v7a-release.apk) | `631ce08c1d3cd037848217ab754dd1d4b2ba7270e810193a55e71cd2f4e2eb1b` |
+| Android x86-64 | [app-x86_64-release.apk](https://github.com/manikantbindass/RdPBrowser/releases/download/v2.4.0/app-x86_64-release.apk) | `c87aa8db0a8fc12617c67240b7cb1d75aa04c2dbdc8b2d9971ebfc72bb91d33d` |
+| Linux x86-64 Arch archive | [RemoteShield-Linux-Arch-x86_64.tar.gz](https://github.com/manikantbindass/RdPBrowser/releases/download/v2.4.0/RemoteShield-Linux-Arch-x86_64.tar.gz) | `9a2f9c5216e28d077f53251114252a95d98cecd2e279f34cc45dcbbf64cd7e57` |
+| Linux x86-64 AppImage | [RemoteShield.X_2.2.4_amd64.AppImage](https://github.com/manikantbindass/RdPBrowser/releases/download/v2.4.0/RemoteShield.X_2.2.4_amd64.AppImage) | `6c6e29585c87f225f5eb71c17b9b599aaed322329d83b83af0ce19d58b020604` |
+| Debian/Ubuntu x86-64 | [RemoteShield.X_2.2.4_amd64.deb](https://github.com/manikantbindass/RdPBrowser/releases/download/v2.4.0/RemoteShield.X_2.2.4_amd64.deb) | `ef81523e5f7719dcf6dec362f6d53bfb78a4ae91383a177735b16154da1d2b29` |
+| macOS universal DMG | [RemoteShield.X_2.2.4_universal.dmg](https://github.com/manikantbindass/RdPBrowser/releases/download/v2.4.0/RemoteShield.X_2.2.4_universal.dmg) | `c414a5e22c01c7b405def7afd8cc43a9fc6d837364d0f2483c930e9308136417` |
+| Windows x86-64 installer | [RemoteShield.X_2.2.4_x64-setup.exe](https://github.com/manikantbindass/RdPBrowser/releases/download/v2.4.0/RemoteShield.X_2.2.4_x64-setup.exe) | `e4fef0d8518f05f406e0dea03c6a05688b2bf5a2656ce07fd7e61eb7af976489` |
+| Windows x86-64 MSI | [RemoteShield.X_2.2.4_x64_en-US.msi](https://github.com/manikantbindass/RdPBrowser/releases/download/v2.4.0/RemoteShield.X_2.2.4_x64_en-US.msi) | `3b340fc9a530e0f39d782bdeb12b92d1d0212a3d3e79040c896334bd24f34c0b` |
+
+[Open the GitHub release](https://github.com/manikantbindass/RdPBrowser/releases/tag/v2.4.0) · [Machine-readable release inventory and audit notes](docs/audit/phase16/release-assets-v2.4.0.json)
+
+There is no published iOS package in this release. The `v2.5.0-preview.4` source preview is not a GitHub Release and has no published release assets. Do not infer a supported platform or current-source compatibility from an asset filename. Inspect and verify downloaded binaries under your organization’s software intake process before use.
+
+## Motion and visual documentation
+
+These original, repository-built loops illustrate product boundaries and workflows. They are conceptual diagrams, not a demonstration of a running security control. The four GIFs loop continuously; static WebP alternatives are linked for readers whose Markdown viewer blocks animation. The top hero honors the reduced-motion media query where the renderer supports `<picture>`; the static README is available at any time.
+
+### Access decision and browser traffic boundary
+
+<picture>
+  <source media="(prefers-reduced-motion: reduce)" srcset="assets/readme/remoteshield-access-flow.webp">
+  <img src="assets/readme/remoteshield-access-flow.gif" alt="Conceptual sequence: a browser requests an access decision from the control plane, then an allowed page loads through the operating-system WebView network stack." width="1280">
+</picture>
+
+### Optional VPN enforcement boundary
+
+<picture>
+  <source media="(prefers-reduced-motion: reduce)" srcset="assets/readme/remoteshield-network-boundary.webp">
+  <img src="assets/readme/remoteshield-network-boundary.gif" alt="Conceptual control-plane and optional WireGuard traffic lanes; a connected state is not packet-level proof." width="1280">
+</picture>
+
+Rebuild all illustrations and loop assets with `python scripts/build_readme_assets.py`. See [animation source, timings, and accessibility notes](assets/readme/README.md); no remote animation service is used.
+
 ## Implementation and evidence
 
 | Area | Implemented and verified | Acceptance still open |

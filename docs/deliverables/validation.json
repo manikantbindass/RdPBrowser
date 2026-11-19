@@ -1,7 +1,7 @@
 {
   "status": "pass",
-  "markdown_files": 25,
-  "relative_links_checked": 193,
+  "markdown_files": 27,
+  "relative_links_checked": 214,
   "broken_links": 0,
   "broken_anchors": 0,
   "openapi_operations": 102,
@@ -42,6 +42,50 @@
       }
     },
     {
+      "path": "assets/readme/remoteshield-access-flow.gif",
+      "bytes": 238111,
+      "sha256": "854a72f2d6901219adb8ad68a27eb4a04727d894ec6345a89ac692697c7759d0",
+      "dimensions": {
+        "width": 1280,
+        "height": 560,
+        "frames": 80,
+        "duration_ms": 5600,
+        "loop": 0
+      }
+    },
+    {
+      "path": "assets/readme/remoteshield-access-flow.webp",
+      "bytes": 28228,
+      "sha256": "d1593d9f40d83285fd44fd6b9a954c459e2537be703eb70823d9aefc81b0a818",
+      "dimensions": {
+        "width": 1280,
+        "height": 560,
+        "frames": 1
+      }
+    },
+    {
+      "path": "assets/readme/remoteshield-network-boundary.gif",
+      "bytes": 199854,
+      "sha256": "a15882ff451ce922c7b800658210352b3def02b97943afae50aeb65873d32412",
+      "dimensions": {
+        "width": 1280,
+        "height": 620,
+        "frames": 80,
+        "duration_ms": 5600,
+        "loop": 0
+      }
+    },
+    {
+      "path": "assets/readme/remoteshield-network-boundary.webp",
+      "bytes": 28188,
+      "sha256": "528187629eba6e50a3be0f586b2addd79f7d5e0ceb0b2c71679ac21f63313051",
+      "dimensions": {
+        "width": 1280,
+        "height": 620,
+        "frames": 1
+      }
+    },
+    {
       "path": "assets/readme/remoteshield-logo.svg",
       "bytes": 1102,
       "sha256": "94a3eeb018667ce99a1703e658942af631022c15fb0d16c554f469582b3793ca",
@@ -71,11 +115,11 @@
     },
     {
       "path": "assets/readme/admin-dashboard.png",
-      "bytes": 119637,
-      "sha256": "db633e824fc0c04de631298da95d735b66bfc766c1131108ffbb103d424dd9db",
+      "bytes": 146922,
+      "sha256": "bef0423245347e2d9edd93a6ebdbf9ae7a4613f9dc4b31b71b44614f1acf17f3",
       "dimensions": {
-        "width": 1280,
-        "height": 907,
+        "width": 1038,
+        "height": 838,
         "frames": 1
       }
     },
