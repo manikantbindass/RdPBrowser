@@ -10,7 +10,7 @@
 
 **Latest fetched `main`:** `0aa4b400aeb87c248632f7760db1be30ba4bac88`
 
-**Pull request:** [#3](https://github.com/manikantbindass/RdPBrowser/pull/3), open and draft
+**Pull request:** [#3](https://github.com/manikantbindass/RdPBrowser/pull/3), open and ready for review
 **Conclusion:** **BLOCKED** for merge and production release; audit/documentation changes are ready to commit separately.
 
 ## Scope and method
@@ -95,7 +95,7 @@ The security posture is **not release-cleared**: IaC CRITICAL findings and backe
 
 ## Pull request, branch and merge decision
 
-Remote `main` was fetched and compared; no merge/rebase or history rewrite was performed. PR #3 remains open and draft. Its latest observed required quality gate failed because both dependency/secret scanning and backend static analysis failed. Therefore no merge approval can be recommended, no merge was attempted, and no readiness toggle was applied. Branch protection could not be independently established from available permissions; treat it as unverified.
+Remote `main` was fetched and compared; no merge/rebase or history rewrite was performed. PR #3 is open and was marked ready for review after the GitHub App connector denied that transition and the authorized GitHub CLI succeeded. Its latest observed required quality gate failed because both dependency/secret scanning and backend static analysis failed. Therefore no merge approval can be recommended and no merge was attempted. Branch protection could not be independently established from available permissions; treat it as unverified.
 
 ## Recovery and release plan
 

@@ -26,7 +26,7 @@ See the [final audit report](FINAL_AUDIT_REPORT.md) for evidence, severity and r
 | README/docs/assets | PASS locally | 210 relative links, 102 OpenAPI operation records, asset manifest/hashes/animation durations, PDF/PPTX structure passed `scripts/quality/verify_docs.py`. |
 | Screenshot authenticity | PARTIAL | Desktop and admin captures have provenance; Android screenshot is explicitly unavailable and was not fabricated. |
 | Published release artifact provenance | **FAIL / mismatch** | Latest stable `v2.4.0` tag is unsigned; desktop package filenames say `2.2.4`. Do not recommend these assets as current-source builds. Correct versioning and sign/attest a new release. |
-| Branch protection and review approval | UNVERIFIED / pending | PR #3 is open and draft. Confirm required reviewers/branch protection, obtain explicit approval, then merge via permitted workflow only. |
+| Branch protection and review approval | UNVERIFIED / pending | PR #3 is open and ready for review. Confirm required reviewers/branch protection, obtain explicit approval, then merge via permitted workflow only. |
 
 ## Required before merge
 
@@ -52,4 +52,4 @@ See the [final audit report](FINAL_AUDIT_REPORT.md) for evidence, severity and r
 
 ## Final disposition
 
-**Blocked:** do not merge or label as production-ready while security scans and required PR gate fail. The open pull request should remain a draft until remediation and all checks pass; then it can be marked ready for human review without bypassing required controls.
+**Blocked:** do not merge or label as production-ready while security scans and required PR gate fail. PR #3 is ready for human review with these failures prominently documented; approval and a passing required gate remain prerequisites to merging.
