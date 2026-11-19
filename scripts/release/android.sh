@@ -38,7 +38,6 @@ for file in "$output"/*.apk; do
   [[ "$cert" =~ ^[a-f0-9]{64}$ ]]
   if [[ "$RELEASE_CHANNEL" != preview ]]; then [[ "$cert" == "$ANDROID_SIGNING_SHA256" ]]; fi
   "$tools/zipalign" -c -P 16 4 "$file"
-  badging=$("$tools/aapt" dump badging "$file")
   # Flutter 3.38.9 adds an ABI-specific offset to split APKs.
   case "$file" in
     *-armeabi-v7a.apk) offset=1000 ;;
@@ -47,5 +46,6 @@ for file in "$output"/*.apk; do
     *-universal.apk) offset=0 ;;
   esac
   expected_code=$((ANDROID_CODE + offset))
-  [[ "$badging" == *"versionCode='$expected_code' versionName='$RELEASE_VERSION'"* ]]
+  "$tools/aapt" dump badging "$file" | python3 "$root/scripts/release/android_metadata.py" \
+    "${file##*/}" "$RELEASE_VERSION" "$expected_code"
 done

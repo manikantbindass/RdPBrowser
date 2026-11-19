@@ -15,7 +15,7 @@ See the [final audit report](FINAL_AUDIT_REPORT.md) for evidence, severity and r
 | All required PR checks pass | **FAIL** | Run [44492760284](https://github.com/manikantbindass/RdPBrowser/actions/runs/44492760284): `dependency-and-secrets`, `backend / security-static`, and aggregate `Required quality gate` failed. Re-run only after remediating findings. |
 | Backend lint/contracts/PostgreSQL tests | PASS in hosted CI | Latest contracts/PostgreSQL job passed. Prior evidence records 156 unit and 48 integration tests. |
 | Desktop supported CI matrix | PASS for observed runners | Windows, Ubuntu 22.04, Intel macOS checks passed. Apple Silicon and signed install/upgrade acceptance remain open. |
-| Android CI analysis/tests | PASS in hosted CI | No local Flutter SDK; managed physical device, signing and real tunnel acceptance still required. |
+| Android CI analysis/tests | PASS in prior hosted CI | Local Flutter analysis passed. Local Flutter tests were blocked by the Windows native asset build hook. Managed physical device, signing and real tunnel acceptance still required. |
 | WireGuard isolated enforcement suite | PASS in hosted CI | Packet-level proof remains scoped to the isolated lab; repeat on release profiles and target OS devices. |
 | Compose deployment/recovery checks | PASS in hosted CI | Docker daemon unavailable locally; run local/non-production recovery drill before production. |
 | Container image security | PASS in hosted CI | Does not clear the separate backend static analysis or Terraform configuration findings. |
@@ -25,7 +25,7 @@ See the [final audit report](FINAL_AUDIT_REPORT.md) for evidence, severity and r
 | Secret/signing material | **NOT READY** | No production signing credentials are configured. Ensure no private keys enter the repository; issue protected, short-lived signing credentials before release. |
 | README/docs/assets | PASS locally | 210 relative links, 102 OpenAPI operation records, asset manifest/hashes/animation durations, PDF/PPTX structure passed `scripts/quality/verify_docs.py`. |
 | Screenshot authenticity | PARTIAL | Desktop and admin captures have provenance; Android screenshot is explicitly unavailable and was not fabricated. |
-| Published release artifact provenance | **FAIL / mismatch** | Latest stable `v2.4.0` tag is unsigned; desktop package filenames say `2.2.4`. Do not recommend these assets as current-source builds. Correct versioning and sign/attest a new release. |
+| Published release artifact provenance | **FAIL / mismatch** | The `v2.4.0` release tag is unsigned and desktop filenames say `2.2.4`. The ARM64 APK reports `com.example.android` version `1.0.0` and launches the generic Flutter activity. The delivery workflow now validates the expected Android package, launcher, version and target SDK before upload. A replacement still needs signing and a launch check. |
 | Branch protection and review approval | UNVERIFIED / pending | PR #3 is open and ready for review. Confirm required reviewers/branch protection, obtain explicit approval, then merge via permitted workflow only. |
 
 ## Required before merge

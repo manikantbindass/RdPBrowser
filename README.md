@@ -23,7 +23,7 @@ The project targets teams that need a central view of who is enrolled, which bro
 
 ## Published application downloads
 
-The latest published stable GitHub release currently visible is **`v2.4.0`**, published **2026-04-18**. The links below are the nine assets attached to that release, grouped by platform. They are a historical inventory: the release tag is unsigned, the desktop installer filenames identify version `2.2.4` while the tag is `v2.4.0`, and the available evidence does not establish that these packages correspond to the current audited source. SHA-256 values identify the downloaded bytes; they do not verify publisher identity or safety.
+The latest published stable GitHub release currently visible is **`v2.4.0`**, published **2026-04-18**. **Do not install its Android APKs:** inspection of the released ARM64 APK found application ID `com.example.android`, version `1.0.0`, and a generic Flutter launcher, which do not match this project’s Android package (`com.remoteshieldx.browser`) or its native `MainActivity`. This mismatch can explain an app opening as a blank screen and means the published APK is not a verified build of the current source. A corrected release has not yet been built, signed, or published. The links below are a historical inventory only. The release tag is unsigned and the desktop installer filenames identify version `2.2.4` while the tag is `v2.4.0`. SHA-256 values identify downloaded bytes; they do not verify publisher identity or safety.
 
 | Platform | Release asset | SHA-256 |
 | --- | --- | --- |
