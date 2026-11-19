@@ -33,9 +33,11 @@ error_log stderr;
 events {}
 http { include $work/scim.conf; }
 EOF
-python3 - <<'PY' >"$work/backend.log" 2>&1 &
+fixture_token=$(openssl rand -hex 16)
+SCIM_TEST_TOKEN="$fixture_token" python3 - <<'PY' >"$work/backend.log" 2>&1 &
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import json
+import os
 
 class Observer(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -44,7 +46,7 @@ class Observer(BaseHTTPRequestHandler):
             'protocol': self.headers.get('X-Forwarded-Proto'),
             'source': self.headers.get('X-Forwarded-For'),
             'host': self.headers.get('Host'),
-            'has_fixture_authorization': self.headers.get('Authorization') == 'Bearer fixture-only'
+            'has_fixture_authorization': self.headers.get('Authorization') == 'Bearer ' + os.environ['SCIM_TEST_TOKEN']
         }).encode()
         self.send_response(200)
         self.send_header('Content-Type', 'application/json')
@@ -67,7 +69,7 @@ for _ in {1..20}; do
 done
 [[ $ready == true ]]
 curl --silent --fail --noproxy '*' http://127.0.0.1:16080/health > /dev/null
-query --fail -H 'X-Forwarded-Proto: http' -H 'X-Forwarded-For: 192.0.2.5' -H 'Authorization: Bearer fixture-only' \
+query --fail -H 'X-Forwarded-Proto: http' -H 'X-Forwarded-For: 192.0.2.5' -H "Authorization: Bearer $fixture_token" \
   https://scim.fixture.test:16443/scim/v2/00000000-0000-4000-8000-000000000001/Users | python3 -c \
   'import json,sys; x=json.load(sys.stdin); assert x == {"path":"/scim/v2/00000000-0000-4000-8000-000000000001/Users","protocol":"https","source":"127.0.0.1","host":"scim.fixture.test","has_fixture_authorization":True}'
 echo 'PASS SCIM HTTPS routing, TLS verification, trusted header overwrite and authorization forwarding'
