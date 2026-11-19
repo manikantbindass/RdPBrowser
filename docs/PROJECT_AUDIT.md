@@ -1,6 +1,6 @@
 # Phase 01: evidence-based repository audit
 
-Phase 02 continuation: see [PHASE02_REPORT.md](PHASE02_REPORT.md), [architecture](ARCHITECTURE.md), [local development](LOCAL_DEVELOPMENT.md) and [cutover requirements](MIGRATION_PHASE02.md). This audit preserves Phase 01 findings and captured command results; the defect register's Phase 02 disposition identifies subsequent repairs without rewriting historical evidence.
+The Phase 01 audit is historical evidence. Current architecture and setup guidance lives in [ARCHITECTURE.md](ARCHITECTURE.md), [GETTING_STARTED.md](GETTING_STARTED.md), and [DEPLOYMENT.md](DEPLOYMENT.md). Phase 14 release evidence is recorded in [PHASE14_REPORT.md](PHASE14_REPORT.md).
 
 Audit date: 2026-11-09, Asia/Calcutta. Scope: existing implementation, source/configuration/dependency review, reproducible available checks, prioritized defects and recovery planning. This is an engineering audit, not a penetration test or production certification.
 

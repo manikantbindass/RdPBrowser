@@ -1,8 +1,8 @@
 # Admin console operations
 
-Phase 11 adds Integrations and Governance. Administrators can review provider/directory state, run independent access reviews and export evidence. Superadmins can validate and activate SSO providers, issue/revoke scoped directory credentials and set mappings. Apply migration 006 and reviewed runtime grants. The console now accepts an administrator SSO handoff from the same HTTPS origin. [Setup and responsibilities](ENTERPRISE_GOVERNANCE.md)
+Phase 11 adds Integrations and Governance. Administrators can review provider/directory state, run independent access reviews and export evidence. Superadmins can validate and activate SSO providers, issue/revoke scoped directory credentials and set mappings. Apply migration 006 and reviewed runtime grants. The console now accepts an administrator SSO handoff from the same HTTPS origin. [Administrator guide](ADMIN_GUIDE.md)
 
-Phase 10 expands Risk & alerts into a deterministic incident queue with worker health, confidence/explanations, evidence and review history, revision conflict checks and manual account/session containment. New incident notifications use the existing tenant-authorized Socket.IO channel; reconnect recovery uses the persistent queue. Deploy migration 005 and reviewed runtime grants. See [detection operations](DETECTION_AND_RESPONSE.md) for enablement, limitations and rollback requirements.
+Phase 10 expands Risk & alerts into a deterministic incident queue with worker health, confidence/explanations, evidence and review history, revision conflict checks and manual account/session containment. New incident notifications use the existing tenant-authorized Socket.IO channel; reconnect recovery uses the persistent queue. Deploy migration 005 and reviewed runtime grants. See [testing and incident limitations](TESTING.md) for enablement, limitations and rollback requirements.
 
 The console is served at `/admin/` by the existing Nginx deployment. It calls the versioned API on the same origin and uses authenticated Socket.IO notifications. The current backend needs checksummed migrations through `006_enterprise_governance.sql`. Run the migration task and renew runtime grants before startup. Back up the database and verify restoration before rollout. Older application images reject migration history newer than their build.
 
@@ -15,7 +15,7 @@ Use an administrator or superadmin account in the intended organization. Passwor
 - Device approval is an operator decision with a one-hour validity in the console and needs an enrolled public key. Quarantining or revoking an application device revokes its associated application sessions. Revoke the WireGuard peer separately through gateway operations.
 - Policy assignments apply to the whole organization, up to 100 existing users or up to 100 directory groups. User and group assignments use the current subject's ID and direct group memberships. Deny rules win and every applicable nonempty allow group must match. The legacy block list remains organization-wide.
 - The initial history entry represents the latest revision available at migration. New edits write a snapshot of rules, activation state and assignment in the same transaction as the policy and audit entry. A stale editor must reload after a revision conflict. The application database role cannot update or delete snapshots.
-- The VPN health page reports this request's source admission, API/database readiness and recent tenant URL observations. It also reads an optional gateway snapshot and counts only peers whose device UUID matches a device in the signed-in organization. Inspect kernel routes, DNS and packet capture using the network operations guide.
+- The VPN health page reports this request's source admission, API/database readiness and recent tenant URL observations. It also reads an optional gateway snapshot and counts only peers whose device UUID matches a device in the signed-in organization. Inspect kernel routes, DNS and packet capture using the [deployment guide](DEPLOYMENT.md).
 
 The overview chart uses seven UTC buckets. It separates server authorization denials from unverified client security reports. Source telemetry covers requests that reached the logged navigation route. Alerts reflect stored anomaly detections. The console never generates sample activity in deployed mode. Tokens are held in the current tab's memory. Reload the tab to start a new sign-in, and use Sign out to explicitly revoke the current server session.
 
@@ -40,4 +40,4 @@ npm run test:browser
 
 Set `INTEGRATION_DATABASE_URL` in the environment before the browser suite. Use `ADMIN_CHROME_PATH` to point at an installed Chromium or Chrome executable. The same fixture seeds only local test records. Test screenshots live in the ignored test-results directory.
 
-[Network operations](NETWORK_PROTECTION.md) · [Phase 09 verification](PHASE09_REPORT.md)
+[Network and recovery](DEPLOYMENT.md) · [Phase 14 verification](PHASE14_REPORT.md)

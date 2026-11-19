@@ -1,119 +1,61 @@
-# RemoteShield X architecture
+# Architecture
 
-Phase 12 retains the single-VPS control plane with scoped file secrets, non-root edge, isolated operational telemetry, encrypted recovery workflows and schema-aware artifact rollback. WireGuard identity/routing remains separate stateful infrastructure. [ADR 0008](adr/0008-single-vps-operations.md) and [operations](OPERATIONS.md) define these boundaries. OIDC, directory provisioning, access reviews and evidence exports remain in the existing PostgreSQL-backed control plane. [ADR 0007](adr/0007-directory-governance.md)
+RemoteShield X is a modular monolith with native clients and a separately operated network enforcement layer. The architecture described here matches the branch verified by [Phase 14](PHASE14_REPORT.md). The [ADR index](adr/0001-modular-monolith.md) records the original monolith decision.
 
-Phase 10 adds a deterministic detection boundary within the same deployable: HTTP observations → tenant-scoped minimal signals → bounded versioned worker → deduplicated incidents/evidence → authorized review and manual response. It does not participate in packet forwarding. PostgreSQL transactions, advisory locks, RLS and append-only runtime grants define persistence boundaries. See [ADR 0006](adr/0006-deterministic-detection.md) and [detection flows, APIs and limitations](DETECTION_AND_RESPONSE.md).
+## Component ownership
 
-Phase 02 established the modular control plane. Phase 04 adds tenant-aware persistence, RLS, lifecycle transactions and enterprise REST interfaces within the same Node/Express deployable and PostgreSQL database. No broker, Redis, Kubernetes or microservice split is introduced. Current backend verification/limits are in PHASE04_REPORT.md; the Phase 01 audit remains historical evidence.
-
-## Component ownership and dependencies
-
-| Boundary | Owns | Must not claim / depend on |
-|---|---|---|
-| desktop/ | Rust/Tauri process and native adapters, React/TypeScript UI, public endpoint config | Backend internals or proof of OS routing from a health response |
-| android/ | Dart/Flutter UI/state and native platform channels | npm/Rust runtime dependency; currently missing screens/native implementation remain open |
-| backend/ | Config/contracts, HTTP/realtime composition, auth/policy/admin adapters, SQL and lifecycle | Client UI imports or packet-level tunnel enforcement |
-| admin-dashboard/ | Browser admin presentation using control API and Socket.io | Direct DB access, client-authoritative roles or simulated infrastructure inventory |
-| contracts/ | Versioned JSON Schema DTO/request/error definitions | Secrets, executable platform implementation or proof of tenant isolation |
-| vpn-server/ | Privileged WireGuard/route/firewall/DNS provisioning | Automatic execution by control-plane startup; scripts require separate OS-specific verification |
-| nginx/,docker/ | Edge TLS/routing, process packaging, development isolation, migration sequencing | Browser content proxy, VPN attestations or embedded signing credentials |
-| security/ | Optional local detector and integrity utility | AI/durable audit/export or signing guarantees unsupported by tests |
+| Component | Technology | Responsibility |
+| --- | --- | --- |
+| Desktop | Tauri 2, Rust, React, TypeScript, Vite | Trusted shell, native browser windows, client state, policy and session checks, and guarded downloads and updates |
+| Android | Flutter, Dart, WebView, Kotlin bridge | Session lifecycle, Keystore enrollment, browsing UI, and OS network observations |
+| Administration | Same-origin browser console | Tenant operations, policy revisions, alerts, integrations and evidence |
+| Control plane | Node 24, Express, Socket.IO | HTTP and realtime authorization, server-owned decisions, persistence and telemetry |
+| Persistence | PostgreSQL 15, explicit SQL migrations | Checksummed schema, transaction-scoped tenant context, constraints and forced row-level security |
+| Packet enforcement | WireGuard, Linux nftables and Unbound, managed OS policies | Peer identity, routing, DNS, forwarding and failure behavior |
+| Infrastructure | Nginx, Docker Compose, optional Terraform | TLS, service networks, resource limits, backup and deployment tooling |
 
 ```mermaid
-flowchart TD
-  React[Desktop React] --> Rust[Tauri Rust commands]
-  React --> HTTP[HTTP control API]
-  Rust --> HTTP
-  Flutter[Android Flutter] --> HTTP
-  Admin[Admin browser] --> Edge[Nginx control edge]
-  Edge --> HTTP
-  Admin --> RT[Socket.io control events]
-  HTTP --> Routes[Auth / admin / policy adapters]
-  RT --> Identity[Shared active-session authentication]
-  Routes --> DB[PostgreSQL adapter]
-  Identity --> DB
-  Migration[Explicit migration CLI] --> DB
-  HTTP --> Schemas[Portable contracts]
-  Flutter -. native types later .-> Schemas
-  Rust -. native types later .-> Schemas
-  RT --> SSH[Development-only SSH adapter]
+flowchart LR
+  D["Desktop shell and WebView"] --> E["Nginx TLS edge"]
+  A["Android app and WebView"] --> E
+  C["Admin console"] --> E
+  E --> B["Express and Socket.IO"]
+  B --> P[("PostgreSQL")]
+  M["Owner-scoped migration job"] --> P
+  D --> O["OS routing and DNS"]
+  A --> O
+  O --> W["WireGuard gateway and firewall"]
+  W --> S["Destination sites"]
 ```
 
-Existing route modules retain the database facade while the composition root is separated. This is incremental architecture, not a claim that every route already uses a complete repository/service layer. Config/logging are process concerns; bootstrap imports do not connect, migrate or listen. Optional detector has an explicit stop handle. Runtime starts only after DB/migration verification and closes sockets/pool on shutdown.
+Client-to-edge arrows represent logical control requests. In a managed tunnel deployment the control requests also traverse WireGuard. The website-content path runs from the native WebView through the OS and gateway to the destination. The API navigation endpoint supplies a policy decision.
 
-## Control-plane data flow
+## Request lifecycle
 
 ```mermaid
 sequenceDiagram
-  participant Client as Desktop / Android / Admin
-  participant Edge as Nginx edge
-  participant API as Express HTTP
-  participant Contract as Shared schema validator
+  participant App as Client or console
+  participant Edge as Nginx
+  participant API as Express
   participant DB as PostgreSQL
-  Client->>Edge: HTTPS /api/v1 request
-  Edge->>API: Forward request; overwrite proxy headers
-  API->>API: Generate request ID, exact CORS/rate/source checks
-  API->>Contract: Validate request DTO
-  Contract-->>API: Accepted or typed validation error
-  API->>DB: Verify active session; query/update state
-  DB-->>API: Result
-  API-->>Client: Compatible success or error + code/requestId
-  Note over API,DB: /ready verifies dependency and migration history
-  Note over Client,API: /api remains a compatibility alias
+  App->>Edge: HTTPS request
+  Edge->>API: Forward with edge-owned source headers
+  API->>API: Validate source, input and session
+  API->>DB: Set transaction-local organization context
+  DB-->>API: Tenant-scoped result
+  API-->>App: Response with server-owned request ID
 ```
 
-Public endpoints: /health liveness, /ready dependency readiness, /api/v1/meta API metadata, existing /api[/v1]/laila search. Auth/admin/policy routes use configured source filtering; protected routes use token/session verification; admin routes also check roles. Socket.io separately reuses active-session authentication. No implicit REST authentication is assumed to cover sockets.
+The middleware ordering places root probes and separately scoped SCIM routes outside the end-user source gate. Public metadata and the compatibility search route also have distinct admission. Protected operations verify the live account, organization and session, then apply role or resource policies. Socket.IO checks active sessions on its own connection path. Consult the [API reference](API_REFERENCE.md) for exceptions and URL prefixes.
 
-## Network traffic flow and enforcement ownership
+## Data model and trust boundaries
 
-```mermaid
-flowchart LR
-  UI[User navigation] --> Decision[Control-plane policy decision]
-  Decision -. allow/deny advice .-> Native[Native WebView adapter]
-  Native --> OS[OS routes / firewall / DNS]
-  OS --> WG[WireGuard encrypted tunnel]
-  WG --> VPS[VPS routing / NAT]
-  VPS --> Site[Destination website]
-  OS -. direct path must be blocked by verified native policy .-> Site
-  Status[Health / UI VPN flag] -. observation only .-> UI
-```
+An organization owns users, devices, sessions and policies. A device’s enrollment, public key and approval state are separate. A session links a subject to its live organization and can be revoked independently. Policies carry revisions and assignment scope. Events and canonical audit rows distinguish source and action, including lower-confidence client observations. Directory mappings and SMTP-free in-app incident notifications reuse this model.
 
-The API is not in the website-content path. Native redirect/subresource interception, tunnel/DNS/IPv6 failure behavior, screenshot restrictions and tamper-resistant device trust remain platform work. Existing bypass/fail-open risks remain documented. The development profile deliberately permits direct control-plane access and must never be presented as managed security.
+Migration 002 adopts legacy rows into tenant ownership. Later migrations add identity, native client policy state, detections and governance. The deployment migrator applies ordered checksums and grants. The service checks schema history before readiness. The runtime role cannot own application tables or bypass RLS. [SQL migrations](../backend/src/db/migrations/) · [Contracts](../contracts/)
 
-## Domain and persistence
+The backend composition root wires validated configuration, HTTP, realtime, optional detection and lifecycle management. Reusable services handle access decisions, organization lifecycle and alert processing. The TypeScript, Rust and Dart clients use their native representations of stable JSON/HTTP contracts.
 
-Phase 05 adds identity links, encrypted short-lived OIDC transactions, consumed refresh hashes/families, key-possession challenges, organization access policy and server-owned access decisions via migration003. services/access selects live authorization from server-defined resource sensitivity; routes/oidc delegates protocol validation to openid-client, and services/sessions centralizes atomic issuance. Device enrollment/proof and admin posture are separate controls. See IDENTITY_AND_ACCESS.md and ADR0005; legacy compatibility defaults and missing native/provider/attestation boundaries are explicit.
+## Deployment boundary
 
-Migration002 adopts legacy data into the default organization, introduces mandatory tenant keys/composite ownership constraints and forces RLS across tenant tables. Organization, user, device, session, revisioned policy and security-event persistence is implemented; API fields are defined by contracts/openapi.json. Domain DTOs in domain.schema.json also contain future integration fields and are not identical wire/storage models. Events are database intake records, not a durable queue. Restricted runtime credentials are separate from operator migration credentials; see MIGRATION_PHASE04.md.
-
-```mermaid
-flowchart LR
-  Client[Desktop / Android / admin] --> Gate[Source / origin / rate / input gates]
-  Gate --> Auth[Verified token + live organization/user/session]
-  Auth --> Tenant[Server-owned async tenant context]
-  Tenant --> Service[Ownership / role / policy services]
-  Service --> Tx[Transaction-local tenant setting]
-  Tx --> PG[(Restricted PostgreSQL role + forced RLS + composite FKs)]
-  Tx --> Audit[Atomic canonical audit rows]
-  Operator[Privileged migration operator] --> Migration[Checksummed migration + runtime grants]
-  Migration --> PG
-  Service --> Decision[Control-plane decision]
-  Decision -. separate integration .-> Native[Native browser / OS / WireGuard enforcement]
-```
-
-## Deployment topology
-
-```mermaid
-flowchart LR
-  Client[Client] --> Edge[Nginx edge network]
-  Edge --> API[Backend: edge + DB networks]
-  API --> PG[(PostgreSQL: private DB network)]
-  Job[One-shot migrator: DB network] --> PG
-  Job -. completed successfully .-> API
-  Cert[Operator TLS certificate] --> Edge
-  Env[Validated process configuration] --> API
-```
-
-Local override publishes PostgreSQL5432, backend3001 and Nginx8180 only on127.0.0.1. Production binds HTTPS443 at the VPN IPv4 address, forwarding to non-root Nginx8443; private operations9091 binds loopback. Optional SCIM has a separate ingress. Nginx cannot directly reach PostgreSQL's private network. Compose uses health and migration completion dependencies. Production adds scoped file secrets, read-only filesystems, resource/log limits and checksummed deployment/rollback preflight. Docker DNS re-resolution supports backend address replacement. A reviewed TLS certificate, independent offsite backups and gateway recovery remain deployment responsibilities.
-
-See LOCAL_DEVELOPMENT.md for executable setup/checks, MIGRATION_PHASE02.md for compatibility/cutover, INTEGRATIONS.md for extension ports, and adr/0001–0005 for decisions/tradeoffs.
+The base Compose topology has an edge network and a private database network. Nginx and the database have no direct network path through Compose. The backend is the application bridge. The migrator uses separate owner credentials. The deployment overlay limits mounts, capabilities and exposed ports. The optional SCIM edge has a separate public ingress. Logs, backup transport, provider setup and gateway state require operator ownership. [Deployment](DEPLOYMENT.md) · [Integration extension points](SECURITY_MODEL.md)
