@@ -59,7 +59,7 @@ jobs:
       - if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libxdo-dev libayatana-appindicator3-dev librsvg2-dev libssl-dev patchelf
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libxdo-dev libayatana-appindicator3-dev librsvg2-dev libssl-dev libdbus-1-dev patchelf
       - run: npm ci --prefix desktop
       - name: Import Windows code signing certificate
         if: runner.os == 'Windows' && env.RELEASE_CHANNEL != 'preview'

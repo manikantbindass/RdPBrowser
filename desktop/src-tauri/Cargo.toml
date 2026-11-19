@@ -6,7 +6,7 @@ authors = ["RemoteShield X Team"]
 license = "MIT"
 repository = "https://github.com/manikantbindass/RdPBrowser"
 edition = "2021"
-rust-version = "1.77"
+rust-version = "1.90"
 
 # See more keys at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -22,14 +22,14 @@ url                        = "2.5"
 serde                      = { version = "1.0", features = ["derive"] }
 serde_json                 = "1.0"
 tokio                      = { version = "1.0", features = ["full"] }
-reqwest                    = { version = "0.11", features = ["json", "rustls-tls", "blocking"], default-features = false }
+reqwest                    = { version = "0.12.28", features = ["json", "rustls-tls", "blocking"], default-features = false }
 sha2                       = "0.10"
 hex                        = "0.4"
 whoami                     = "1.4"
 sys-info                   = "0.9"
 log                        = "0.4"
 env_logger                 = "0.10"
-tauri-plugin-updater = "~2.12.0"
+tauri-plugin-updater = "~2.14.1"
 
 [features]
 default = ["custom-protocol"]
