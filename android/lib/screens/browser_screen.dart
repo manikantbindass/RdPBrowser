@@ -120,11 +120,18 @@ class _BrowserScreenState extends State<BrowserScreen> {
         );
         if (mounted && value != null) _open(value);
       case _Tool.downloads:
-        await showDialog<void>(
-          context: context,
-          builder: (context) => DownloadsPanel(session: widget.session),
-        );
+        await _downloads();
     }
+  }
+
+  Future<void> _downloads([Uri? address]) async {
+    await showDialog<void>(
+      context: context,
+      builder: (context) => DownloadsPanel(
+        session: widget.session,
+        initialAddress: address?.toString() ?? '',
+      ),
+    );
   }
 
   @override
@@ -230,6 +237,13 @@ class _BrowserScreenState extends State<BrowserScreen> {
                         onPressed: saved == null
                             ? null
                             : _browser.toggleBookmark,
+                      ),
+                      IconButton(
+                        tooltip: 'Save open file',
+                        icon: const Icon(Icons.download_outlined),
+                        onPressed: controller == null || currentAddress == null
+                            ? null
+                            : () => _downloads(currentAddress),
                       ),
                     ],
                   ),

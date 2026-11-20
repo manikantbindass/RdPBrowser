@@ -21,6 +21,7 @@ pub struct AppState {
     pub vpn_connected: Arc<Mutex<bool>>,
     pub server_url: String,
     pub auth_token: Arc<Mutex<Option<String>>>,
+    pub download: Mutex<()>,
 }
 
 #[tauri::command]
@@ -176,6 +177,7 @@ fn main() {
         vpn_connected: Arc::new(Mutex::new(false)),
         server_url: server_url.clone(),
         auth_token: Arc::new(Mutex::new(None)),
+        download: Mutex::new(()),
     };
 
     tauri::Builder::default()
@@ -251,7 +253,7 @@ fn main() {
             browser::close_content_tab,
             updates::check_updates,
             updates::install_update,
-            download::save_text_download,
+            download::save_file_download,
             control_plane_origin,
             vpn::wireguard_status,
         ])

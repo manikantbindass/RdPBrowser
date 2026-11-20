@@ -1,12 +1,142 @@
 use crate::{navigation, AppState};
+use std::{path::PathBuf, sync::atomic::Ordering, time::Duration};
 use tauri::Manager;
+use tokio::io::AsyncWriteExt;
 
-const MAX_BYTES: usize = 5 * 1024 * 1024;
+const MAX_FILE_BYTES: u64 = 128 * 1024 * 1024;
+const MAX_TEXT_BYTES: u64 = 5 * 1024 * 1024;
+const PREFIX_BYTES: usize = 16;
 
-/// Explicit download of an independently fetched HTTPS text response. The WebView's
-/// download callback never writes to disk and never passes cookies or credentials here.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Format {
+    Text,
+    Pdf,
+    Png,
+    Jpeg,
+    Gif,
+    Webp,
+    Mp4,
+    Webm,
+    Mp3,
+    Wav,
+}
+
+impl Format {
+    fn from_content_type(value: &str) -> Option<Self> {
+        match value
+            .split(';')
+            .next()?
+            .trim()
+            .to_ascii_lowercase()
+            .as_str()
+        {
+            "text/plain" => Some(Self::Text),
+            "application/pdf" => Some(Self::Pdf),
+            "image/png" => Some(Self::Png),
+            "image/jpeg" => Some(Self::Jpeg),
+            "image/gif" => Some(Self::Gif),
+            "image/webp" => Some(Self::Webp),
+            "video/mp4" => Some(Self::Mp4),
+            "video/webm" => Some(Self::Webm),
+            "audio/mpeg" => Some(Self::Mp3),
+            "audio/wav" | "audio/x-wav" => Some(Self::Wav),
+            _ => None,
+        }
+    }
+
+    fn extension(self) -> &'static str {
+        match self {
+            Self::Text => "txt",
+            Self::Pdf => "pdf",
+            Self::Png => "png",
+            Self::Jpeg => "jpg",
+            Self::Gif => "gif",
+            Self::Webp => "webp",
+            Self::Mp4 => "mp4",
+            Self::Webm => "webm",
+            Self::Mp3 => "mp3",
+            Self::Wav => "wav",
+        }
+    }
+
+    fn limit(self) -> u64 {
+        if self == Self::Text {
+            MAX_TEXT_BYTES
+        } else {
+            MAX_FILE_BYTES
+        }
+    }
+
+    fn matches_prefix(self, bytes: &[u8]) -> bool {
+        match self {
+            Self::Text => true, // Validate the complete UTF-8 body before committing it.
+            Self::Pdf => bytes.starts_with(b"%PDF-"),
+            Self::Png => bytes.starts_with(b"\x89PNG\r\n\x1a\n"),
+            Self::Jpeg => bytes.starts_with(b"\xff\xd8\xff"),
+            Self::Gif => bytes.starts_with(b"GIF87a") || bytes.starts_with(b"GIF89a"),
+            Self::Webp => bytes.starts_with(b"RIFF") && bytes.get(8..12) == Some(b"WEBP"),
+            Self::Mp4 => bytes.get(4..8) == Some(b"ftyp"),
+            Self::Webm => bytes.starts_with(b"\x1a\x45\xdf\xa3"),
+            Self::Mp3 => {
+                bytes.starts_with(b"ID3")
+                    || (bytes.len() >= 2 && bytes[0] == 0xff && bytes[1] & 0xe0 == 0xe0)
+            }
+            Self::Wav => bytes.starts_with(b"RIFF") && bytes.get(8..12) == Some(b"WAVE"),
+        }
+    }
+}
+
+struct PendingFile(PathBuf);
+
+impl Drop for PendingFile {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_file(&self.0);
+    }
+}
+
+async fn authorize(
+    client: &reqwest::Client,
+    origin: &str,
+    token: &str,
+    url: &url::Url,
+    starting: bool,
+) -> Result<(), String> {
+    let addresses = [url.to_string()];
+    // Keep signed URL parameters out of the control-plane request line. The
+    // initial navigation decision also performs the proxy's geographic check.
+    let (route, payload) = if starting {
+        ("proxy/navigate", serde_json::json!({"url": url.as_str()}))
+    } else {
+        ("auth/status", serde_json::json!({"urls": addresses}))
+    };
+    let decision = client
+        .post(format!("{origin}/api/v1/{route}"))
+        .timeout(Duration::from_secs(8))
+        .bearer_auth(token)
+        .json(&payload)
+        .send()
+        .await
+        .map_err(|_| "Download policy unavailable")?;
+    if !decision.status().is_success()
+        || !decision
+            .json::<serde_json::Value>()
+            .await
+            .is_ok_and(|body| {
+                if starting {
+                    body["allowed"] == true && body["url"].as_str() == Some(url.as_str())
+                } else {
+                    crate::browser::policy_allows(&body, &addresses)
+                }
+            })
+    {
+        return Err("Organization policy denied this download".into());
+    }
+    Ok(())
+}
+
+/// Save an approved direct file without handing WebView credentials to the downloader.
 #[tauri::command]
-pub async fn save_text_download(
+pub async fn save_file_download(
     app: tauri::AppHandle,
     window: tauri::WebviewWindow,
     state: tauri::State<'_, AppState>,
@@ -19,59 +149,51 @@ pub async fn save_text_download(
     if url.scheme() != "https" {
         return Err("Downloads require HTTPS".into());
     }
-    crate::vpn::require_recent_peer().await?;
+    let _download = state
+        .download
+        .try_lock()
+        .map_err(|_| "A download is already running")?;
+    let generation = state.generation.load(Ordering::SeqCst);
     let token = state
         .auth_token
         .lock()
         .await
         .clone()
         .ok_or("Sign in first")?;
+    let current = || state.generation.load(Ordering::SeqCst) == generation;
+    crate::vpn::require_recent_peer().await?;
     let client = reqwest::Client::builder()
-        .timeout(std::time::Duration::from_secs(15))
+        .timeout(Duration::from_secs(300))
+        .read_timeout(Duration::from_secs(15))
         .redirect(reqwest::redirect::Policy::none())
         .build()
         .map_err(|_| "Download client unavailable")?;
-    let decision = client
-        .get(format!("{}/api/v1/proxy/check", state.server_url))
-        .bearer_auth(&token)
-        .query(&[("url", url.as_str())])
-        .send()
-        .await
-        .map_err(|_| "Policy unavailable")?;
-    if !decision.status().is_success()
-        || !decision
-            .json::<serde_json::Value>()
-            .await
-            .is_ok_and(|body| body["allowed"] == true && body["url"].as_str() == Some(url.as_str()))
-    {
-        return Err("Organization policy denied this download".into());
+    authorize(&client, &state.server_url, &token, &url, true).await?;
+    if !current() {
+        return Err("Session changed".into());
     }
+    // Construct a separate request: only the control-plane call above carries the bearer token.
     let mut response = client
-        .get(url)
+        .get(url.clone())
+        .header(reqwest::header::ACCEPT_ENCODING, "identity")
         .send()
         .await
         .map_err(|_| "Download unavailable")?;
-    let content_type = response
+    let format = response
         .headers()
         .get(reqwest::header::CONTENT_TYPE)
-        .and_then(|v| v.to_str().ok())
-        .unwrap_or("");
-    if !response.status().is_success() || content_type.split(';').next() != Some("text/plain") {
-        return Err("Only direct HTTPS plain-text responses are accepted".into());
+        .and_then(|header| header.to_str().ok())
+        .and_then(Format::from_content_type);
+    if response.status() != reqwest::StatusCode::OK {
+        return Err(
+            "Open a direct HTTPS file link. Redirects and partial responses are not saved.".into(),
+        );
     }
-    let mut bytes = Vec::new();
-    while let Some(chunk) = response.chunk().await.map_err(|_| "Download interrupted")? {
-        if bytes.len() + chunk.len() > MAX_BYTES {
-            return Err("Download exceeds 5 MiB".into());
-        }
-        bytes.extend_from_slice(&chunk);
-    }
-    if !valid_text(&bytes) {
-        return Err("Download is not UTF-8 plain text".into());
-    }
-    let session = state.auth_token.lock().await;
-    if session.as_deref() != Some(token.as_str()) {
-        return Err("Session changed".into());
+    let format =
+        format.ok_or("This address did not return a supported image, PDF, media or text file")?;
+    let expected = response.content_length();
+    if expected.is_some_and(|length| length == 0 || length > format.limit()) {
+        return Err("The file is empty or exceeds the download limit".into());
     }
     let directory = app
         .path()
@@ -89,25 +211,70 @@ pub async fn save_text_download(
     {
         return Err("Download folder cannot be a symbolic link".into());
     }
-    let timestamp = std::time::SystemTime::now()
+    let id = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .map_err(|_| "Clock unavailable")?
         .as_nanos();
-    let path = directory.join(format!("remoteshield-{timestamp}.txt"));
-    use tokio::io::AsyncWriteExt;
+    let destination = directory.join(format!("remoteshield-{id}.{}", format.extension()));
+    let pending_path = directory.join(format!("remoteshield-{id}.part"));
     let mut file = tokio::fs::OpenOptions::new()
         .write(true)
         .create_new(true)
-        .open(&path)
+        .open(&pending_path)
         .await
-        .map_err(|_| "Could not create new download")?;
-    let result = file.write_all(&bytes).await;
-    drop(file);
-    if result.is_err() {
-        let _ = tokio::fs::remove_file(&path).await;
-        return Err("Could not save download".into());
+        .map_err(|_| "Could not create a temporary download")?;
+    let pending = PendingFile(pending_path);
+    let mut prefix = Vec::with_capacity(PREFIX_BYTES);
+    let mut size = 0;
+    let result = async {
+        while let Some(chunk) = response.chunk().await.map_err(|_| "Download interrupted")? {
+            size += chunk.len() as u64;
+            if !current() || size > format.limit() {
+                return Err("Session changed or file exceeded its download limit");
+            }
+            if prefix.len() < PREFIX_BYTES {
+                let count = chunk.len().min(PREFIX_BYTES - prefix.len());
+                prefix.extend_from_slice(&chunk[..count]);
+                if prefix.len() == PREFIX_BYTES && !format.matches_prefix(&prefix) {
+                    return Err("File content does not match its reported format");
+                }
+            }
+            file.write_all(&chunk)
+                .await
+                .map_err(|_| "Could not write download")?;
+        }
+        if size == 0
+            || expected.is_some_and(|length| length != size)
+            || !format.matches_prefix(&prefix)
+        {
+            return Err("File is incomplete or does not match its reported format");
+        }
+        file.sync_all().await.map_err(|_| "Could not save download")
     }
-    Ok(path.to_string_lossy().into_owned())
+    .await;
+    // Close the descriptor before returning an error so cleanup also works on Windows.
+    drop(file);
+    result?;
+    if format == Format::Text
+        && !valid_text(
+            &tokio::fs::read(&pending.0)
+                .await
+                .map_err(|_| "Could not read download")?,
+        )
+    {
+        return Err("Download is not UTF-8 plain text".into());
+    }
+    crate::vpn::require_recent_peer().await?;
+    authorize(&client, &state.server_url, &token, &url, false).await?;
+    let session = state.auth_token.lock().await;
+    if !current() || session.as_deref() != Some(token.as_str()) {
+        return Err("Session changed".into());
+    }
+    // Publishing with a hard link makes the complete file visible without replacing an existing one.
+    tokio::fs::hard_link(&pending.0, &destination)
+        .await
+        .map_err(|_| "Could not complete download")?;
+    Ok(destination.to_string_lossy().into_owned())
 }
 
 fn valid_text(bytes: &[u8]) -> bool {
@@ -119,11 +286,37 @@ fn valid_text(bytes: &[u8]) -> bool {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
+    #[test]
+    fn supported_content_types_require_matching_headers() {
+        for (mime, sample, extension) in [
+            ("application/pdf", &b"%PDF-1.7"[..], "pdf"),
+            ("IMAGE/PNG; x=y", &b"\x89PNG\r\n\x1a\n"[..], "png"),
+            ("video/mp4", &b"\0\0\0\x20ftypisom"[..], "mp4"),
+            ("image/webp", &b"RIFF\0\0\0\0WEBP"[..], "webp"),
+        ] {
+            let format = Format::from_content_type(mime).unwrap();
+            assert_eq!(format.extension(), extension);
+            assert!(format.matches_prefix(sample));
+            assert!(!format.matches_prefix(b"<html>not a file"));
+        }
+        for mime in [
+            "text/html",
+            "image/svg+xml",
+            "application/octet-stream",
+            "application/x-msdownload",
+            "application/vnd.apple.mpegurl",
+        ] {
+            assert!(Format::from_content_type(mime).is_none());
+        }
+    }
+
     #[test]
     fn rejects_binary_and_terminal_control_sequences() {
-        assert!(super::valid_text("hello\r\nworld\t✓".as_bytes()));
+        assert!(valid_text("hello\r\nworld\t✓".as_bytes()));
         for bytes in [&b"abc\0def"[..], &b"\x1b[31m"[..], &[0xff][..]] {
-            assert!(!super::valid_text(bytes));
+            assert!(!valid_text(bytes));
         }
     }
 }

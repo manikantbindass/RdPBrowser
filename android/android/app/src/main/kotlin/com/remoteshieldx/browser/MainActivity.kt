@@ -1,5 +1,6 @@
 package com.remoteshieldx.browser
 
+import android.content.ClipData
 import android.content.Intent
 import android.net.ConnectivityManager
 import android.net.Network
@@ -13,8 +14,10 @@ import android.security.keystore.KeyProperties
 import android.util.Base64
 import android.view.WindowManager
 import android.webkit.CookieManager
+import android.webkit.MimeTypeMap
 import android.webkit.WebStorage
 import android.webkit.WebView
+import androidx.core.content.FileProvider
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.EventChannel
@@ -25,6 +28,8 @@ import java.security.KeyStore
 import java.security.Signature
 import java.security.interfaces.ECPublicKey
 import java.security.spec.ECGenParameterSpec
+
+class DownloadFileProvider : FileProvider()
 
 class MainActivity : FlutterActivity() {
     private val connectivity by lazy { getSystemService(ConnectivityManager::class.java) }
@@ -51,6 +56,10 @@ class MainActivity : FlutterActivity() {
                     "protectScreen" -> {
                         val flag = WindowManager.LayoutParams.FLAG_SECURE
                         if (call.arguments == true) window.addFlags(flag) else window.clearFlags(flag)
+                        result.success(null)
+                    }
+                    "shareDownload" -> {
+                        shareDownload(call.argument<String>("scope"), call.argument<String>("name"))
                         result.success(null)
                     }
                     "clearWebData" -> {
@@ -117,6 +126,23 @@ class MainActivity : FlutterActivity() {
     override fun cleanUpFlutterEngine(flutterEngine: FlutterEngine) {
         stopObservation()
         super.cleanUpFlutterEngine(flutterEngine)
+    }
+
+    private fun shareDownload(scope: String?, name: String?) {
+        require(scope != null && scope.matches(Regex("[A-Za-z0-9_-]{1,512}={0,2}")))
+        require(name != null && name.matches(Regex("remoteshield-[a-f0-9-]{36}\\.(txt|pdf|png|jpg|gif|webp|mp4|webm|mp3|wav)")))
+        val root = File(filesDir, "downloads").canonicalFile
+        val folder = File(root, scope)
+        val file = File(folder, name)
+        require(folder.canonicalFile == folder && file.canonicalFile == file && file.isFile)
+        val uri = FileProvider.getUriForFile(this, "$packageName.downloads", file)
+        val send = Intent(Intent.ACTION_SEND).apply {
+            type = MimeTypeMap.getSingleton().getMimeTypeFromExtension(file.extension) ?: "application/octet-stream"
+            putExtra(Intent.EXTRA_STREAM, uri)
+            clipData = ClipData.newRawUri(name, uri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        startActivity(Intent.createChooser(send, "Share downloaded file"))
     }
 
     private fun vpnState(): String {

@@ -220,7 +220,7 @@ export default function ManagedBrowser({ authToken, owner, onSignOut }: Props) {
       listen<{ url: string }>('browser-download-blocked', (event) => {
         setDownloadUrl(event.payload.url);
         setNotice(
-          'WebView download blocked. You can explicitly save a direct HTTPS plain-text response, up to 5 MiB.',
+          'The site requested a download. Review the address and choose Save file to continue.',
         );
         void invoke('content_visibility', { active: null });
         setPanel('downloads');
@@ -427,9 +427,10 @@ export default function ManagedBrowser({ authToken, owner, onSignOut }: Props) {
   };
   const saveDownload = async () => {
     setBusy(true);
+    setNotice('Checking URL policy and saving the file…');
     try {
-      const path = await invoke<string>('save_text_download', {
-        address: downloadUrl,
+      const path = await invoke<string>('save_file_download', {
+        address: downloadUrl.trim(),
       });
       setNotice(`Saved to ${path}`);
     } catch (e) {
@@ -568,13 +569,21 @@ export default function ManagedBrowser({ authToken, owner, onSignOut }: Props) {
         <button
           onClick={() => {
             setDownloadUrl('');
-            setNotice(
-              'Save direct HTTPS plain text to the application download folder.',
-            );
+            setNotice('');
             setPanel('downloads');
           }}
         >
           Downloads
+        </button>
+        <button
+          disabled={busy || loading || !!error || !tab.url.startsWith('https://')}
+          onClick={() => {
+            setDownloadUrl(tab.url);
+            setNotice('');
+            setPanel('downloads');
+          }}
+        >
+          Save open file
         </button>
         <button
           onClick={() => {
@@ -632,22 +641,26 @@ export default function ManagedBrowser({ authToken, owner, onSignOut }: Props) {
               </>
             )}
             {panel === 'downloads' && (
-              <form
-                className="address"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  void saveDownload();
-                }}
-              >
-                <input
-                  type="url"
-                  aria-label="HTTPS download address"
-                  required
-                  value={downloadUrl}
-                  onChange={(e) => setDownloadUrl(e.target.value)}
-                />
-                <button disabled={busy}>Save text file</button>
-              </form>
+              <>
+                <p>Save a direct HTTPS image, PDF, video, audio file, or text file. Files save to the app’s local downloads folder.</p>
+                <form
+                  className="address"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    if (!busy) void saveDownload();
+                  }}
+                >
+                  <input
+                    type="url"
+                    aria-label="HTTPS download address"
+                    required
+                    disabled={busy}
+                    value={downloadUrl}
+                    onChange={(e) => setDownloadUrl(e.target.value)}
+                  />
+                  <button disabled={busy}>{busy ? 'Saving…' : 'Save file'}</button>
+                </form>
+              </>
             )}
             {panel === 'updates' && updateVersion && (
               <button disabled={busy} onClick={installUpdate}>

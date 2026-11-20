@@ -29,7 +29,7 @@ fn authorize_redirect(server: &str, token: &str, url: &url::Url) -> bool {
         .is_ok_and(|body| policy_allows(&body, &[url.to_string()]))
 }
 
-fn policy_allows(body: &serde_json::Value, urls: &[String]) -> bool {
+pub(crate) fn policy_allows(body: &serde_json::Value, urls: &[String]) -> bool {
     body["access"]["allowed"] == true
         && body["decisions"].as_array().is_some_and(|rows| {
             rows.len() == urls.len()

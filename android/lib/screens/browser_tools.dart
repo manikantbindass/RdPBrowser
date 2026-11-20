@@ -148,15 +148,20 @@ class _BrowserSettingsState extends State<BrowserSettings> {
 }
 
 class DownloadsPanel extends StatefulWidget {
-  const DownloadsPanel({super.key, required this.session});
+  const DownloadsPanel({
+    super.key,
+    required this.session,
+    this.initialAddress = '',
+  });
   final Session session;
+  final String initialAddress;
 
   @override
   State<DownloadsPanel> createState() => _DownloadsPanelState();
 }
 
 class _DownloadsPanelState extends State<DownloadsPanel> {
-  final _address = TextEditingController();
+  late final _address = TextEditingController(text: widget.initialAddress);
   late Future<List<File>> _files = savedDownloads(widget.session);
   String _status = '';
   bool _busy = false;
@@ -164,23 +169,35 @@ class _DownloadsPanelState extends State<DownloadsPanel> {
   Future<void> _save() async {
     setState(() {
       _busy = true;
-      _status = '';
+      _status = 'Checking URL policy and saving the file…';
     });
-    var saved = false;
+    File? saved;
+    String? failure;
     try {
-      await saveTextDownload(widget.session, _address.text);
-      saved = true;
+      saved = await saveFileDownload(widget.session, _address.text);
+    } on DownloadFailure catch (error) {
+      failure = error.message;
     } on Exception {
       // The destination and any transport errors can contain private data.
+      failure = 'Download unavailable.';
     }
     if (!mounted) return;
     setState(() {
       _busy = false;
-      _status = saved
-          ? 'Saved in app storage.'
-          : 'Download denied or unavailable.';
-      if (saved) _files = savedDownloads(widget.session);
+      _status = failure ?? 'Saved ${saved!.uri.pathSegments.last}.';
+      if (saved != null) _files = savedDownloads(widget.session);
     });
+  }
+
+  Future<void> _share(File file) async {
+    setState(() => _busy = true);
+    try {
+      await shareSavedDownload(widget.session, file);
+    } on Exception {
+      if (mounted) setState(() => _status = 'Could not share this file.');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
   }
 
   @override
@@ -198,9 +215,12 @@ class _DownloadsPanelState extends State<DownloadsPanel> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Save a direct HTTPS plain-text response up to 5 MiB.'),
+          const Text(
+            'Save a direct HTTPS image, PDF, video, audio file, or text file. Share a saved copy using the Android chooser.',
+          ),
           TextField(
             controller: _address,
+            enabled: !_busy,
             decoration: const InputDecoration(
               labelText: 'HTTPS download address',
             ),
@@ -218,10 +238,24 @@ class _DownloadsPanelState extends State<DownloadsPanel> {
                 for (final file in (snapshot.data ?? <File>[]).take(50))
                   ListTile(
                     title: Text(file.uri.pathSegments.last),
-                    trailing: IconButton(
-                      tooltip: 'Delete download',
-                      icon: const Icon(Icons.delete_outline),
-                      onPressed: () async {
+                    trailing: PopupMenuButton<String>(
+                      tooltip: 'Saved file actions',
+                      enabled: !_busy,
+                      itemBuilder: (_) => const [
+                        PopupMenuItem(
+                          value: 'share',
+                          child: Text('Share copy…'),
+                        ),
+                        PopupMenuItem(
+                          value: 'delete',
+                          child: Text('Delete copy'),
+                        ),
+                      ],
+                      onSelected: (action) async {
+                        if (action == 'share') {
+                          await _share(file);
+                          return;
+                        }
                         try {
                           await file.delete();
                           if (mounted) {
@@ -248,7 +282,7 @@ class _DownloadsPanelState extends State<DownloadsPanel> {
     actions: [
       TextButton(
         onPressed: _busy ? null : _save,
-        child: Text(_busy ? 'Savingâ€¦' : 'Save text'),
+        child: Text(_busy ? 'Working…' : 'Save file'),
       ),
       TextButton(
         onPressed: () => Navigator.pop(context),

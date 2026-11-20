@@ -42,7 +42,12 @@ class Session extends ChangeNotifier {
 
   bool get signedIn => _access != null;
   bool get canBrowse =>
-      !_signingOut && signedIn && authorized && networkReady && foreground;
+      !_disposed &&
+      !_signingOut &&
+      signedIn &&
+      authorized &&
+      networkReady &&
+      foreground;
   String get _originKey => 'session.v1.${controlPlaneUri('/').origin}';
 
   void _publish() {

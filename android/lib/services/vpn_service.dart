@@ -35,6 +35,9 @@ class PlatformSecurity {
   Future<void> protectScreen(bool enabled) =>
       _channel.invokeMethod<void>('protectScreen', enabled);
 
+  Future<void> shareDownload(String scope, String name) => _channel
+      .invokeMethod<void>('shareDownload', {'scope': scope, 'name': name});
+
   Future<Map<String, String>> deviceKey(String alias) async {
     final key = await _channel.invokeMapMethod<String, String>(
       'deviceKey',
