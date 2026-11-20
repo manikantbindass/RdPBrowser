@@ -22,9 +22,9 @@ function createTelemetry(config,logger) {
         const status=aborted ? '4xx' : Math.floor(res.statusCode/100)+'xx';
         let key=method+'|'+route+'|'+status;
         if (!requests.has(key) && requests.size>=256) key='OTHER|overflow|'+status;
-        if (!requests.has(key)) requests.set(key,{method:key.split('|')[0],route:key.split('|')[1],status,count:0,sum:0,buckets:buckets.map(()=>0)});
+        if (!requests.has(key)) requests.set(key,{method:key.split('|')[0],route:key.split('|')[1],status,count:0,sum:0,buckets:new Map(buckets.map(bound=>[bound,0]))});
         const row=requests.get(key);row.count++;row.sum+=elapsed;
-        buckets.forEach((limit,index)=>{if (elapsed<=limit) row.buckets[index]++;});
+        for (const [bound,count] of row.buckets) if (elapsed<=bound) row.buckets.set(bound,count+1);
         if (trace.sampled) logger.info({event:'trace.span',name:'http.request',traceId:trace.traceId,spanId:trace.spanId,method,route,status,durationMs:elapsed*1000,outcome:aborted ? 'aborted' : 'complete'});
       }
       res.once('finish',()=>finish(false));res.once('close',()=>finish(!res.writableFinished));
@@ -52,10 +52,13 @@ function createTelemetry(config,logger) {
       for (const row of requests.values()) {
         const labels='method='+label(row.method)+',route='+label(row.route)+',status_class='+label(row.status);
         lines.push('rsx_http_requests_total{'+labels+'} '+row.count);
-        buckets.forEach((bound,index)=>lines.push('rsx_http_request_duration_seconds_bucket{'+labels+',le='+label(bound===Infinity ? '+Inf' : bound)+'} '+row.buckets[index]));
+        for (const [bound,count] of row.buckets) lines.push('rsx_http_request_duration_seconds_bucket{'+labels+',le='+label(bound===Infinity ? '+Inf' : bound)+'} '+count);
         lines.push('rsx_http_request_duration_seconds_count{'+labels+'} '+row.count,'rsx_http_request_duration_seconds_sum{'+labels+'} '+row.sum);
       }
-      if (extra.pool) for (const key of ['total','idle','waiting']) lines.push('rsx_database_pool_'+key+' '+extra.pool[key]);
+      if (extra.pool) {
+        const {total,idle,waiting}=extra.pool;
+        lines.push('rsx_database_pool_total '+total,'rsx_database_pool_idle '+idle,'rsx_database_pool_waiting '+waiting);
+      }
       lines.push('rsx_operations_observer_fresh '+(extra.observer?.state==='fresh' ? 1 : 0));
       lines.push('rsx_backup_last_success_timestamp_seconds '+(Date.parse(extra.backup?.completedAt || '')/1000 || 0));
       lines.push('rsx_operations_alerts '+(extra.observer?.alerts?.filter(item=>item.state==='firing').length || 0));

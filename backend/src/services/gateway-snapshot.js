@@ -2,6 +2,7 @@
 
 const { open } = require('node:fs/promises');
 const { constants } = require('node:fs');
+const { isAbsolute } = require('node:path');
 const { uuid } = require('../db/tenant');
 const { query } = require('../db/db');
 
@@ -10,6 +11,8 @@ const MAX_AGE = 120;
 const RECENT_HANDSHAKE = 180;
 
 async function readSnapshot(file) {
+  if (typeof file !== 'string' || !isAbsolute(file)) throw new Error('Invalid snapshot path');
+  // eslint-disable-next-line security/detect-non-literal-fs-filename -- Startup config selects a mounted status file. Inspect the opened descriptor and cap each read.
   const handle = await open(file, constants.O_RDONLY | (constants.O_NONBLOCK || 0));
   try {
     const info = await handle.stat();

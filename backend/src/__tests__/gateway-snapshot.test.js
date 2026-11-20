@@ -16,9 +16,18 @@ beforeEach(async () => {
 });
 afterEach(async () => { await fs.rm(directory, { recursive: true, force: true }); });
 
+async function writeSnapshot(text, mtime) {
+  // eslint-disable-next-line security/detect-non-literal-fs-filename -- Fixed fixture name in this test's private temporary directory.
+  const handle = await fs.open(file, 'w');
+  try {
+    await handle.writeFile(text);
+    if (mtime) await handle.utimes(mtime, mtime);
+  } finally { await handle.close(); }
+}
+
 test('gateway counters include only device IDs visible through the tenant query', async () => {
   const peer = deviceId => ({ deviceId, active: true, configured: true, handshakeAgeSeconds: 10 });
-  await fs.writeFile(file, JSON.stringify({ peers: [peer(own), peer(other)] }));
+  await writeSnapshot(JSON.stringify({ peers: [peer(own), peer(other)] }));
   query.mockResolvedValue({ rows: [{ id: own }] });
   const result = await gatewayHealth(file);
   expect(result).toMatchObject({ state: 'available', enrolled: 1, active: 1, configured: 1, recent: 1 });
@@ -29,11 +38,10 @@ test('gateway counters include only device IDs visible through the tenant query'
 test('absent, invalid and stale gateway observations remain explicit', async () => {
   expect(await gatewayHealth('')).toEqual({ state: 'not_configured' });
   expect(await gatewayHealth(file)).toEqual({ state: 'unavailable' });
-  await fs.writeFile(file, '{"peers":[{"deviceId":"invalid"}]}');
+  await writeSnapshot('{"peers":[{"deviceId":"invalid"}]}');
   expect(await gatewayHealth(file)).toEqual({ state: 'unavailable' });
-  await fs.writeFile(file, '{"peers":[]}');
   const stale = new Date(Date.now() - 180000);
-  await fs.utimes(file, stale, stale);
+  await writeSnapshot('{"peers":[]}', stale);
   expect(await gatewayHealth(file)).toEqual({ state: 'stale' });
   expect(query).not.toHaveBeenCalled();
 });

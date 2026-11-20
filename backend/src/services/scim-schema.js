@@ -28,7 +28,7 @@ function groupValue(body) { return validate(groupSchema,body); }
 function paging(query) {
   for (const key of Object.keys(query)) if (!['startIndex','count','filter','excludedAttributes'].includes(key)) fail(400,'Unsupported SCIM query','invalidFilter');
   if (query.excludedAttributes!==undefined && !['members','groups'].includes(query.excludedAttributes)) fail(400,'Unsupported attribute exclusion','invalidValue');
-  for (const key of ['startIndex','count']) if (query[key]!==undefined && (typeof query[key]!=='string' || !/^\d{1,7}$/.test(query[key]))) fail(400,'Invalid pagination','invalidValue');
+  for (const value of [query.startIndex,query.count]) if (value!==undefined && (typeof value!=='string' || !/^\d{1,7}$/.test(value))) fail(400,'Invalid pagination','invalidValue');
   const start=Number(query.startIndex ?? 1),count=Number(query.count ?? 100);
   if (start<1 || start>1000000 || count<0 || count>100) fail(400,'SCIM pagination out of range','invalidValue');
   return { start,count,offset:start-1 };
@@ -39,12 +39,15 @@ function filter(value,kind) {
   const match=/^(userName|externalId|id|displayName)\s+eq\s+("(?:[^"\\]|\\["\\])*")$/i.exec(value);
   if (!match) fail(400,'Only supported-attribute equality filters are implemented','invalidFilter');
   const attribute=match[1].toLowerCase();
-  const columns=kind==='Users' ? { username:'username',externalid:'scim_external_id',id:'id' } : { displayname:'display_name',externalid:'external_id',id:'id' };
-  if (!columns[attribute]) fail(400,'Unsupported filter attribute','invalidFilter');
+  const columns=kind==='Users' ? userFilterColumns : groupFilterColumns;
+  const column=columns.get(attribute);
+  if (!column) fail(400,'Unsupported filter attribute','invalidFilter');
   const term=JSON.parse(match[2]);
   if (attribute==='id') validate(id.required(),term);
-  return { column:columns[attribute],term,fold:['username','displayname'].includes(attribute) };
+  return { column,term,fold:['username','displayname'].includes(attribute) };
 }
+const userFilterColumns=new Map([['username','username'],['externalid','scim_external_id'],['id','id']]);
+const groupFilterColumns=new Map([['displayname','display_name'],['externalid','external_id'],['id','id']]);
 function operations(body) {
   return validate(Joi.object({ schemas:Joi.array().items(Joi.string().valid(PATCH)).length(1).required(),
     Operations:Joi.array().min(1).max(50).items(Joi.object({ op:Joi.string().valid('add','Add','replace','Replace','remove','Remove').required(),path:Joi.string().min(1).max(400),value:Joi.any() })).required() }),body).Operations;

@@ -7,7 +7,10 @@ const { change }=require('./governance-change');
 function canonical(value) {
   if (value instanceof Date) return JSON.stringify(value.toJSON());
   if (Array.isArray(value)) return '['+value.map(canonical).join(',')+']';
-  if (value && typeof value==='object') return '{'+Object.keys(value).sort().map(k=>JSON.stringify(k)+':'+canonical(value[k])).join(',')+'}';
+  if (value && typeof value==='object') {
+    const entries=Object.entries(value).sort(([a],[b])=>a<b ? -1 : a>b ? 1 : 0);
+    return '{'+entries.map(([key,item])=>JSON.stringify(key)+':'+canonical(item)).join(',')+'}';
+  }
   return JSON.stringify(value);
 }
 const digest=value=>createHash('sha256').update(canonical(value)).digest('hex');

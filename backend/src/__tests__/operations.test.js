@@ -14,12 +14,20 @@ const logger={info:jest.fn(),warn:jest.fn(),error:jest.fn()};
 let directory;
 beforeEach(()=>{directory=fs.mkdtempSync(path.join(os.tmpdir(),'rsx-operations-'));jest.clearAllMocks();});
 afterEach(()=>fs.rmSync(directory,{recursive:true,force:true}));
+function writeFixture(name,text,time) {
+  // eslint-disable-next-line security/detect-non-literal-fs-filename -- The fixture names are test constants and scoped to this test's private temporary directory.
+  const descriptor=fs.openSync(path.join(directory,name),'w');
+  try {
+    fs.writeSync(descriptor,text);
+    if (time!==undefined) fs.futimesSync(descriptor,time,time);
+  } finally {fs.closeSync(descriptor);}
+}
 test('file secrets load without exposing values and reject conflicting, missing or multiline sources',()=>{
-  const file=path.join(directory,'secret');fs.writeFileSync(file,'private-fixture\n');
+  const file=path.join(directory,'secret');writeFixture('secret','private-fixture\n');
   expect(secretValue({JWT_SECRET_FILE:file},'JWT_SECRET')).toBe('private-fixture');
   expect(()=>secretValue({JWT_SECRET:'conflict',JWT_SECRET_FILE:file},'JWT_SECRET')).toThrow('Invalid secret source');
   expect(()=>secretValue({JWT_SECRET_FILE:'relative'},'JWT_SECRET')).toThrow('Invalid secret source');
-  fs.writeFileSync(file,'private-fixture\nsecond');
+  writeFixture('secret','private-fixture\nsecond');
   expect(()=>secretValue({JWT_SECRET_FILE:file},'JWT_SECRET')).toThrow('Cannot read secret file for JWT_SECRET');
   expect(()=>secretValue({JWT_SECRET_FILE:path.join(directory,'missing')},'JWT_SECRET')).toThrow('Cannot read secret');
 });
@@ -66,20 +74,28 @@ test('metrics authenticate, traces correlate without raw inputs, dashboard has n
   } finally {telemetry.close();await operations.close();}
 });
 test('observer feed distinguishes stale, missing and oversized reports',()=>{
-  const file=path.join(directory,'alerts.json');fs.writeFileSync(file,'{}');
+  writeFixture('alerts.json','{}');
   expect(statusFile(directory,'alerts.json',1000).state).toBe('fresh');
-  fs.utimesSync(file,1,1);expect(statusFile(directory,'alerts.json',1000).state).toBe('stale');
-  fs.writeFileSync(file,'x'.repeat(65537));expect(statusFile(directory,'alerts.json',1000).state).toBe('unavailable');
+  expect(statusFile(directory,'./alerts.json',1000).state).toBe('unavailable');
+  writeFixture('alerts.json','{}',1);expect(statusFile(directory,'alerts.json',1000).state).toBe('stale');
+  writeFixture('alerts.json','x'.repeat(65537));expect(statusFile(directory,'alerts.json',1000).state).toBe('unavailable');
+});
+test('a directory cannot be used as a secret or database CA file',()=>{
+  expect(()=>secretValue({JWT_SECRET_FILE:directory},'JWT_SECRET')).toThrow('Cannot read secret file');
+  expect(()=>loadDatabaseConfig({...env,DB_SSL_CA_FILE:directory})).toThrow('Database CA file is unavailable');
 });
 test('disconnect prevents an outstanding dashboard response from revealing data',async()=>{
   const nodes=new Map();
-  for(const id of ['connect','disconnect','snapshot','token','cards','alerts','recovery','message']) nodes.set(id,{hidden:id==='snapshot',value:'x'.repeat(64),addEventListener:(name,handler)=>{nodes.get(id)[name]=handler;},replaceChildren:jest.fn()});
+  for(const id of ['connect','disconnect','snapshot','token','cards','alerts','recovery','message']) {
+    const listeners=new Map();
+    nodes.set(id,{hidden:id==='snapshot',value:'x'.repeat(64),listeners,addEventListener:(name,handler)=>listeners.set(name,handler),replaceChildren:jest.fn()});
+  }
   let complete;
   const pending=new Promise(resolve=>{complete=resolve;});
   const sandbox={document:{getElementById:id=>nodes.get(id)},fetch:()=>pending,setInterval:()=>1,clearInterval:()=>{}};
   require('node:vm').runInNewContext(fs.readFileSync(path.join(__dirname,'../operations/public/dashboard.js'),'utf8'),sandbox);
-  nodes.get('connect').submit({preventDefault:()=>{}});
-  nodes.get('disconnect').click();
+  nodes.get('connect').listeners.get('submit')({preventDefault:()=>{}});
+  nodes.get('disconnect').listeners.get('click')();
   complete({ok:true,json:async()=>({})});
   await new Promise(resolve=>setImmediate(resolve));
   expect(nodes.get('snapshot').hidden).toBe(true);

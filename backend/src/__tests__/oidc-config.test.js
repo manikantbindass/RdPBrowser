@@ -9,8 +9,9 @@ const provider={ id:'enterprise',organizationId:'00000000-0000-4000-8000-0000000
   clientSecretEnv:'TEST_ONLY_CLIENT_SECRET',redirectUri:'https://app.example.com/api/v1/auth/oidc/enterprise/callback',mfaAcrValues:['urn:test:mfa'] };
 let directory,file;
 beforeEach(() => { directory=fs.mkdtempSync(path.join(os.tmpdir(),'rsx-oidc-'));file=path.join(directory,'providers.json'); });
-afterEach(() => { if(fs.existsSync(file)) fs.unlinkSync(file);fs.rmdirSync(directory); });
+afterEach(() => { fs.rmSync(directory,{recursive:true,force:true}); });
 function config(change={},env={}) {
+  // eslint-disable-next-line security/detect-non-literal-fs-filename -- Fixed fixture name in this test's private temporary directory.
   fs.writeFileSync(file,JSON.stringify([{ ...provider,...change }]));
   return loadConfig({ ...base,OIDC_PROVIDERS_FILE:file,OIDC_STATE_KEY:crypto.randomBytes(32).toString('hex'),TEST_ONLY_CLIENT_SECRET:crypto.randomBytes(24).toString('hex'),...env });
 }

@@ -1,21 +1,19 @@
 'use strict';
-const fs = require('node:fs');
 const path = require('node:path');
+const { readOperatorFile } = require('./operator-files');
 function secretValue(env, name) {
-  const file = env[name + '_FILE'];
-  if (!file) return env[name];
-  if (env[name] || !path.isAbsolute(file)) throw new Error('Invalid secret source for ' + name);
+  const lookup = key => Object.hasOwn(env, key) ? Reflect.get(env, key) : undefined;
+  const file = lookup(name + '_FILE');
+  const direct = lookup(name);
+  if (!file) return direct;
+  if (direct || typeof file !== 'string' || !path.isAbsolute(file)) throw new Error('Invalid secret source for ' + name);
   try {
-    const stat = fs.statSync(file);
-    if (!stat.isFile() || stat.size > 65536) throw new Error();
-    const value = fs.readFileSync(file, 'utf8').replace(/\r?\n$/, '');
+    const value = readOperatorFile(file, 65536).text.replace(/\r?\n$/, '');
     if (!value || value.includes('\n') || value.includes('\r') || value.includes('\0')) throw new Error();
     return value;
   } catch { throw new Error('Cannot read secret file for ' + name); }
 }
 function secretEnvironment(env, names) {
-  const resolved = { ...env };
-  for (const name of names) resolved[name] = secretValue(env, name);
-  return resolved;
+  return { ...env, ...Object.fromEntries(names.map(name => [name, secretValue(env, name)])) };
 }
 module.exports = { secretValue, secretEnvironment };

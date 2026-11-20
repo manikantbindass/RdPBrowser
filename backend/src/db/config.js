@@ -1,5 +1,5 @@
 'use strict';
-const fs = require('node:fs');
+const { readDatabaseCa } = require('../services/operator-files');
 const { Joi,validate } = require('../services/validation');
 const { secretEnvironment } = require('../services/secret-files');
 function loadDatabaseConfig(environment = process.env) {
@@ -19,7 +19,7 @@ function loadDatabaseConfig(environment = process.env) {
     DB_POOL_MAX:env.DB_POOL_MAX === undefined ? 20 : Number(env.DB_POOL_MAX),DB_RUNTIME_PASSWORD:env.DB_RUNTIME_PASSWORD,
     NODE_ENV:env.NODE_ENV,LOG_LEVEL:env.LOG_LEVEL });
   if (value.NODE_ENV==='production' && value.DB_SSL_MODE==='disable' && !value.DB_NETWORK_TRUSTED) throw new Error('Database network trust is required');
-  if (value.DB_SSL_CA_FILE && !fs.existsSync(value.DB_SSL_CA_FILE)) throw new Error('Database CA file is unavailable');
+  if (value.DB_SSL_CA_FILE) readDatabaseCa(value.DB_SSL_CA_FILE);
   if (['sslmode','sslcert','sslkey','sslrootcert'].some(key => new URL(value.DATABASE_URL).searchParams.has(key))) throw new Error('Use explicit database TLS settings');
   return value;
 }

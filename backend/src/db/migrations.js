@@ -2,20 +2,22 @@
 const fs = require('fs');
 const path = require('path');
 const { createHash } = require('crypto');
+const { readOperatorFile } = require('../services/operator-files');
 function readMigrations(directory = path.join(__dirname, 'migrations')) {
+  // eslint-disable-next-line security/detect-non-literal-fs-filename -- Defaults to packaged migrations. The optional directory is for direct callers, never HTTP.
   const names = fs.readdirSync(directory).filter(name => name.endsWith('.sql')).sort();
   const prefixes = new Set();
   return names.map(version => {
     if (!/^\d{3}_[a-z0-9_]+\.sql$/.test(version) || prefixes.has(version.slice(0, 3))) throw new Error('Invalid or duplicate migration version');
     prefixes.add(version.slice(0, 3));
-    const sql = fs.readFileSync(path.join(directory, version), 'utf8').replace(/\r\n/g, '\n');
+    const sql = readOperatorFile(path.join(directory, version), 1024 * 1024).text.replace(/\r\n/g, '\n');
     return { version, sql, checksum: createHash('sha256').update(sql).digest('hex') };
   });
 }
 function validateApplied(rows, migrations) {
   const byVersion = new Map(migrations.map(m => [m.version, m]));
   for (const row of rows) if (!byVersion.has(row.version) || byVersion.get(row.version).checksum !== row.checksum) throw new Error('Database migration history differs from this build');
-  if (rows.map(r => r.version).sort().some((version, i) => migrations[i]?.version !== version)) throw new Error('Database migration history is out of order');
+  if (rows.map(r => r.version).sort().some((version, i) => migrations.at(i)?.version !== version)) throw new Error('Database migration history is out of order');
 }
 async function migrate(pool, migrations = readMigrations()) {
   const client = await pool.connect();

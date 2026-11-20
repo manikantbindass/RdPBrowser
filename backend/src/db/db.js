@@ -1,6 +1,6 @@
 'use strict';
 const { Pool } = require('pg');
-const fs = require('fs');
+const { readDatabaseCa } = require('../services/operator-files');
 const { verifyMigrations } = require('./migrations');
 const { AsyncLocalStorage } = require('async_hooks');
 const { tenantId } = require('./tenant');
@@ -18,7 +18,7 @@ function getPool() {
   if (!config) throw new Error('Database is not configured');
   if (!pool) {
     pool = new Pool({ connectionString: config.DATABASE_URL,
-      ssl: config.DB_SSL_MODE === 'verify-full' ? { rejectUnauthorized: true, ...(config.DB_SSL_CA_FILE ? { ca: fs.readFileSync(config.DB_SSL_CA_FILE, 'utf8') } : {}) } : false,
+      ssl: config.DB_SSL_MODE === 'verify-full' ? { rejectUnauthorized: true, ...(config.DB_SSL_CA_FILE ? { ca: readDatabaseCa(config.DB_SSL_CA_FILE) } : {}) } : false,
       max: config.DB_POOL_MAX || 20, idleTimeoutMillis: 30000, connectionTimeoutMillis: 2000, statement_timeout: 15000 });
     pool.on('error', () => logger?.error({ event: 'database.pool_error' }));
   }

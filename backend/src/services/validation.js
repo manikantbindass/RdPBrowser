@@ -9,7 +9,7 @@ const id = Joi.string().guid({ version:['uuidv4','uuidv5','uuidv7'] });
 const password = Joi.string().min(12).max(72).pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/).custom((v,h) => Buffer.byteLength(v)>72 ? h.error('any.invalid') : v);
 const userRegistration = Joi.object({ username:Joi.string().alphanum().min(3).max(80).required(), email:Joi.string().email().max(255).required(), password:password.required(), deviceId:Joi.string().min(1).max(255) });
 function pagination(req) {
-  for (const key of ['page','limit']) if (req.query[key]!==undefined && (typeof req.query[key]!=='string' || !/^[1-9]\d*$/.test(req.query[key]))) fail(400,'Invalid pagination','VALIDATION_ERROR');
+  for (const value of [req.query.page,req.query.limit]) if (value!==undefined && (typeof value!=='string' || !/^[1-9]\d*$/.test(value))) fail(400,'Invalid pagination','VALIDATION_ERROR');
   const page = req.query.page === undefined ? 1 : Number(req.query.page);
   const limit = req.query.limit === undefined ? 50 : Number(req.query.limit);
   if (!Number.isSafeInteger(page) || page<1 || page>10000 || !Number.isSafeInteger(limit) || limit<1 || limit>100) fail(400,'Invalid pagination','VALIDATION_ERROR');

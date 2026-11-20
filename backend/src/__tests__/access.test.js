@@ -13,6 +13,8 @@ test.each([
   [{ policy:{ ...defaults,allowedRoles:['admin'] } },'ROLE_DENIED'],
   [{ resource:'admin.manage' },'ADMIN_REQUIRED'],
   [{ resource:'client-invented' },'RESOURCE_UNKNOWN'],
+  [{ resource:'constructor' },'RESOURCE_UNKNOWN'],
+  [{ resource:'__proto__' },'RESOURCE_UNKNOWN'],
   [{ policy:{ ...defaults,requireMfa:true } },'MFA_REQUIRED'],
   [{ policy:{ ...defaults,requireTrustedDevice:true },device:{ external_id:'identifier-only',user_id:user.id,organization_id:user.organization_id } },'TRUSTED_DEVICE_REQUIRED'],
   [{ device:{ user_id:user.id,organization_id:user.organization_id,trust_state:'quarantined' } },'DEVICE_INVALID'],

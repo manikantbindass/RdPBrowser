@@ -1,5 +1,5 @@
 'use strict';
-const fs=require('fs');
+const { readOperatorFile }=require('./operator-files');
 const { Joi }=require('./validation');
 const schema=Joi.array().max(20).items(Joi.object({
   id:Joi.string().pattern(/^[a-z][a-z0-9-]{0,63}$/).required(),organizationId:Joi.string().guid().required(),
@@ -16,7 +16,7 @@ const schema=Joi.array().max(20).items(Joi.object({
 function loadProviders(file,env) {
   if (!file) return [];
   try {
-    const { error,value }=schema.validate(JSON.parse(fs.readFileSync(file,'utf8')),{ convert:false });
+    const { error,value }=schema.validate(JSON.parse(readOperatorFile(file,256*1024).text),{ convert:false });
     if (error) throw error;
     return value.map(provider => {
       const issuer=new URL(provider.issuer),redirect=new URL(provider.redirectUri);

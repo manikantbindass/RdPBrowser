@@ -1,27 +1,39 @@
 'use strict';
 const http=require('node:http');
-const fs=require('node:fs');
 const path=require('node:path');
 const { createHash,timingSafeEqual }=require('node:crypto');
+const { readOperatorFile }=require('../services/operator-files');
 function statusFile(directory,name,maximumAge) {
   if (!directory) return {state:'unconfigured'};
   try {
-    const file=path.join(directory,name),stat=fs.statSync(file);
-    if (!stat.isFile() || stat.size>65536) throw new Error();
-    const value=JSON.parse(fs.readFileSync(file,'utf8'));
-    return {...value,state:Date.now()-stat.mtimeMs>maximumAge ? 'stale' : 'fresh'};
+    if (!['alerts.json','backup.json'].includes(name)) throw new Error('Unknown operations report');
+    const {text,mtimeMs}=readOperatorFile(path.join(directory,name),65536);
+    const value=JSON.parse(text);
+    return {...value,state:Date.now()-mtimeMs>maximumAge ? 'stale' : 'fresh'};
   } catch {return {state:'unavailable'};}
 }
 function startOperations({config,app,telemetry,database,logger}) {
   const expected=createHash('sha256').update(config.METRICS_TOKEN).digest();
-  const files={'/dashboard':'dashboard.html','/dashboard.js':'dashboard.js','/dashboard.css':'dashboard.css'};
+  const files=new Map([
+    ['/dashboard',['dashboard.html','text/html']],
+    ['/dashboard.js',['dashboard.js','text/javascript']],
+    ['/dashboard.css',['dashboard.css','text/css']],
+  ]);
   const server=http.createServer({maxHeaderSize:4096},(req,res)=>{
     res.setHeader('Cache-Control','no-store');res.setHeader('X-Content-Type-Options','nosniff');
     res.setHeader('Content-Security-Policy',"default-src 'self'; script-src 'self'; style-src 'self'; frame-ancestors 'none'");
     if (req.method!=='GET') {res.writeHead(405);return res.end();}
-    if (files[req.url]) {
-      res.setHeader('Content-Type',req.url.endsWith('.js') ? 'text/javascript' : req.url.endsWith('.css') ? 'text/css' : 'text/html');
-      return res.end(fs.readFileSync(path.join(__dirname,'public',files[req.url])));
+    const asset=files.get(req.url);
+    if (asset) {
+      const [file,contentType]=asset;
+      try {
+        const {text}=readOperatorFile(path.join(__dirname,'public',file),1024*1024);
+        res.setHeader('Content-Type',contentType);
+        return res.end(text);
+      } catch {
+        res.writeHead(503);
+        return res.end();
+      }
     }
     const token=/^Bearer ([A-Za-z0-9_-]{32,256})$/.exec(req.headers.authorization || '')?.[1] || '';
     if (!timingSafeEqual(createHash('sha256').update(token).digest(),expected)) {res.writeHead(401,{'WWW-Authenticate':'Bearer realm="RemoteShield operations"'});return res.end();}

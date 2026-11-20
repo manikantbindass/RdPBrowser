@@ -1,9 +1,9 @@
 'use strict';
 
 const Joi = require('joi');
-const fs = require('fs');
 const path = require('path');
 const { normalizeAddress } = require('./services/network-source');
+const { readDatabaseCa } = require('./services/operator-files');
 
 const definitions = {
   NODE_ENV: Joi.string().valid('development', 'test', 'production').default('development'),
@@ -62,7 +62,7 @@ function loadConfig(env = process.env) {
   env = require('./services/secret-files').secretEnvironment(env,['DATABASE_URL','JWT_SECRET','JWT_REFRESH_SECRET','OIDC_STATE_KEY','METRICS_TOKEN']);
   const { value, error } = Joi.object(definitions).unknown(true).validate(env, { abortEarly: false });
   if (error) throw new Error(`Invalid configuration keys: ${[...new Set(error.details.map(d => d.path[0]))].join(', ')}`);
-  const config = Object.fromEntries(Object.keys(definitions).map(key => [key, value[key]]));
+  const config = Object.fromEntries(Object.entries(value).filter(([key]) => Object.hasOwn(definitions, key)));
   const invalid = [];
   if (config.METRICS_ENABLED && (config.METRICS_TOKEN.length<32 || /CHANGE_ME|placeholder/i.test(config.METRICS_TOKEN))) invalid.push('METRICS_TOKEN');
   if (config.METRICS_ENABLED && config.METRICS_PORT===config.PORT) invalid.push('METRICS_PORT');
@@ -103,7 +103,10 @@ function loadConfig(env = process.env) {
     if (config.SSH_ENABLED) invalid.push('SSH_ENABLED (experimental transport is development-only)');
     if (!origins.length) invalid.push('CORS_ORIGINS');
   }
-  if (config.DB_SSL_CA_FILE && !fs.existsSync(config.DB_SSL_CA_FILE)) invalid.push('DB_SSL_CA_FILE');
+  if (config.DB_SSL_CA_FILE) {
+    try { readDatabaseCa(config.DB_SSL_CA_FILE); }
+    catch { invalid.push('DB_SSL_CA_FILE'); }
+  }
   if (invalid.length) throw new Error(`Invalid configuration keys: ${[...new Set(invalid)].join(', ')}`);
   const oidcProviders=require('./services/oidc-config').loadProviders(config.OIDC_PROVIDERS_FILE,env);
   if (oidcProviders.length && (!/^[0-9a-f]{64}$/i.test(config.OIDC_STATE_KEY) || config.OIDC_STATE_KEY===config.JWT_SECRET || config.OIDC_STATE_KEY===config.JWT_REFRESH_SECRET)) throw new Error('Invalid configuration keys: OIDC_STATE_KEY');

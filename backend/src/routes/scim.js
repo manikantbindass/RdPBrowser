@@ -116,7 +116,7 @@ for (const kind of ['Users','Groups']) {
     });
     await send(req,res,kind,row,201);
   }));
-  for (const method of ['put','patch']) router[method]('/'+kind+'/:id',wrap(async(req,res)=>{
+  const update=wrap(async(req,res)=>{
     if (Object.keys(req.query).length) fail(400,'Unexpected mutation query','invalidValue');
     const row=await provisionMutation(req,async()=>{
       const current=await get(req,kind,true);
@@ -124,7 +124,7 @@ for (const kind of ['Users','Groups']) {
       const existing=await resource(req,kind,current);
       // Omit potentially large read-only memberships from a User replacement.
       if (kind==='Users') delete existing.groups;
-      const body=method==='put' ? {
+      const body=req.method==='PUT' ? {
         ...(existing.externalId && { externalId:existing.externalId }),
         ...(kind==='Users' && { active:existing.active }),
         ...req.body,
@@ -146,7 +146,8 @@ for (const kind of ['Users','Groups']) {
       return updated;
     });
     await send(req,res,kind,row);
-  }));
+  });
+  router.route('/'+kind+'/:id').put(update).patch(update);
   router.delete('/'+kind+'/:id',wrap(async(req,res)=>{
     await provisionMutation(req,async()=>{
       const row=await get(req,kind,true,true);
@@ -169,6 +170,13 @@ for (const kind of ['Users','Groups']) {
     res.status(204).end();
   }));
 }
+const groupPatchFields=new Map([['displayname','displayName'],['externalid','externalId']]);
+const userPatchFields=new Map([...groupPatchFields,['username','userName'],['active','active'],['name','name'],['emails','emails']]);
+const namePatchFields=new Map([
+  ['name.givenname','givenName'],['name.familyname','familyName'],['name.middlename','middleName'],
+  ['name.formatted','formatted'],['name.honorificprefix','honorificPrefix'],['name.honorificsuffix','honorificSuffix'],
+]);
+
 function patchResource(kind,existing,operations) {
   const result=structuredClone(existing);
   for (const operation of operations) {
@@ -192,13 +200,20 @@ function patchResource(kind,existing,operations) {
       }
       continue;
     }
-    const names=kind==='Users' ? { username:'userName',active:'active',displayname:'displayName',externalid:'externalId',name:'name',emails:'emails' } : { displayname:'displayName',externalid:'externalId' };
-    if (names[path]) {
-      if (op==='remove') { if (!['displayname','name'].includes(path)) fail(400,'Required or immutable attribute cannot be removed','mutability');delete result[names[path]]; }
-      else result[names[path]]=path==='active' && ['true','false'].includes(operation.value) ? operation.value==='true' : operation.value;
-    } else if (kind==='Users' && /^name\.(givenname|familyname|middlename|formatted|honorificprefix|honorificsuffix)$/.test(path)) {
-      const canonical={ givenname:'givenName',familyname:'familyName',middlename:'middleName',formatted:'formatted',honorificprefix:'honorificPrefix',honorificsuffix:'honorificSuffix' }[path.split('.')[1]];
-      result.name ||= {}; if (op==='remove') delete result.name[canonical];else result.name[canonical]=operation.value;
+    const field=(kind==='Users' ? userPatchFields : groupPatchFields).get(path);
+    const nameField=kind==='Users' ? namePatchFields.get(path) : undefined;
+    if (field) {
+      if (op==='remove') {
+        if (!['displayname','name'].includes(path)) fail(400,'Required or immutable attribute cannot be removed','mutability');
+        Reflect.deleteProperty(result,field);
+      } else {
+        const value=path==='active' && ['true','false'].includes(operation.value) ? operation.value==='true' : operation.value;
+        Reflect.set(result,field,value);
+      }
+    } else if (nameField) {
+      result.name ||= {};
+      if (op==='remove') Reflect.deleteProperty(result.name,nameField);
+      else Reflect.set(result.name,nameField,operation.value);
     } else if (kind==='Users' && path==='emails[type eq "work"].value' && op!=='remove') {
       const work=result.emails.find(email=>email.type==='work');if (!work) result.emails.push({ type:'work',value:operation.value });else work.value=operation.value;
     } else fail(400,'Unsupported or read-only attribute path','invalidPath');

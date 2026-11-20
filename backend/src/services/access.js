@@ -37,7 +37,7 @@ async function loadPolicy() {
   return { revision:row.revision,configuration:value };
 }
 function decide({ user,session,device,resource,policy,now=Date.now(),login=false }) {
-  const sensitivity=resources[resource];
+  const sensitivity=Object.hasOwn(resources,resource) ? Reflect.get(resources,resource) : undefined;
   const deny=reason => ({ allowed:false,reason,resource,sensitivity:sensitivity || 'high' });
   if (!sensitivity) return deny('RESOURCE_UNKNOWN');
   if (!user?.is_active || user.is_locked || !user.organization_active) return deny('IDENTITY_INACTIVE');

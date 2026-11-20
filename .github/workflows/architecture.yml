@@ -85,7 +85,7 @@ jobs:
       - run: npm ci --prefix backend --ignore-scripts
       - name: Static security analysis
         working-directory: backend
-        run: node node_modules/eslint/bin/eslint.js src --ext .js --config security.eslintrc.cjs --format json --output-file security-eslint.json --max-warnings 0
+        run: node node_modules/eslint/bin/eslint.js src --ext .js --config security.eslintrc.cjs --format json --output-file security-eslint.json --max-warnings 0 --report-unused-disable-directives
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
