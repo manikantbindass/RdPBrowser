@@ -81,6 +81,9 @@ jobs:
           done
           "$RUNNER_TEMP/rsx-scanners/gitleaks" dir "$RUNNER_TEMP/rsx-source" --config .gitleaks.toml --redact=100 --report-format json --report-path scan-results/gitleaks.json || result=1
           "$RUNNER_TEMP/rsx-scanners/trivy" fs --scanners vuln,misconfig --severity HIGH,CRITICAL --exit-code 1 --format json --output scan-results/trivy.json "$RUNNER_TEMP/rsx-source" || result=1
+          "$RUNNER_TEMP/rsx-scanners/trivy" fs --scanners misconfig --severity HIGH,CRITICAL --exit-code 1 --format json \
+            --tf-vars "$RUNNER_TEMP/rsx-source/infrastructure/digitalocean/terraform.tfvars.example" \
+            --output scan-results/terraform-example.json "$RUNNER_TEMP/rsx-source/infrastructure/digitalocean" || result=1
           exit "$result"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()

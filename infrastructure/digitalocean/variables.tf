@@ -40,11 +40,34 @@ variable "admin_cidrs" {
   }
 }
 variable "vpn_client_cidrs" {
-  type    = list(string)
-  default = ["0.0.0.0/0", "::/0"]
+  type = list(string)
   validation {
-    condition     = length(var.vpn_client_cidrs) > 0 && alltrue([for cidr in var.vpn_client_cidrs : can(cidrhost(cidr, 0))])
-    error_message = "Supply valid VPN client CIDRs."
+    condition     = length(var.vpn_client_cidrs) > 0 && alltrue([for cidr in var.vpn_client_cidrs : can(cidrhost(cidr, 0)) && try(tonumber(split("/", cidr)[1]), 0) > 0])
+    error_message = "Use explicit non-default network CIDRs for WireGuard clients."
+  }
+}
+
+variable "web_egress_cidrs" {
+  type = list(string)
+  validation {
+    condition     = length(var.web_egress_cidrs) > 0 && alltrue([for cidr in var.web_egress_cidrs : can(cidrhost(cidr, 0)) && try(tonumber(split("/", cidr)[1]), 0) > 0])
+    error_message = "Supply approved non-default CIDRs for HTTP and HTTPS destinations and deployment mirrors."
+  }
+}
+
+variable "resolver_egress_cidrs" {
+  type = list(string)
+  validation {
+    condition     = length(var.resolver_egress_cidrs) > 0 && alltrue([for cidr in var.resolver_egress_cidrs : can(cidrhost(cidr, 0)) && try(tonumber(split("/", cidr)[1]), 0) > 0])
+    error_message = "Supply approved non-default upstream DNS resolver CIDRs."
+  }
+}
+variable "ntp_egress_cidrs" {
+  type    = list(string)
+  default = []
+  validation {
+    condition     = alltrue([for cidr in var.ntp_egress_cidrs : can(cidrhost(cidr, 0)) && try(tonumber(split("/", cidr)[1]), 0) > 0])
+    error_message = "Supply approved non-default time server CIDRs."
   }
 }
 variable "scim_source_cidrs" {

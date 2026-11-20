@@ -4,7 +4,7 @@
 
 **Date:** 2026-11-19
 
-**Current decision:** **NOT READY — required security gates fail.**
+**Current decision:** **Stable release pending signing and platform acceptance.** The security fixes have local verification. Merge requires a passing hosted run for the final pull request commit.
 See the [final audit report](FINAL_AUDIT_REPORT.md) for evidence, severity and remediation owners.
 
 ## Merge gates
@@ -12,16 +12,16 @@ See the [final audit report](FINAL_AUDIT_REPORT.md) for evidence, severity and r
 | Gate | Status | Evidence / required action |
 | --- | --- | --- |
 | Latest `main` fetched and compared | PASS | `origin/main` at `0aa4b400aeb87c248632f7760db1be30ba4bac88`; no history rewritten. |
-| All required PR checks pass | **FAIL** | Run [44492760284](https://github.com/manikantbindass/RdPBrowser/actions/runs/44492760284): `dependency-and-secrets`, `backend / security-static`, and aggregate `Required quality gate` failed. Re-run only after remediating findings. |
-| Backend lint/contracts/PostgreSQL tests | PASS in hosted CI | Latest contracts/PostgreSQL job passed. Prior evidence records 156 unit and 48 integration tests. |
+| All required PR checks pass | Hosted confirmation required | The [pre-fix run](https://github.com/manikantbindass/RdPBrowser/actions/runs/44608385684) failed the two security jobs and their aggregate gate. Verify all jobs for the final PR commit on GitHub. |
+| Backend lint/contracts/PostgreSQL tests | PASS locally | After security remediation, 159 unit tests, 48 PostgreSQL integration tests and 9 admin browser tests passed. |
 | Desktop supported CI matrix | PASS for observed runners | Windows, Ubuntu 22.04, Intel macOS checks passed. Apple Silicon and signed install/upgrade acceptance remain open. |
 | Android CI analysis/tests | PASS in prior hosted CI | Local Flutter analysis passed. Local Flutter tests were blocked by the Windows native asset build hook. Managed physical device, signing and real tunnel acceptance still required. |
 | WireGuard isolated enforcement suite | PASS in hosted CI | Packet-level proof remains scoped to the isolated lab; repeat on release profiles and target OS devices. |
 | Compose deployment/recovery checks | PASS in hosted CI | Docker daemon unavailable locally; run local/non-production recovery drill before production. |
 | Container image security | PASS in hosted CI | Does not clear the separate backend static analysis or Terraform configuration findings. |
-| IaC security scan | **FAIL / unresolved** | Earlier detailed scan recorded five CRITICAL DigitalOcean firewall/misconfiguration findings. Latest syntax/plan validation is not a security scan. Clear and re-scan. |
-| Backend static security analysis | **FAIL / unresolved** | Prior scanner evidence: 52 findings (25 non-literal filesystem paths, 27 object injection). Review each and rerun. |
-| Dependency and secret scan | **FAIL / unresolved** | Latest job failed. Earlier scan reported 2 moderate backend, 1 moderate desktop dependency advisories and zero Gitleaks findings. Review current artifact, update/adjudicate, rerun. |
+| IaC security scan | PASS locally | Six mock plans passed. Trivy reported zero high or critical findings for the scoped DigitalOcean configuration with the example inputs. Verify the intended network paths in staging before applying. |
+| Backend static security analysis | PASS locally | Object lookups and file readers were hardened. Remaining dynamic filesystem calls have a line-specific explanation for the operator or test-fixture trust boundary. ESLint still uses a zero-warning threshold and rejects unused suppressions. |
+| Dependency and secret scan | npm PASS locally | Node watch replaces the vulnerable development dependency chain. Desktop `fflate` is locked to `0.8.3`. npm audit found zero vulnerabilities in all three projects. Confirm the full Trivy and Gitleaks jobs on GitHub. |
 | Secret/signing material | **NOT READY** | No production signing credentials are configured. Ensure no private keys enter the repository; issue protected, short-lived signing credentials before release. |
 | README/docs/assets | PASS locally | 210 relative links, 102 OpenAPI operation records, asset manifest/hashes/animation durations, PDF/PPTX structure passed `scripts/quality/verify_docs.py`. |
 | Screenshot authenticity | PARTIAL | Desktop and admin captures have provenance; Android screenshot is explicitly unavailable and was not fabricated. |
@@ -52,4 +52,4 @@ See the [final audit report](FINAL_AUDIT_REPORT.md) for evidence, severity and r
 
 ## Final disposition
 
-**Blocked:** do not merge or label as production-ready while security scans and required PR gate fail. PR #3 is ready for human review with these failures prominently documented; approval and a passing required gate remain prerequisites to merging.
+Merge after GitHub verifies the final PR commit and any configured review requirements are satisfied. Signed distribution and physical Android acceptance remain open.

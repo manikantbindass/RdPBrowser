@@ -8,7 +8,9 @@ Start with the previously documented sizing assumption of 2 vCPUs, 4 GiB RAM and
 
 - The default control edge binds HTTPS to the WireGuard IPv4 address, with Nginx as UID 101 and backend as UID 1001. The PostgreSQL network stays private.
 - Use a trusted full-chain certificate and internal DNS for the control hostname. Maintain separate operator SSH access and an off-host recovery channel. Add the optional SCIM TLS listener only for approved provisioner sources.
-- Restrict administrator and provisioner CIDRs. Review the host and cloud firewall together. Five unresolved public-ingress and broad-egress configuration findings remain in the delivery gate. The Terraform plans use mocks. No production cloud deployment is established by those tests.
+- Restrict administrator and provisioner CIDRs. Review the host and cloud firewall together. The DigitalOcean Terraform profile now requires explicit client source CIDRs for WireGuard and explicit destination CIDRs for web and DNS egress. It allows TCP 80 and 443 to approved web networks, TCP and UDP 53 to approved resolvers, and optional UDP 123 to approved time servers. The provider firewall denies other traffic by default. [DigitalOcean firewall rules](https://docs.digitalocean.com/products/networking/firewalls/how-to/configure-rules/)
+
+Before applying the Terraform change to an existing gateway, inventory client source networks, approved destinations, image registries, OS package mirrors, the identity provider, ACME endpoints, resolver upstreams, and any time servers. The reference Unbound configuration performs recursion, which contacts DNS servers across the Internet. For this allowlisted cloud profile, configure forwarding to the approved upstream resolvers. Verify intended paths in staging, including IPv6 and path MTU. This cloud profile assumes clients connect from known networks and browse destinations within the configured allowlist. Terraform tests use mock plans. [Terraform inputs](../infrastructure/digitalocean/terraform.tfvars.example)
 
 ## Initial setup
 

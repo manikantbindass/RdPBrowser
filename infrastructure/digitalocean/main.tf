@@ -50,23 +50,29 @@ resource "digitalocean_firewall" "remoteshield" {
       source_addresses = var.scim_source_cidrs
     }
   }
-  inbound_rule {
-    protocol         = "icmp"
-    source_addresses = ["0.0.0.0/0", "::/0"]
+  dynamic "outbound_rule" {
+    for_each = toset(["80", "443"])
+    content {
+      protocol              = "tcp"
+      port_range            = outbound_rule.value
+      destination_addresses = var.web_egress_cidrs
+    }
   }
-  outbound_rule {
-    protocol              = "tcp"
-    port_range            = "1-65535"
-    destination_addresses = ["0.0.0.0/0", "::/0"]
+  dynamic "outbound_rule" {
+    for_each = toset(["tcp", "udp"])
+    content {
+      protocol              = outbound_rule.value
+      port_range            = "53"
+      destination_addresses = var.resolver_egress_cidrs
+    }
   }
-  outbound_rule {
-    protocol              = "udp"
-    port_range            = "1-65535"
-    destination_addresses = ["0.0.0.0/0", "::/0"]
-  }
-  outbound_rule {
-    protocol              = "icmp"
-    destination_addresses = ["0.0.0.0/0", "::/0"]
+  dynamic "outbound_rule" {
+    for_each = length(var.ntp_egress_cidrs) > 0 ? [1] : []
+    content {
+      protocol              = "udp"
+      port_range            = "123"
+      destination_addresses = var.ntp_egress_cidrs
+    }
   }
 }
 
