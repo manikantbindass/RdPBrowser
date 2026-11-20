@@ -46,7 +46,7 @@ The latest published stable GitHub release currently visible is **`v2.4.0`**, pu
 
 [Open the GitHub release](https://github.com/manikantbindass/RdPBrowser/releases/tag/v2.4.0) · [Machine-readable release inventory and audit notes](docs/audit/phase16/release-assets-v2.4.0.json)
 
-There is no published iOS package in this release. The `v2.5.0-preview.4` source preview is not a GitHub Release and has no published release assets. Do not infer a supported platform or current-source compatibility from an asset filename. Inspect and verify downloaded binaries under your organization’s software intake process before use.
+There is no published iOS package. Verification builds for Windows, Linux, macOS, and Android use the [v2.5.0-preview.5 Actions run](https://github.com/manikantbindass/RdPBrowser/actions/runs/44673849388). The run shows which artifacts completed and how they were verified. The Android preview uses a disposable signer and a reserved test origin. Signed distribution still requires the protected [release process](docs/RELEASE_PROCESS.md).
 
 ## Motion and visual documentation
 
@@ -167,10 +167,10 @@ Android evidence covers builds, emulator boundary tests, and preview packaging. 
 
 [Full toolchain and platform requirements](docs/GETTING_STARTED.md)
 
-In a fresh checkout on the development branch:
+Start from a fresh checkout of `main`:
 
 ```sh
-git clone --branch codex/remoteshield-enterprise-completion https://github.com/manikantbindass/RdPBrowser.git
+git clone --branch main https://github.com/manikantbindass/RdPBrowser.git
 cd RdPBrowser
 node scripts/setup-dev.mjs
 npm ci --prefix backend
