@@ -22,7 +22,7 @@ See the [complete README](../README.md) for architecture, platform setup and scr
 
 ## Published application downloads
 
-The newest published stable release listed by GitHub is [v2.4.0](https://github.com/manikantbindass/RdPBrowser/releases/tag/v2.4.0), published 2026-04-18. The release tag is unsigned, and its desktop filenames say 2.2.4. This is a historical inventory, not a verified recommendation for current source. SHA-256 values identify bytes only. See the [complete platform and package list](../README.md#published-application-downloads) and [machine-readable release snapshot](audit/phase16/release-assets-v2.4.0.json). No iOS release is published; preview source `v2.5.0-preview.4` has no associated release assets.
+The newest published stable release listed by GitHub is [v2.4.0](https://github.com/manikantbindass/RdPBrowser/releases/tag/v2.4.0), published 2026-04-18. The release tag is unsigned, and its desktop filenames say 2.2.4. The [historical package inventory](../README.md#published-application-downloads) records hashes for the published files. No iOS release is published. Current verification builds use the [v2.5.0-preview.5 Actions run](https://github.com/manikantbindass/RdPBrowser/actions/runs/44673849388).
 
 **Avoid the v2.4.0 Android downloads.** The published ARM64 APK reports the example package `com.example.android` and a generic Flutter launcher. A corrected signed APK is pending.
 

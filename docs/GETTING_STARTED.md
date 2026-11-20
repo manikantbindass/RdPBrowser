@@ -16,7 +16,7 @@ The Android APK minimum is API 26. Evidence for API 36 comes from an emulator. R
 ## Start the loopback stack
 
 ```sh
-git clone --branch codex/remoteshield-enterprise-completion https://github.com/manikantbindass/RdPBrowser.git
+git clone --branch main https://github.com/manikantbindass/RdPBrowser.git
 cd RdPBrowser
 node scripts/setup-dev.mjs
 npm ci --prefix backend
