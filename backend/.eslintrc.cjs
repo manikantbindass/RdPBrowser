@@ -5,6 +5,8 @@ module.exports = {
     jest: true,
   },
   extends: ['eslint:recommended'],
+  plugins: ['security'],
+  overrides: [{ files:['src/operations/public/*.js'],env:{browser:true,node:false,jest:false} }],
   parserOptions: {
     ecmaVersion: 2022,
     sourceType: 'commonjs',

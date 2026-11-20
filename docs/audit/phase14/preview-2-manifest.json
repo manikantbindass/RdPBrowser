@@ -1,0 +1,109 @@
+{
+  "tag": "v2.5.0-preview.2",
+  "version": "2.5.0",
+  "channel": "preview",
+  "androidCode": 2050002,
+  "schemaVersion": 1,
+  "commit": "6389ceac3b529e7d6a3b986befd485092e680f84",
+  "runId": 44364433363,
+  "runAttempt": 1,
+  "signing": "verification-only",
+  "artifacts": [
+    {
+      "name": "RemoteShield-v2.5.0-preview.2-android-arm64-v8a.apk",
+      "target": "android",
+      "bytes": 18279528,
+      "sha256": "a76d47e7c51a6345b9bd9542d56b78fa6d674e19b539a392d7f3edab48075e30"
+    },
+    {
+      "name": "RemoteShield-v2.5.0-preview.2-android-armeabi-v7a.apk",
+      "target": "android",
+      "bytes": 15759512,
+      "sha256": "c560087f59fe1f5cb7b1dbc5d55b85fefc0bc528078b97a247b98c8f81ec00c2"
+    },
+    {
+      "name": "RemoteShield-v2.5.0-preview.2-android-universal.apk",
+      "target": "android",
+      "bytes": 50973966,
+      "sha256": "3b74cca55370586c40a4e8a828f94d8c4b1a923202c74442e8f9ec63ba1b632d"
+    },
+    {
+      "name": "RemoteShield-v2.5.0-preview.2-android-x86_64.apk",
+      "target": "android",
+      "bytes": 19630756,
+      "sha256": "75c8e13047f750d6001c8a9b410beb398f986d0e0c590dcf93fea86d3500f1bd"
+    },
+    {
+      "name": "RemoteShield-v2.5.0-preview.2-linux-x64.AppImage",
+      "target": "linux-x64",
+      "bytes": 107574464,
+      "sha256": "26a346a685598c3b325a02f0a77366e5236d1272382e34c3c072376bfba5ee99"
+    },
+    {
+      "name": "RemoteShield-v2.5.0-preview.2-linux-x64.deb",
+      "target": "linux-x64",
+      "bytes": 9074528,
+      "sha256": "7d52311cc9a1b7cf3b3421b947e200e467780e43643cbf5c55036754907d6094"
+    },
+    {
+      "name": "RemoteShield-v2.5.0-preview.2-linux-x64.tar.gz",
+      "target": "linux-x64",
+      "bytes": 115374048,
+      "sha256": "0cf09d57c0b25ad665e2b8c075573640de5207d5d78626c2e9cbcd705e2dbacf"
+    },
+    {
+      "name": "RemoteShield-v2.5.0-preview.2-macos-universal.dmg",
+      "target": "macos-universal",
+      "bytes": 20097612,
+      "sha256": "792c70dee9503ec36db3f7cb5b97f075babcf2a85ef8a380f6abfd0be6a3f0bd"
+    },
+    {
+      "name": "RemoteShield-v2.5.0-preview.2-windows-x64-setup.exe",
+      "target": "windows-x64",
+      "bytes": 4885890,
+      "sha256": "9e176459f45c110a21dccc46ac1690d6770ffeccde932c231043d8a7a77f67b5"
+    },
+    {
+      "name": "RemoteShield-v2.5.0-preview.2-windows-x64.msi",
+      "target": "windows-x64",
+      "bytes": 7589888,
+      "sha256": "0f0625a6a65cddbb3d9b0174799ee35c640f9b1291f524c2ec7f4f0fa8a9bf83"
+    },
+    {
+      "name": "backend-image.cdx.json",
+      "target": "containers",
+      "bytes": 406360,
+      "sha256": "c2320c4dd46609ddeea653af4a01453237ad1203eb24812e7e56143cca5c98eb"
+    },
+    {
+      "name": "edge-image.cdx.json",
+      "target": "containers",
+      "bytes": 113450,
+      "sha256": "de8975c20976cfa4bd54f0f082a7a25880234f72ed64f52ef0dabca1297e0df3"
+    },
+    {
+      "name": "image-identities.json",
+      "target": "containers",
+      "bytes": 267,
+      "sha256": "53eb98ea57dfa81581633816fedf5562bde0448444635cd711e334a38b42abfb"
+    },
+    {
+      "name": "remoteshield-backend-v2.5.0-preview.2-linux-amd64.tar.gz",
+      "target": "containers",
+      "bytes": 101985120,
+      "sha256": "1fbc72b5040c0bfdce101b36285e20610a148dd797ad41b9bd1337974db140c3"
+    },
+    {
+      "name": "remoteshield-edge-v2.5.0-preview.2-linux-amd64.tar.gz",
+      "target": "containers",
+      "bytes": 25332313,
+      "sha256": "a9b6769a95c684113c0039cce0d54216087e1b30d58f354b398c0aac7cf4f890"
+    },
+    {
+      "name": "source-lockfiles.cdx.json",
+      "target": "containers",
+      "bytes": 630436,
+      "sha256": "7cbb0b92ad187a0d5ff5c9104914101135a205680c522f24df16fef23d3b7a53"
+    }
+  ]
+}

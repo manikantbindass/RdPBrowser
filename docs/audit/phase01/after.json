@@ -1,0 +1,196 @@
+{
+  "capturedAt": "2026-11-09T03:11:13.327Z",
+  "label": "after",
+  "platform": "win32",
+  "head": "c5f7c81cd99aab7fcc31b011e66fbf95e531c525",
+  "gitStatus": "M backend/src/__tests__/app.test.js\n M backend/src/index.js\n M backend/src/routes/admin.js\n?? backend/src/__tests__/admin.test.js\n?? docs/PHASE01_PLAN.md\n?? docs/audit/\n?? scripts/",
+  "versions": {
+    "command": "node --version && npm --version && cargo --version && rustc --version",
+    "cwd": ".",
+    "exitCode": 0,
+    "signal": null,
+    "output": "v24.14.1\r\n11.11.0\ncargo 1.94.1 (29ea6fb6a 2026-03-24)\nrustc 1.94.1 (e408947bf 2026-03-25)\n"
+  },
+  "inputs": {
+    "backend/package.json": "fd968d498bdb357546650278f4e6b6620666c405797b883281707aec56cb7736",
+    "backend/package-lock.json": "e121a1d0967bd726675abb420741c7da80d45e6ccfa08713fe43c30d951371cd",
+    "desktop/package.json": "4ab1f0f1136e393841a40933af98ccbd87ccd282cad7ee0f09abe9a276dead96",
+    "desktop/package-lock.json": "eb8088f5699b3c5ca1a3d31f94eb13ed0065c603f9bf667cb9014259dc5536fa",
+    "desktop/src-tauri/Cargo.toml": "fdbbff4e67487a6df579ce53f07132f92e19168af938d1e4f38584dd229d1cbb",
+    "desktop/src-tauri/Cargo.lock": "0e1326e2310b9044523a987537bc56dcfccf84fa26191c3f5cca863606b1ceeb",
+    "android/pubspec.yaml": "e037cf3e259fe963c71bdf9dc0e1f6415c83a3b0c364d6f51ca09ceda24c5fa9"
+  },
+  "checks": [
+    {
+      "id": "source-inventory",
+      "durationMs": 164,
+      "command": "node scripts/audit-source.mjs",
+      "cwd": ".",
+      "exitCode": 1,
+      "signal": null,
+      "output": "{\n  \"scope\": \"Tracked current-tree text only; regex secret signatures are intentionally limited; no history or entropy scan.\",\n  \"missingDartImports\": [\n    {\n      \"file\": \"android/lib/screens/browser_screen.dart\",\n      \"line\": 11,\n      \"import\": \"bookmarks_screen.dart\"\n    },\n    {\n      \"file\": \"android/lib/screens/browser_screen.dart\",\n      \"line\": 12,\n      \"import\": \"history_screen.dart\"\n    },\n    {\n      \"file\": \"android/lib/screens/browser_screen.dart\",\n      \"line\": 13,\n      \"import\": \"downloads_screen.dart\"\n    },\n    {\n      \"file\": \"android/lib/screens/browser_screen.dart\",\n      \"line\": 14,\n      \"import\": \"settings_screen.dart\"\n    },\n    {\n      \"file\": \"android/lib/screens/browser_screen.dart\",\n      \"line\": 15,\n      \"import\": \"search_engine_screen.dart\"\n    }\n  ],\n  \"missingFiles\": [\n    \"backend/src/db/migrate.js\",\n    \"android/android/gradlew\",\n    \"android/android/gradlew.bat\",\n    \"android/android/gradle/wrapper/gradle-wrapper.jar\",\n    \"android/pubspec.lock\"\n  ],\n  \"nativeSources\": [],\n  \"secretCandidates\": []\n}\n"
+    },
+    {
+      "id": "backend-lint",
+      "durationMs": 719,
+      "command": "npm run lint",
+      "cwd": "backend",
+      "exitCode": 0,
+      "signal": null,
+      "output": "\n> @manikantbindass/remoteshield-x-backend@1.0.0 lint\n> eslint src/ --ext .js --max-warnings 0\n\n"
+    },
+    {
+      "id": "backend-tests",
+      "durationMs": 2338,
+      "command": "npm test -- --runInBand --detectOpenHandles",
+      "cwd": "backend",
+      "exitCode": 0,
+      "signal": null,
+      "output": "\n> @manikantbindass/remoteshield-x-backend@1.0.0 test\n> jest --coverage --testEnvironment node --runInBand --detectOpenHandles\n\nPASS src/__tests__/app.test.js\n  ● Console\n\n    console.log\n      info: ::ffff:127.0.0.1 - - [09/Nov/2026:03:11:16 +0000] \"GET /health HTTP/1.1\" 200 89 \"-\" \"-\" {\"timestamp\":\"2026-11-09T03:11:16.078Z\"}\n\n      at Console.log (node_modules/winston/lib/winston/transports/console.js:87:23)\n\n    console.log\n      info: ::ffff:127.0.0.1 - - [09/Nov/2026:03:11:16 +0000] \"POST /api/auth/login HTTP/1.1\" 401 31 \"-\" \"-\" {\"timestamp\":\"2026-11-09T03:11:16.131Z\"}\n\n      at Console.log (node_modules/winston/lib/winston/transports/console.js:87:23)\n\n    console.log\n      info: ::ffff:127.0.0.1 - - [09/Nov/2026:03:11:16 +0000] \"GET /api/nonexistent HTTP/1.1\" 404 27 \"-\" \"-\" {\"timestamp\":\"2026-11-09T03:11:16.146Z\"}\n\n      at Console.log (node_modules/winston/lib/winston/transports/console.js:87:23)\n\n    console.log\n      info: ::ffff:127.0.0.1 - - [09/Nov/2026:03:11:16 +0000] \"POST /api/auth/login HTTP/1.1\" 400 36 \"-\" \"-\" {\"timestamp\":\"2026-11-09T03:11:16.161Z\"}\n\n      at Console.log (node_modules/winston/lib/winston/transports/console.js:87:23)\n\n    console.log\n      info: ::ffff:127.0.0.1 - - [09/Nov/2026:03:11:16 +0000] \"POST /api/auth/login HTTP/1.1\" 400 66 \"-\" \"-\" {\"timestamp\":\"2026-11-09T03:11:16.174Z\"}\n\n      at Console.log (node_modules/winston/lib/winston/transports/console.js:87:23)\n\n    console.log\n      info: ::ffff:127.0.0.1 - - [09/Nov/2026:03:11:16 +0000] \"POST /api/auth/register HTTP/1.1\" 400 67 \"-\" \"-\" {\"timestamp\":\"2026-11-09T03:11:16.188Z\"}\n\n      at Console.log (node_modules/winston/lib/winston/transports/console.js:87:23)\n\n    console.log\n      info: ::ffff:127.0.0.1 - - [09/Nov/2026:03:11:16 +0000] \"GET /api/admin/stats HTTP/1.1\" 401 53 \"-\" \"-\" {\"timestamp\":\"2026-11-09T03:11:16.203Z\"}\n\n      at Console.log (node_modules/winston/lib/winston/transports/console.js:87:23)\n\n    console.log\n      info: ::ffff:127.0.0.1 - - [09/Nov/2026:03:11:16 +0000] \"GET /api/admin/sessions HTTP/1.1\" 401 53 \"-\" \"-\" {\"timestamp\":\"2026-11-09T03:11:16.218Z\"}\n\n      at Console.log (node_modules/winston/lib/winston/transports/console.js:87:23)\n\n    console.log\n      info: ::ffff:127.0.0.1 - - [09/Nov/2026:03:11:16 +0000] \"POST /api/proxy/navigate HTTP/1.1\" 401 53 \"-\" \"-\" {\"timestamp\":\"2026-11-09T03:11:16.235Z\"}\n\n      at Console.log (node_modules/winston/lib/winston/transports/console.js:87:23)\n\nPASS src/__tests__/admin.test.js\n----------------|---------|----------|---------|---------|----------------------------------------------------------------------------------\nFile            | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s                                                                \n----------------|---------|----------|---------|---------|----------------------------------------------------------------------------------\nAll files       |   29.82 |    14.55 |   18.86 |   30.49 |                                                                                  \n src            |   46.49 |    30.61 |      20 |   47.66 |                                                                                  \n  index.js      |   46.49 |    30.61 |      20 |   47.66 | 74-83,127-129,136-203,216-231,238                                                \n src/db         |       0 |        0 |       0 |       0 |                                                                                  \n  db.js         |       0 |        0 |       0 |       0 | 3-57                                                                             \n src/middleware |    27.9 |       20 |     100 |    27.9 |                                                                                  \n  auth.js       |      28 |    14.28 |     100 |      28 | 17-50                                                                            \n  vpnCheck.js   |   27.77 |    27.27 |     100 |   27.77 | 20-44                                                                            \n src/routes     |   25.46 |     8.14 |   14.81 |   26.29 |                                                                                  \n  admin.js      |   31.86 |    21.42 |   16.66 |   33.33 | 12,19-31,36-56,90,95-100,104-126,130-138,143-152,156-159,164-169,173-182,187-200 \n  auth.js       |   31.39 |      9.8 |   33.33 |   32.05 | 34-48,57-89,111-169,175-192,198-211                                              \n  laila.js      |   15.62 |        0 |       0 |   15.62 | 7-80                                                                             \n  proxy.js      |   12.06 |        0 |       0 |   12.96 | 12-90,97,106-122                                                                 \n----------------|---------|----------|---------|---------|----------------------------------------------------------------------------------\n\nTest Suites: 2 passed, 2 total\nTests:       12 passed, 12 total\nSnapshots:   0 total\nTime:        1.463 s, estimated 2 s\nRan all test suites.\n"
+    },
+    {
+      "id": "desktop-build",
+      "durationMs": 4457,
+      "command": "npm run build",
+      "cwd": "desktop",
+      "exitCode": 0,
+      "signal": null,
+      "output": "\n> remoteshield-x-desktop@2.2.4 build\n> tsc && vite build\n\n\u001b[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.\u001b[39m\nvite v5.4.21 building for production...\ntransforming...\n✓ 1790 modules transformed.\nrendering chunks...\ncomputing gzip size...\ndist/index.html                   0.84 kB │ gzip:   0.47 kB\ndist/assets/index-d_WjBhTP.css   22.80 kB │ gzip:   6.09 kB\n\n(!) Some chunks are larger than 500 kB after minification. Consider:\n- Using dynamic import() to code-split the application\n- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks\n- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.\ndist/assets/index-nmziK6O3.js   528.79 kB │ gzip: 146.48 kB\n✓ built in 2.18s\n"
+    },
+    {
+      "id": "rust-tests",
+      "durationMs": 7000,
+      "command": "cargo test --offline --manifest-path desktop/src-tauri/Cargo.toml",
+      "cwd": ".",
+      "exitCode": 0,
+      "signal": null,
+      "output": "   Compiling remoteshield-x v1.0.0 (D:\\Runtime Terror\\RDPBrowser\\desktop\\src-tauri)\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 6.24s\n     Running unittests src\\main.rs (desktop\\src-tauri\\target\\debug\\deps\\remoteshield_x-f26ef1cd8ce4b535.exe)\n\nrunning 0 tests\n\ntest result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\n\n"
+    },
+    {
+      "id": "rust-format",
+      "durationMs": 258,
+      "command": "cargo fmt --manifest-path desktop/src-tauri/Cargo.toml -- --check",
+      "cwd": ".",
+      "exitCode": 1,
+      "signal": null,
+      "output": "Diff in \\\\?\\D:\\Runtime Terror\\RDPBrowser\\desktop\\src-tauri\\src\\integrity.rs:1:\n #[allow(unused_imports)]\n-use sha2::{Sha256, Digest};\n+use sha2::{Digest, Sha256};\n #[allow(unused_imports)]\n use std::fs;\n \nDiff in \\\\?\\D:\\Runtime Terror\\RDPBrowser\\desktop\\src-tauri\\src\\integrity.rs:6:\n-\n /// In production, we hash the main binary and compare to a known-good hash.\n /// In debug/dev mode, this is skipped.\n pub fn verify_app_integrity() -> Result<bool, String> {\nDiff in \\\\?\\D:\\Runtime Terror\\RDPBrowser\\desktop\\src-tauri\\src\\integrity.rs:14:\n \n     #[cfg(not(debug_assertions))]\n     {\n-        let exe_path = std::env::current_exe()\n-            .map_err(|e| format!(\"Cannot locate exe: {e}\"))?;\n+        let exe_path = std::env::current_exe().map_err(|e| format!(\"Cannot locate exe: {e}\"))?;\n \n-        let bytes = fs::read(&exe_path)\n-            .map_err(|e| format!(\"Cannot read exe: {e}\"))?;\n+        let bytes = fs::read(&exe_path).map_err(|e| format!(\"Cannot read exe: {e}\"))?;\n \n         let mut hasher = Sha256::new();\n         hasher.update(&bytes);\nDiff in \\\\?\\D:\\Runtime Terror\\RDPBrowser\\desktop\\src-tauri\\src\\main.rs:1:\n // Prevents additional console window on Windows in release\n #![cfg_attr(not(debug_assertions), windows_subsystem = \"windows\")]\n \n-mod vpn;\n mod integrity;\n mod platform;\n+mod vpn;\n \n+use log::{error, info, warn};\n use std::sync::Arc;\n-use tauri::{WindowEvent, Emitter};\n+use tauri::{Emitter, WindowEvent};\n use tokio::sync::Mutex;\n-use log::{info, warn, error};\n \n pub struct AppState {\n     pub vpn_connected: Arc<Mutex<bool>>,\nDiff in \\\\?\\D:\\Runtime Terror\\RDPBrowser\\desktop\\src-tauri\\src\\main.rs:51:\n }\n \n #[tauri::command]\n-async fn set_auth_token(\n-    token: String,\n-    state: tauri::State<'_, AppState>,\n-) -> Result<(), String> {\n+async fn set_auth_token(token: String, state: tauri::State<'_, AppState>) -> Result<(), String> {\n     let mut t = state.auth_token.lock().await;\n     *t = Some(token);\n     Ok(())\nDiff in \\\\?\\D:\\Runtime Terror\\RDPBrowser\\desktop\\src-tauri\\src\\main.rs:75:\n     info!(\"RemoteShield X starting...\");\n \n     match integrity::verify_app_integrity() {\n-        Ok(true)  => info!(\"✅ Integrity check passed\"),\n+        Ok(true) => info!(\"✅ Integrity check passed\"),\n         Ok(false) => {\n             error!(\"❌ App integrity check FAILED\");\n             std::process::exit(1);\nDiff in \\\\?\\D:\\Runtime Terror\\RDPBrowser\\desktop\\src-tauri\\src\\main.rs:110:\n \n                     if !is_connected && was_connected {\n                         warn!(\"VPN disconnected\");\n-                        let _ = app_handle.emit(\"vpn_status\", serde_json::json!({\n-                            \"connected\": false,\n-                            \"message\": \"VPN disconnected — browser blocked for security\"\n-                        }));\n+                        let _ = app_handle.emit(\n+                            \"vpn_status\",\n+                            serde_json::json!({\n+                                \"connected\": false,\n+                                \"message\": \"VPN disconnected — browser blocked for security\"\n+                            }),\n+                        );\n                     } else if is_connected && !was_connected {\n                         info!(\"VPN reconnected\");\n-                        let _ = app_handle.emit(\"vpn_status\", serde_json::json!({\n-                            \"connected\": true,\n-                            \"message\": \"VPN connected\"\n-                        }));\n+                        let _ = app_handle.emit(\n+                            \"vpn_status\",\n+                            serde_json::json!({\n+                                \"connected\": true,\n+                                \"message\": \"VPN connected\"\n+                            }),\n+                        );\n                     }\n                     was_connected = is_connected;\n                 }\nDiff in \\\\?\\D:\\Runtime Terror\\RDPBrowser\\desktop\\src-tauri\\src\\main.rs:127:\n \n             Ok(())\n         })\n-        .on_window_event(|_window, event| {\n-            if let WindowEvent::DragDrop(_) = event {}\n-        })\n+        .on_window_event(|_window, event| if let WindowEvent::DragDrop(_) = event {})\n         .invoke_handler(tauri::generate_handler![\n             check_vpn_status,\n             request_navigate,\n"
+    },
+    {
+      "id": "rust-clippy",
+      "durationMs": 2332,
+      "command": "cargo clippy --offline --manifest-path desktop/src-tauri/Cargo.toml --all-targets -- -D warnings",
+      "cwd": ".",
+      "exitCode": 101,
+      "signal": null,
+      "output": "    Checking remoteshield-x v1.0.0 (D:\\Runtime Terror\\RDPBrowser\\desktop\\src-tauri)\nerror: unneeded `return` statement\n  --> src\\integrity.rs:12:9\n   |\n12 |         return Err(\"Dev mode — integrity check skipped\".to_string());\n   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n   |\n   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#needless_return\n   = note: `-D clippy::needless-return` implied by `-D warnings`\n   = help: to override `-D warnings` add `#[allow(clippy::needless_return)]`\nhelp: remove `return`\n   |\n12 -         return Err(\"Dev mode — integrity check skipped\".to_string());\n12 +         Err(\"Dev mode — integrity check skipped\".to_string())\n   |\n\nerror: could not compile `remoteshield-x` (bin \"remoteshield-x\") due to 1 previous error\nwarning: build failed, waiting for other jobs to finish...\nerror: could not compile `remoteshield-x` (bin \"remoteshield-x\" test) due to 1 previous error\n"
+    },
+    {
+      "id": "compose-config",
+      "durationMs": 463,
+      "command": "docker compose -f docker/docker-compose.yml config --quiet",
+      "cwd": ".",
+      "exitCode": 0,
+      "signal": null,
+      "output": "time=\"2026-11-09T08:41:31+05:30\" level=warning msg=\"D:\\\\Runtime Terror\\\\RDPBrowser\\\\docker\\\\docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion\"\n"
+    },
+    {
+      "id": "docker-engine",
+      "durationMs": 724,
+      "command": "docker info --format \"{{.ServerVersion}}\"",
+      "cwd": ".",
+      "exitCode": 1,
+      "signal": null,
+      "output": "\nfailed to connect to the docker API at npipe:////./pipe/dockerDesktopWindowsEngine; check if the path is correct and if the daemon is running: open //./pipe/dockerDesktopWindowsEngine: The system cannot find the file specified.\n"
+    },
+    {
+      "id": "flutter-version",
+      "durationMs": 44,
+      "command": "flutter --version",
+      "cwd": ".",
+      "exitCode": 1,
+      "signal": null,
+      "output": "'flutter' is not recognized as an internal or external command,\r\noperable program or batch file.\r\n"
+    },
+    {
+      "id": "flutter-analyze",
+      "durationMs": 40,
+      "command": "flutter analyze",
+      "cwd": "android",
+      "exitCode": 1,
+      "signal": null,
+      "output": "'flutter' is not recognized as an internal or external command,\r\noperable program or batch file.\r\n"
+    },
+    {
+      "id": "flutter-tests",
+      "durationMs": 37,
+      "command": "flutter test",
+      "cwd": "android",
+      "exitCode": 1,
+      "signal": null,
+      "output": "'flutter' is not recognized as an internal or external command,\r\noperable program or batch file.\r\n"
+    },
+    {
+      "id": "flutter-build",
+      "durationMs": 42,
+      "command": "flutter build apk --release --obfuscate --split-debug-info=build/debug-info --split-per-abi",
+      "cwd": "android",
+      "exitCode": 1,
+      "signal": null,
+      "output": "'flutter' is not recognized as an internal or external command,\r\noperable program or batch file.\r\n"
+    },
+    {
+      "id": "shell-syntax",
+      "durationMs": 457,
+      "command": "bash -n vpn-server/setup.sh",
+      "cwd": ".",
+      "exitCode": 1,
+      "signal": null,
+      "output": "<3>WSL (10) ERROR: CreateProcessEntryCommon:505: execvpe /bin/bash failed 2\n<3>WSL (10) ERROR: CreateProcessEntryCommon:508: Create process not expected to return\n"
+    },
+    {
+      "id": "backend-dependencies",
+      "durationMs": 1221,
+      "command": "npm ls --depth=0",
+      "cwd": "backend",
+      "exitCode": 0,
+      "signal": null,
+      "output": "@manikantbindass/remoteshield-x-backend@1.0.0 D:\\Runtime Terror\\RDPBrowser\\backend\n├── axios@1.15.0\n├── bcryptjs@2.4.3\n├── cors@2.8.6\n├── dotenv@16.6.1\n├── eslint@8.57.1\n├── express-rate-limit@7.5.1\n├── express@4.22.1\n├── geoip-lite@1.4.10\n├── helmet@7.2.0\n├── http-proxy-middleware@2.0.9\n├── ip-range-check@0.2.0\n├── jest@29.7.0\n├── joi@17.13.3\n├── jsonwebtoken@9.0.3\n├── morgan@1.10.1\n├── node-cron@3.0.3\n├── nodemon@3.1.14\n├── pg@8.20.0\n├── socket.io@4.8.3\n├── ssh2@1.17.0\n├── supertest@6.3.4\n├── uuid@9.0.1\n└── winston@3.19.0\n\n"
+    },
+    {
+      "id": "desktop-dependencies",
+      "durationMs": 523,
+      "command": "npm ls --depth=0",
+      "cwd": "desktop",
+      "exitCode": 0,
+      "signal": null,
+      "output": "remoteshield-x-desktop@2.2.4 D:\\Runtime Terror\\RDPBrowser\\desktop\n├── @react-three/fiber@8.18.0\n├── @tauri-apps/api@2.10.1\n├── @tauri-apps/cli@2.0.0\n├── @tauri-apps/plugin-http@2.0.0\n├── @tauri-apps/plugin-notification@2.0.0\n├── @tauri-apps/plugin-shell@2.0.0\n├── @tauri-apps/plugin-store@2.0.0\n├── @types/react-dom@18.3.7\n├── @types/react@18.3.28\n├── @types/three@0.184.0\n├── @vitejs/plugin-react@4.7.0\n├── lucide-react@1.8.0\n├── react-dom@18.3.1\n├── react@18.3.1\n├── socket.io-client@4.8.3\n├── three@0.184.0\n├── typescript@5.9.3\n├── vite@5.4.21\n├── xterm-addon-fit@0.8.0\n└── xterm@5.3.0\n\n"
+    },
+    {
+      "id": "rust-audit-tool",
+      "durationMs": 124,
+      "command": "cargo audit --version",
+      "cwd": ".",
+      "exitCode": 101,
+      "signal": null,
+      "output": "error: no such command: `audit`\n\nhelp: a command with a similar name exists: `add`\n\nhelp: view all installed commands with `cargo --list`\nhelp: find a package to install `audit` with `cargo search cargo-audit`\n"
+    },
+    {
+      "id": "actionlint-tool",
+      "durationMs": 39,
+      "command": "actionlint -version",
+      "cwd": ".",
+      "exitCode": 1,
+      "signal": null,
+      "output": "'actionlint' is not recognized as an internal or external command,\r\noperable program or batch file.\r\n"
+    },
+    {
+      "id": "secret-scanner-tool",
+      "durationMs": 41,
+      "command": "gitleaks version",
+      "cwd": ".",
+      "exitCode": 1,
+      "signal": null,
+      "output": "'gitleaks' is not recognized as an internal or external command,\r\noperable program or batch file.\r\n"
+    }
+  ]
+}

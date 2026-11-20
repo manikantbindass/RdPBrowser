@@ -1,5 +1,6 @@
 -- RemoteShield X — PostgreSQL Schema
--- Run via: psql -U remoteshield -d remoteshield_db -f schema.sql
+-- HISTORICAL initial schema only. Do not initialize/upgrade from this snapshot.
+-- Use npm run migrate, including all checksummed tenant migrations.
 
 -- ─── Extensions ──────────────────────────────────────────────────────────────
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";

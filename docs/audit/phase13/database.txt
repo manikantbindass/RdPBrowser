@@ -1,0 +1,29 @@
+waiting for server to start..... done
+server started
+postgres (PostgreSQL) 15.19
+
+> @manikantbindass/remoteshield-x-backend@1.0.0 test:integration
+> jest --runInBand --testPathIgnorePatterns=/__tests__/ --testMatch=**/integration/*.integration.js --coverage=false --json --outputFile=D:\Runtime Terror\RDPBrowser\.quality-db-isolated/database-jest.json
+
+PASS integration/governance.integration.js (28.137 s)
+PASS integration/detection.integration.js (24.991 s)
+  ● Console
+
+    console.info
+      {"event":"synthetic_load_evaluation","signals":2001,"scanMs":5505,"observationToIncidentMs":6336.873}
+
+      at Object.info (integration/detection.integration.js:190:11)
+
+PASS integration/enterprise.integration.js (26.137 s)
+PASS integration/architecture.integration.js (6.321 s)
+PASS integration/identity.integration.js (8.183 s)
+
+Test Suites: 5 passed, 5 total
+Tests:       48 passed, 48 total
+Snapshots:   0 total
+Time:        96.171 s, estimated 155 s
+Ran all test suites.
+Test results written to: ..\.quality-db-isolated\database-jest.json
+{"startTime":"2026-11-18T06:24:51.911Z","duration":58485.537,"expected":9,"skipped":0,"unexpected":0,"flaky":0}
+waiting for server to shut down........ done
+server stopped

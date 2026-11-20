@@ -1,0 +1,15 @@
+
+> test
+> node --test test/*.test.js
+
+✔ security chart scales measured totals and represents zero data (16.9963ms)
+✔ concurrent expired requests consume a rotating refresh token once (28.7426ms)
+✔ permission and conflict responses preserve the request ID and never rotate (1.0298ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 506.9346

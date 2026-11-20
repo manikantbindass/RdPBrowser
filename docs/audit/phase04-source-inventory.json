@@ -1,0 +1,38 @@
+{
+  "scope": "Tracked current-tree text only; regex secret signatures are intentionally limited; no history or entropy scan.",
+  "missingDartImports": [
+    {
+      "file": "android/lib/screens/browser_screen.dart",
+      "line": 12,
+      "import": "bookmarks_screen.dart"
+    },
+    {
+      "file": "android/lib/screens/browser_screen.dart",
+      "line": 13,
+      "import": "history_screen.dart"
+    },
+    {
+      "file": "android/lib/screens/browser_screen.dart",
+      "line": 14,
+      "import": "downloads_screen.dart"
+    },
+    {
+      "file": "android/lib/screens/browser_screen.dart",
+      "line": 15,
+      "import": "settings_screen.dart"
+    },
+    {
+      "file": "android/lib/screens/browser_screen.dart",
+      "line": 16,
+      "import": "search_engine_screen.dart"
+    }
+  ],
+  "missingFiles": [
+    "android/android/gradlew",
+    "android/android/gradlew.bat",
+    "android/android/gradle/wrapper/gradle-wrapper.jar",
+    "android/pubspec.lock"
+  ],
+  "nativeSources": [],
+  "secretCandidates": []
+}

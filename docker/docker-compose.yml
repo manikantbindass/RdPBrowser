@@ -1,102 +1,144 @@
-version: '3.9'
-
-# ─── Networks ─────────────────────────────────────────────────────────────────
-networks:
-  remoteshield:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.20.0.0/24
-
-# ─── Volumes ──────────────────────────────────────────────────────────────────
-volumes:
-  postgres_data:
-  nginx_logs:
-
-# ─── Services ─────────────────────────────────────────────────────────────────
+name: remoteshield
+x-logging: &service-logging
+  driver: local
+  options:
+    max-size: '10m'
+    max-file: '5'
 services:
-
-  # ── PostgreSQL Database ──────────────────────────────────────────────────────
   postgres:
-    image: postgres:15-alpine
-    container_name: remoteshield-db
+    image: postgres:15-alpine@sha256:aae6554de426ae1990f1a939ff183a0299146cf7142a6f4c379c3357af9cc2d8
     restart: unless-stopped
+    logging: *service-logging
+    mem_limit: 1536m
+    cpus: '1.5'
+    pids_limit: 256
+    stop_grace_period: 60s
     environment:
-      POSTGRES_DB:       remoteshield_db
-      POSTGRES_USER:     remoteshield
-      POSTGRES_PASSWORD: ${DB_PASS:-CHANGE_ME_IN_ENV}
+      POSTGRES_DB: remoteshield_db
+      POSTGRES_USER: remoteshield
+      POSTGRES_PASSWORD: ${DB_PASS:-}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./backend/src/db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
-    networks:
-      - remoteshield
+    networks: [database]
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U remoteshield -d remoteshield_db"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    ports:
-      # Do NOT expose to public — only internal
-      - "127.0.0.1:5432:5432"
-
-  # ── Backend API ──────────────────────────────────────────────────────────────
-  backend:
+      test: [CMD-SHELL, 'pg_isready -U remoteshield -d remoteshield_db']
+      interval: 3s
+      timeout: 3s
+      retries: 20
+  migrate:
+    image: ${BACKEND_IMAGE:-remoteshield-backend:local}
     build:
       context: ..
       dockerfile: docker/Dockerfile.backend
-    container_name: remoteshield-backend
-    restart: unless-stopped
+    command: [node, src/db/migrate.js]
+    restart: 'no'
+    logging: *service-logging
+    mem_limit: 512m
+    cpus: '1.0'
+    pids_limit: 128
+    security_opt: ['no-new-privileges:true']
+    cap_drop: [ALL]
     depends_on:
       postgres:
         condition: service_healthy
+    environment: &backend-environment
+      NODE_ENV: ${NODE_ENV:-production}
+      HOST: 0.0.0.0
+      PORT: '3000'
+      DATABASE_URL: postgresql://remoteshield:${DB_PASS:-}@postgres:5432/remoteshield_db
+      DB_RUNTIME_PASSWORD: ${DB_RUNTIME_PASS:-}
+      DB_SSL_MODE: ${DB_SSL_MODE:-disable}
+      DB_NETWORK_TRUSTED: ${DB_NETWORK_TRUSTED:-false}
+      JWT_SECRET: ${JWT_SECRET:-}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-}
+      VPN_REQUIRED: ${VPN_REQUIRED:-true}
+      VPN_SUBNET: ${VPN_SUBNET:-10.8.0.0/24}
+      VPN_SUBNETS: ${VPN_SUBNETS:-}
+      VPN_SOURCE_MODE: ${VPN_SOURCE_MODE:-tunnel}
+      VPN_EGRESS_IPS: ${VPN_EGRESS_IPS:-}
+      SERVER_PUBLIC_IP: ${SERVER_PUBLIC_IP:-127.0.0.1}
+      TRUST_PROXY_CIDRS: 172.20.0.10/32
+      CORS_ORIGINS: ${CORS_ORIGINS:?CORS_ORIGINS required}
+      DEVICE_BINDING_ENABLED: ${DEVICE_BINDING_ENABLED:-true}
+      SSH_ENABLED: ${SSH_ENABLED:-false}
+      ANOMALY_DETECTION_ENABLED: ${ANOMALY_DETECTION_ENABLED:-false}
+      DETECTION_INTERVAL_MS: ${DETECTION_INTERVAL_MS:-30000}
+      DETECTION_SIGNAL_RETENTION_DAYS: ${DETECTION_SIGNAL_RETENTION_DAYS:-7}
+      LOG_LEVEL: info
+      REGISTRATION_ENABLED: ${REGISTRATION_ENABLED:-false}
+      AUTH_RATE_LIMIT_MAX: ${AUTH_RATE_LIMIT_MAX:-20}
+      RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-100}
+      OIDC_STATE_KEY: ''
+      OIDC_PROVIDERS_FILE: ''
+      ANOMALY_ORGANIZATION_IDS: ${ANOMALY_ORGANIZATION_IDS:-00000000-0000-4000-8000-000000000001}
+    networks: [database]
+  backend:
+    image: ${BACKEND_IMAGE:-remoteshield-backend:local}
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.backend
+    restart: unless-stopped
+    logging: *service-logging
+    mem_limit: 768m
+    cpus: '1.0'
+    pids_limit: 128
+    stop_grace_period: 30s
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
     environment:
-      NODE_ENV:                production
-      PORT:                    3000
-      HOST:                    0.0.0.0
-      DATABASE_URL:            postgresql://remoteshield:${DB_PASS:-CHANGE_ME_IN_ENV}@postgres:5432/remoteshield_db
-      JWT_SECRET:              ${JWT_SECRET:-CHANGE_ME_64_CHAR_RANDOM_STRING}
-      JWT_EXPIRES_IN:          8h
-      JWT_REFRESH_SECRET:      ${JWT_REFRESH_SECRET:-CHANGE_ME_REFRESH_SECRET}
-      JWT_REFRESH_EXPIRES_IN:  7d
-      VPN_SUBNET:              10.8.0.0/24
-      SERVER_PUBLIC_IP:        ${SERVER_PUBLIC_IP:-YOUR_SERVER_STATIC_IP}
-      SERVER_VPN_IP:           10.8.0.1
-      DEVICE_BINDING_ENABLED:  "true"
-      MAX_SESSIONS_PER_USER:   1
-      ANOMALY_DETECTION_ENABLED: "true"
-      GEO_RESTRICTION_ENABLED: "false"
-      LOG_LEVEL:               info
-      DASHBOARD_ORIGIN:        https://${DOMAIN:-localhost}/admin
-    networks:
-      - remoteshield
-    expose:
-      - "3000"
-    volumes:
-      - ../backend/logs:/app/logs
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
-      interval: 15s
-      timeout: 5s
-      retries: 3
-
-  # ── Nginx Reverse Proxy ──────────────────────────────────────────────────────
+      <<: *backend-environment
+      DATABASE_URL: postgresql://remoteshield_app:${DB_RUNTIME_PASS:-}@postgres:5432/remoteshield_db
+      DB_RUNTIME_PASSWORD: ''
+      OIDC_STATE_KEY: ${OIDC_STATE_KEY:-}
+      OIDC_PROVIDERS_FILE: ${OIDC_PROVIDERS_FILE:-}
+      SCIM_ENABLED: ${SCIM_ENABLED:-false}
+      SCIM_PUBLIC_BASE_URL: ${SCIM_PUBLIC_BASE_URL:-}
+      SCIM_RATE_LIMIT_MAX: ${SCIM_RATE_LIMIT_MAX:-200}
+      VPN_PEER_STATUS_FILE: ${VPN_PEER_STATUS_FILE:-}
+      DB_POOL_MAX: ${DB_POOL_MAX:-20}
+      DEPLOYMENT_ENV: ${DEPLOYMENT_ENV:-development}
+      NODE_OPTIONS: --max-old-space-size=384
+    networks: [control, database]
+    expose: ['3000']
+    init: true
+    security_opt: ['no-new-privileges:true']
+    cap_drop: [ALL]
   nginx:
+    image: ${EDGE_IMAGE:-remoteshield-nginx:local}
     build:
       context: ..
       dockerfile: docker/Dockerfile.nginx
-    container_name: remoteshield-nginx
     restart: unless-stopped
+    logging: *service-logging
+    mem_limit: 128m
+    cpus: '0.25'
+    pids_limit: 64
+    stop_grace_period: 15s
     depends_on:
       backend:
         condition: service_healthy
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - nginx_logs:/var/log/nginx
-      - /etc/letsencrypt:/etc/letsencrypt:ro
-      - ../admin-dashboard:/var/www/remoteshield/admin-dashboard:ro
-    networks:
-      - remoteshield
+    ports: ['${CONTROL_BIND_IPV4:-10.8.0.1}:443:8443']
     environment:
-      DOMAIN: ${DOMAIN:-localhost}
+      DOMAIN: ${DOMAIN:?DOMAIN required}
+      NGINX_ENVSUBST_FILTER: DOMAIN
+    volumes:
+      - ./certs/tls.crt:/etc/nginx/certs/tls.crt:ro
+      - ./certs/tls.key:/etc/nginx/certs/tls.key:ro
+    security_opt: ['no-new-privileges:true']
+    cap_drop: [ALL]
+    tmpfs: ['/tmp:rw,noexec,nosuid,size=32m,mode=1777']
+    networks:
+      control:
+        ipv4_address: 172.20.0.10
+volumes:
+  postgres_data:
+networks:
+  database:
+    internal: true
+  control:
+    driver_opts:
+      com.docker.network.bridge.name: br-rsx-control
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24

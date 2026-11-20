@@ -1,0 +1,179 @@
+name: Versioned delivery
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+defaults:
+  run:
+    shell: bash
+concurrency:
+  group: delivery-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    name: Validate release tag and source
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      tag: ${{ steps.metadata.outputs.tag }}
+      version: ${{ steps.metadata.outputs.version }}
+      channel: ${{ steps.metadata.outputs.channel }}
+      androidCode: ${{ steps.metadata.outputs.androidCode }}
+      commit: ${{ steps.metadata.outputs.commit }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - id: metadata
+        run: |
+          python3 scripts/release/manifest.py version "$GITHUB_REF_NAME"
+          test "$(git rev-parse "$GITHUB_REF^{commit}")" = "$(git rev-parse HEAD)"
+          printf 'commit=%s\n' "$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+  admission:
+    name: Check release protections
+    needs: prepare
+    if: needs.prepare.outputs.channel != 'preview'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+      attestations: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_COMMIT: ${{ needs.prepare.outputs.commit }}
+          RELEASE_CHANNEL: ${{ needs.prepare.outputs.channel }}
+          RELEASE_VERSION: ${{ needs.prepare.outputs.version }}
+        run: bash scripts/release/protection.sh
+  quality:
+    needs: prepare
+    uses: ./.github/workflows/ci.yml
+  package-preview:
+    needs: prepare
+    if: needs.prepare.outputs.channel == 'preview'
+    uses: ./.github/workflows/delivery-package.yml
+    with:
+      tag: ${{ needs.prepare.outputs.tag }}
+      version: ${{ needs.prepare.outputs.version }}
+      channel: ${{ needs.prepare.outputs.channel }}
+      androidCode: ${{ needs.prepare.outputs.androidCode }}
+      commit: ${{ needs.prepare.outputs.commit }}
+  package-distribution:
+    needs: [prepare, admission, quality]
+    if: needs.prepare.outputs.channel != 'preview'
+    uses: ./.github/workflows/delivery-package.yml
+    with:
+      tag: ${{ needs.prepare.outputs.tag }}
+      version: ${{ needs.prepare.outputs.version }}
+      channel: ${{ needs.prepare.outputs.channel }}
+      androidCode: ${{ needs.prepare.outputs.androidCode }}
+      commit: ${{ needs.prepare.outputs.commit }}
+  assemble:
+    name: Assemble and attest complete payload
+    needs: [prepare, package-preview, package-distribution]
+    if: ${{ !cancelled() && (needs.package-preview.result == 'success' || needs.package-distribution.result == 'success') }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    env:
+      RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
+      SOURCE_COMMIT: ${{ needs.prepare.outputs.commit }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          pattern: payload-*-${{ github.run_attempt }}
+          path: downloaded
+      - run: |
+          python3 scripts/release/manifest.py collect downloaded release-dist "$RELEASE_TAG" "$SOURCE_COMMIT" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT"
+          python3 scripts/release/manifest.py verify release-dist "$RELEASE_TAG" "$SOURCE_COMMIT"
+      - uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
+        with:
+          subject-path: release-dist/release-manifest.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release-evidence-${{ env.RELEASE_TAG }}-${{ github.run_attempt }}
+          path: |
+            release-dist/release-manifest.json
+            release-dist/SHA256SUMS.txt
+            release-dist/*.cdx.json
+            release-dist/image-identities.json
+          if-no-files-found: error
+          retention-days: 90
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release-payload-${{ env.RELEASE_TAG }}-${{ github.run_attempt }}
+          path: release-dist/
+          compression-level: 0
+          retention-days: ${{ needs.prepare.outputs.channel == 'preview' && 30 || 90 }}
+          if-no-files-found: error
+  rehearsal:
+    name: Verify preview artifacts independently
+    needs: [prepare, assemble]
+    if: ${{ !cancelled() && needs.prepare.outputs.channel == 'preview' && needs.assemble.result == 'success' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      attestations: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
+      SOURCE_COMMIT: ${{ needs.prepare.outputs.commit }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: release-payload-${{ env.RELEASE_TAG }}-${{ github.run_attempt }}
+          path: release-dist
+      - run: |
+          python3 scripts/release/manifest.py verify release-dist "$RELEASE_TAG" "$SOURCE_COMMIT"
+          gh attestation verify release-dist/release-manifest.json --repo "$GITHUB_REPOSITORY" \
+            --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/delivery.yml" --source-ref "$GITHUB_REF"
+          for service in backend edge; do
+            docker load -i "release-dist/remoteshield-$service-$RELEASE_TAG-linux-amd64.tar.gz"
+            expected=$(jq -er --arg service "$service" '.[$service]' release-dist/image-identities.json)
+            test "$(docker image inspect "remoteshield-$service:$RELEASE_TAG" --format '{{.Id}}')" = "$expected"
+          done
+          printf '%s\n' 'Preview artifact verification passed. Quality jobs report their outcomes separately.' >> "$GITHUB_STEP_SUMMARY"
+  publish:
+    name: Publish verified release
+    needs: [prepare, admission, quality, assemble]
+    if: needs.prepare.outputs.channel != 'preview'
+    environment: release-publication
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    permissions:
+      contents: write
+      attestations: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
+      RELEASE_VERSION: ${{ needs.prepare.outputs.version }}
+      RELEASE_CHANNEL: ${{ needs.prepare.outputs.channel }}
+      SOURCE_COMMIT: ${{ needs.prepare.outputs.commit }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: release-payload-${{ env.RELEASE_TAG }}-${{ github.run_attempt }}
+          path: release-dist
+      - run: bash scripts/release/publish.sh

@@ -1,0 +1,77 @@
+# RemoteShield X network protection
+
+RemoteShield X uses two independent controls. The browser checks authentication, device state and top-level URL policy with the control plane. The operating system and WireGuard route packets and enforce the kill switch. Browser callbacks cannot establish protection for subresources, other apps or a device's alternate interfaces. The server's source check reports where one request arrived.
+
+## Supported topology
+
+| Component | Policy |
+| --- | --- |
+| Dedicated Linux gateway | IPv4 WireGuard underlay on a static address and UDP 51820. One key and one IPv4 /32 and IPv6 /128 per device. An IPv4-capable uplink is required. |
+| Tunnel and egress | Clients route both default prefixes. Gateway IPv4 and IPv6 use scoped masquerading. IPv6 Internet access requires a working IPv6 uplink. Without it, IPv6 traffic fails inside the tunnel. |
+| Forwarding | TCP 80/443 through the designated uplink. Private, link-local and multicast destinations, peer-to-peer forwarding and other ports are blocked. Add site-specific deny ranges for internal services on globally addressed networks. |
+| DNS | The profiles point at gateway resolvers `10.8.0.1` and `fd42:5253:5800::1`. The gateway accepts peer UDP and TCP 53 at those addresses and blocks forwarded DNS and DNS-over-TLS ports. Configure endpoint/browser policy to disable application-specific DoH or restrict approved resolvers. Generic HTTPS can carry DoH, VPNs or other application tunnels. HTTP/3 is blocked by the UDP egress policy. |
+| Default control plane | Compose publishes HTTPS on `10.8.0.1:443` only, with a dedicated `br-rsx-control` bridge. Gateway rules verify WireGuard ingress even after DNAT, Nginx replaces forwarding headers and Express trusts one configured edge. Use a certificate and a DNS A record pointing at the tunnel address. The default Compose edge is IPv4 inside the tunnel. |
+| Alternate control plane | Deploy a separate TLS edge restricted to the gateway's dedicated public egress addresses. Set the backend to `VPN_SOURCE_MODE=egress` and list exact IPv4/IPv6 addresses in `VPN_EGRESS_IPS`. The reference Compose/Nginx edge is configured for tunnel ingress. An egress deployment requires its own reviewed bind, edge ACL and network rules. |
+
+Run the gateway on a dedicated Linux machine. The nftables component only restricts WireGuard and control-edge paths. Maintain a host input firewall and cloud security policy that allow UDP 51820, limit administration to an out-of-band network, and avoid publishing the backend or PostgreSQL. Configure existing firewall chains to permit the intended WireGuard paths because a drop in another chain still applies. The 10.8.0.0/24 and ULA pools, bridge subnet, table ID and interfaces must be reserved for this installation. Treat the edge, gateway administrators, endpoint administrators and kernel as trusted. Source matching cannot attest device posture, gateway identity beyond TLS, or the path of another flow. An egress address shared with other hosts grants those hosts the same network admission.
+
+## Gateway deployment and legacy migration
+
+Install `bash`, `iproute2`, `wireguard-tools`, `nftables`, `unbound` and Python 3 using the distribution's package manager. Install the repository VPN files beneath `/opt/remoteshield` with directories and executable code writable only by root. The following commands assume a spare dedicated gateway and console access.
+
+```sh
+sudo bash /opt/remoteshield/vpn-server/setup.sh init 203.0.113.10
+sudo bash /opt/remoteshield/vpn-server/setup.sh up eth0
+sudo sysctl -w net.ipv4.ip_forward=1 net.ipv6.conf.all.forwarding=1
+```
+
+Use the actual static endpoint and uplink. Persist the two forwarding settings in a dedicated sysctl file. On an IPv6 uplink that learns its default route from router advertisements, configure the uplink's `accept_ra=2` deliberately before enabling forwarding and verify the resulting routes. Static underlay configuration is recommended for the Linux client profile. The gateway profile does not modify global firewall rules or install software.
+
+Include `vpn-server/wireguard/unbound.conf` in the system resolver configuration, configure the control hostname in internal DNS and ensure DNSSEC trust-anchor configuration for recursive Internet resolution. Validate with `unbound-checkconf` and start Unbound after `wg0` has both addresses. Allow the resolver's own upstream queries in the host firewall. Keep alternate resolvers out of managed profiles.
+
+Provision the real certificates before starting Compose. The production edge requires the WireGuard address before Compose can publish HTTPS. Use DNS-based certificate renewal or a separate reviewed ACME ingress. Existing deployments may need to recreate the control network so it uses `br-rsx-control`. Preserve the database volume.
+
+On the dedicated gateway, merge `"userland-proxy": false` and `"ip-forward-no-drop": true` into the existing Docker daemon configuration. Keep Docker's firewall integration enabled. This uses kernel DNAT and avoids a Docker-imposed forwarding policy that would override the gateway component. Maintain the host's firewall for other forwarding paths. Review any pre-existing forwarding drops, and permit only the WireGuard paths allowed by the gateway policy. Confirm the API observes the peer's assigned tunnel IP. Changing the tunnel bind requires synchronized changes to the gateway and Nginx allowlists. [Docker forwarding and firewall behavior](https://docs.docker.com/engine/network/packet-filtering-firewalls/)
+
+On systemd systems install `remoteshield-gateway.service` and create root-owned `/etc/remoteshield/gateway.env` with `UPLINK=eth0`. Wire the resolver and Compose deployment to start after the gateway, and test the ordering after reboot. Ensure firewall reloads preserve or reapply the RemoteShield tables. Keep a console available.
+
+The legacy installer changed host firewall and package state and generated shared profiles. Export the old public peer inventory, encrypted backups and active firewall rules. Use a maintenance window or parallel gateway, enroll devices with new keys, migrate DNS and test connectivity before removing the old service. Remove only the legacy firewall rules you can attribute to that deployment. Rotate credentials exposed by prior provisioning logs. The new installer refuses to replace an existing `wg0` or initialized server key.
+
+## Provision, distribute and revoke
+
+1. Verify the inventory device UUID and operator authorization in your existing enrollment process. On the device, generate its WireGuard private key in the approved WireGuard client, or on Linux run `umask 077; wg genkey > device.key; wg pubkey < device.key > device.pub`. Send the public key through an authenticated device-management channel. WireGuard credentials are separate from app session and Keystore device-proof keys.
+2. On the gateway, run `sudo python3 /opt/remoteshield/vpn-server/peerctl.py add DEVICE_UUID DEVICE_PUBLIC_KEY`. The registry allocates and persists unique addresses and applies the peer without restarting other peers. Run `profile DEVICE_UUID` to generate the public profile template, or add `--linux` for the Linux client. The template includes the gateway public key and an empty private-key placeholder.
+3. Deliver the template via an authenticated, integrity-protected channel bound to the device. Confirm the gateway public key separately or through an existing trusted device-management policy. Fill the private key locally and store the final config with root-only or platform equivalent permissions. Avoid email, shared QR codes, source control and application logs. Import using the platform's managed client. The gateway never needs the client's private key.
+4. Use `peerctl.py status` to compare live and stored peer keys and inspect handshake age. A recent handshake is an activity signal. Use `GET /api/v1/network/status` via TLS to verify the address observed by the API. Expect 403 outside the configured policy, `accepted` inside it, or `disabled` on an explicitly ungated development server. Do not log the response if addresses are confidential.
+5. Run `peerctl.py revoke DEVICE_UUID` on the gateway and revoke the app device/session through the control plane. These are separate operations. Verify the peer disappears and the app session is rejected. Revoked addresses are reserved and retired keys cannot be reused. The default /24 has 253 lifetime allocations per registry. Plan capacity and gateway migration before exhaustion.
+
+For device key rotation, generate a new local key, run `peerctl.py rotate DEVICE_UUID NEW_PUBLIC_KEY` and activate the new private key locally. The old key stops working during the cutover. A failed live update retains the desired state and attempts to take the gateway link down. If the link cannot be disabled, isolate the gateway at the uplink. An interrupted process between the durable write and the live update requires reconciliation. Check status after a failed or interrupted management operation. After correction run `peerctl.py sync`, bring the link up, and confirm the registry and live peers match.
+
+For a gateway key rotation, provision a parallel gateway with newly distributed, authenticated profiles and a distinct endpoint. Cut over and validate the clients before retiring the old gateway. A compromised gateway should be isolated first. Keep encrypted backups of the registry and server key, and account for revocations and rotations since the backup before bringing any restored interface online. If the durable state is unavailable, keep the gateway offline until an authoritative peer inventory is rebuilt. Never restore an old live peer list and assume revocations are preserved.
+
+## Kill switch and recovery by platform
+
+| Platform | Deployment requirement and limits |
+| --- | --- |
+| Linux | Root-owned `/etc/wireguard/wg0.conf` at mode 0600. Use `linux-client.sh up /etc/wireguard/wg0.conf ENDPOINT_IPV4`. The profile uses reserved firewall mark `0x525358`, routing table 5395288 and priority 11008. The firewall permits loopback and marked outer UDP only to the fixed IPv4 endpoint while the tunnel is down. Forwarded packets are blocked. Use a network configuration compatible with the kill switch, including static IPv4 on the underlay. No DHCP, captive portal access, LAN discovery or direct IPv6 application traffic is allowed by this profile. |
+| Windows | Use the official client with one peer, both default routes and its restrictive firewall setting. Configure independent managed firewall policy to cover shutdown, reboot and disabled-tunnel states. Verify behavior with a packet capture on the actual Windows build. |
+| Android | Use device or work-profile management to set WireGuard Always-on VPN and Block connections without VPN. The browser checks local routing candidates and the backend gate. A work-profile policy covers traffic in that profile. Verify coverage on the enrolled hardware, including work/personal profile boundaries. |
+| macOS | Import a managed WireGuard profile. Require approved OS or managed firewall constraints for fail-closed operation. Verify sleep/wake, explicit disconnect and reconnect. |
+
+For Linux boot enforcement, create root-owned `/etc/remoteshield/client.env` with `ENDPOINT_IPV4=...`, install both client units and enable them. Add a drop-in for the service that brings up the underlay, such as `systemd-networkd.service` or `NetworkManager.service`. Its `[Unit]` section should contain `Requires=remoteshield-client-firewall.service` and `After=remoteshield-client-firewall.service` so a firewall startup failure prevents that network manager from starting. Verify the actual boot path from a console, including early initramfs networking if enabled and any nftables reload that replaces the ruleset. The profile's DNS relies on the system `resolvconf` integration. Verify the resolver configuration and fallback behavior on the deployed distribution. Linux packet sockets, privileged processes and firewall changes are outside this profile's ordinary IP application boundary. ARP and some kernel IPv6 control traffic can appear on the underlay. [systemd startup dependencies](https://www.freedesktop.org/software/systemd/man/latest/systemd.unit.html)
+
+`linux-client.sh down` removes the tunnel and policy routes with the firewall retained. An endpoint outage leaves clients offline until the WireGuard handshake succeeds again. A resolver outage prevents new lookups while already resolved destinations may remain reachable. Check link state, handshakes, resolver health, the API source report and outside egress independently. For planned endpoint changes, distribute the new endpoint and firewall allowance together. Use console recovery. If an authorized operator deliberately removes the Linux kill switch, stop the client service and run `sudo nft delete table inet rsx_client`. This restores whatever routing and firewall the OS has and must be a deliberate decision.
+
+Run `sudo bash vpn-server/tests/lab.sh` on a disposable Linux guest with WireGuard kernel support and the dependencies listed in the network workflow. It creates private mount and network namespaces. [WireGuard namespaces](https://www.wireguard.com/netns/) · [WireGuard for Windows routing](https://git.zx2c4.com/wireguard-windows/about/docs/netquirk.md) · [Android Enterprise VPN](https://developer.android.com/work/dpc/network-telephony) · [Unbound configuration](https://www.nlnetlabs.nl/documentation/unbound/unbound.conf/)
+
+To exercise the actual Compose deployment, prepare the pinned images on a Linux Docker daemon with Internet access. Use a clean checkout and Docker Engine 29 with its containerd image store. Run these commands from the repository root.
+
+```sh
+docker compose --env-file docker/.env.example -f docker/docker-compose.yml pull postgres
+docker compose --env-file docker/.env.example -f docker/docker-compose.yml build backend nginx
+postgres_image=$(docker compose --env-file docker/.env.example -f docker/docker-compose.yml config --images | awk '/^postgres:/ {print; exit}')
+docker save -o /tmp/rsx-compose-images.tar "$postgres_image" remoteshield-backend:local remoteshield-nginx:latest
+sudo bash vpn-server/tests/compose-lab.sh /tmp/rsx-compose-images.tar
+```
+
+The deployment lab uses a second Docker daemon with a private Unix socket, a fresh PostgreSQL volume, a disposable TLS certificate and local Unbound records. It can run without external networking once the images are exported. It checks tunnel access, DNS resolution, forwarded source integrity, off-tunnel rejection and gateway recreation. Run a cold-boot capture and a failed-firewall startup test on the deployed client distribution. On each managed platform, also test suspend and reconnect, disable or stop the tunnel, trigger a DNS outage and confirm intended IPv6 behavior. Observe the physical interface or an external capture point independently of the browser. Verify production TLS and recursive resolver policy with the organization's real settings.

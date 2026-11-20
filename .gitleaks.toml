@@ -1,0 +1,88 @@
+# These exact SHA-256 lines were matched to public Git blobs.
+# See docs/audit/phase14/verified-public-hashes.json for the source of each digest.
+[extend]
+useDefault = true
+
+[[allowlists]]
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "line"
+paths = ['''(?:^|[\\/])docs[\\/]audit[\\/]phase02[\\/]verification\.json$''']
+regexes = [
+  '''^[[:space:]]*"backend/src/middleware/auth\.js": "d9784566d37a7152d8be31f08b21cd6f41ceffa9d319db5a94516f14cdbe31a3",?[[:space:]]*$''',
+  '''^[[:space:]]*"backend/src/routes/auth\.js": "9814cf952f6e69100a797849e9db55699d6dcb6159a0c2e6a4692419de6c6ffb",?[[:space:]]*$''',
+  '''^[[:space:]]*"contracts/API\.md": "b92225a2377f8aedfae72f36f9324c423de707ad30f71834dd6c5f866ee6202f",?[[:space:]]*$''',
+]
+
+[[allowlists]]
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "line"
+paths = ['''(?:^|[\\/])docs[\\/]audit[\\/]phase04[\\/]docker\-outage\.json$''']
+regexes = [
+  '''^[[:space:]]*"backend/src/routes/auth\.js": "81f08924b24548d947734c2e221f4fff35fadf59527af9a32015c7c962a35db9",?[[:space:]]*$''',
+  '''^[[:space:]]*"contracts/openapi\.json": "cfad4c82bb294ff32ddfefad1b4a3fead2bc6745cc2e1ae4c81b7008551c2a75",?[[:space:]]*$''',
+]
+
+[[allowlists]]
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "line"
+paths = ['''(?:^|[\\/])docs[\\/]audit[\\/]phase04[\\/]verification\.json$''']
+regexes = [
+  '''^[[:space:]]*"backend/src/routes/auth\.js": "81f08924b24548d947734c2e221f4fff35fadf59527af9a32015c7c962a35db9",?[[:space:]]*$''',
+  '''^[[:space:]]*"contracts/openapi\.json": "cfad4c82bb294ff32ddfefad1b4a3fead2bc6745cc2e1ae4c81b7008551c2a75",?[[:space:]]*$''',
+]
+
+[[allowlists]]
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "line"
+paths = ['''(?:^|[\\/])docs[\\/]audit[\\/]phase05[\\/]verification\.json$''']
+regexes = [
+  '''^[[:space:]]*"backend/src/__tests__/access\.test\.js": "4ae5a8c2049f7c3df8e22ba7d4e8c421194d3c6215978c356190b2778cd4c15b",?[[:space:]]*$''',
+  '''^[[:space:]]*"backend/src/__tests__/openapi\.test\.js": "83bc2e317259a6fc2ad475829d58df4213ee491e2a5b85da3c79a36e4c204a26",?[[:space:]]*$''',
+  '''^[[:space:]]*"backend/src/middleware/auth\.js": "677a55c6ae9b4762eb3bdcf2e8b810ca1b33fe41253dc7f060f0806e438ee21a",?[[:space:]]*$''',
+  '''^[[:space:]]*"backend/src/routes/auth\.js": "f04458ba3c7bb21750d4aa9f9844e0297b0fa45a6974e268be7cbb6d90c017fa",?[[:space:]]*$''',
+  '''^[[:space:]]*"backend/src/services/access\.js": "fd2564e8ac8fdd5315e2aecd42c93ebe297e04c5ddb828b0b1df2cb0a59d8546",?[[:space:]]*$''',
+  '''^[[:space:]]*"backend/src/validate\-openapi\.js": "5e49e47a987c6784c1a1a45e27bb45924fc8d7f7e80cebc4d801fe29b93e172d",?[[:space:]]*$''',
+  '''^[[:space:]]*"contracts/openapi\.json": "5dfbbe3d8e47b8d8193ba47345f3ca951bfc69a36ab13b9f8a880c07d58645e2",?[[:space:]]*$''',
+  '''^[[:space:]]*"scripts/build\-openapi\.cjs": "f3626d892b1c442a5c1cae13c9ccde6d90d8ee16f8c67b9308c759f52ffc2903",?[[:space:]]*$''',
+  '''^[[:space:]]*"scripts/scan\-backend\-secrets\.mjs": "ca58e250dafe20a846d8f2cfdc7de55e75791f35ccf02b9b7bc4ebc85364ef69",?[[:space:]]*$''',
+]
+
+[[allowlists]]
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "line"
+paths = ['''(?:^|[\\/])docs[\\/]audit[\\/]phase10[\\/]verification\.json$''']
+regexes = [
+  '''^[[:space:]]*"backend/src/routes/auth\.js": "44441d0620c5a097a4081f9cd3bd50710279b786217e3ef46d114acb70772d8d",?[[:space:]]*$''',
+  '''^[[:space:]]*"backend/src/services/access\.js": "7c1c8df4139338c848a39ee58eda9c3e0792071e83b52d078cfd3fc5219055fd",?[[:space:]]*$''',
+  '''^[[:space:]]*"contracts/openapi\.json": "bf0d305cd3bd36fb10eb69fc3a92d2b87d4d444e985f410f2e4b5c186330a694",?[[:space:]]*$''',
+  '''^[[:space:]]*"scripts/build\-openapi\.cjs": "da10235a9010358bdaf841c5c40eb4348d9d5288ee1d5a4f5c751d433cbdd6bc",?[[:space:]]*$''',
+]
+
+[[allowlists]]
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "line"
+paths = ['''(?:^|[\\/])docs[\\/]audit[\\/]phase11[\\/]verification\.json$''']
+regexes = [
+  '''^[[:space:]]*"admin\-dashboard/api\.js": "5d3cafb8c231746808568470d04b6b01decd494679ba43f887cf179aba60f094",?[[:space:]]*$''',
+  '''^[[:space:]]*"backend/src/middleware/auth\.js": "03261d53e95f6ee229881b7fd9abb612b437df95a95021654b8c9751122e1eb7",?[[:space:]]*$''',
+  '''^[[:space:]]*"backend/src/routes/auth\.js": "06fa648a3da5e9ca3c30a1aa4050b9a0de23c0d029ad84dcc213b94a89941135",?[[:space:]]*$''',
+  '''^[[:space:]]*"backend/src/services/access\-reviews\.js": "a0e9eaa32af2696607b686a9297966a9bc52226d03b404a546bf7075737b701e",?[[:space:]]*$''',
+  '''^[[:space:]]*"backend/src/services/access\.js": "6724732dfcd1a6b04ba4c539c9f5314c8af934056ffd0f07142a466ebd623759",?[[:space:]]*$''',
+  '''^[[:space:]]*"contracts/openapi\.json": "4ff60bb639db2cc5e51335f2345b85b859c6391862afbc9677d43d34d921c9b9",?[[:space:]]*$''',
+  '''^[[:space:]]*"scripts/build\-openapi\.cjs": "063c4ea366575696a204ae29e3549ddd321a7630bda0a1998cb72233c5f047de",?[[:space:]]*$''',
+]
+
+[[allowlists]]
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "line"
+paths = ['''(?:^|[\\/])docs[\\/]audit[\\/]phase12[\\/]input\-hashes\.json$''']
+regexes = [
+  '''^[[:space:]]*"backend/src/services/secret\-files\.js": "1b2b7d9b5e231e82f98cc14b1d172f5d7bcf884c194426f49b40bc57e2dd505c",?[[:space:]]*$''',
+]

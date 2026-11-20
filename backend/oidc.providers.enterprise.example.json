@@ -1,0 +1,30 @@
+[
+  {
+    "id": "okta",
+    "kind": "okta",
+    "requireActivation": true,
+    "organizationId": "00000000-0000-4000-8000-000000000001",
+    "issuer": "https://your-okta-organization.example.invalid",
+    "clientId": "REPLACE_WITH_OKTA_WEB_APP_CLIENT_ID",
+    "clientSecretEnv": "RSX_OKTA_CLIENT_SECRET",
+    "redirectUri": "https://control.example.invalid/api/v1/auth/oidc/okta/callback",
+    "provisioningSubjectClaim": "none",
+    "mfaAcrValues": [],
+    "mfaAmrValues": [],
+    "maxAuthenticationAgeSeconds": 3600
+  },
+  {
+    "id": "entra",
+    "kind": "entra",
+    "requireActivation": true,
+    "organizationId": "00000000-0000-4000-8000-000000000001",
+    "issuer": "https://login.microsoftonline.com/00000000-0000-4000-8000-000000000002/v2.0",
+    "clientId": "REPLACE_WITH_ENTRA_APPLICATION_CLIENT_ID",
+    "clientSecretEnv": "RSX_ENTRA_CLIENT_SECRET",
+    "redirectUri": "https://control.example.invalid/api/v1/auth/oidc/entra/callback",
+    "provisioningSubjectClaim": "none",
+    "mfaAcrValues": [],
+    "mfaAmrValues": [],
+    "maxAuthenticationAgeSeconds": 3600
+  }
+]

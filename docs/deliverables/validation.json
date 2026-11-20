@@ -1,0 +1,152 @@
+{
+  "status": "pass",
+  "markdown_files": 27,
+  "relative_links_checked": 214,
+  "broken_links": 0,
+  "broken_anchors": 0,
+  "openapi_operations": 102,
+  "catalogue_operations": 102,
+  "required_readme_assets": [
+    {
+      "path": "assets/readme/remoteshield-hero.gif",
+      "bytes": 289011,
+      "sha256": "46d119cd0590570c4dc3fdcaaa3f7d179ed71d0b1610aa1522047ef5f79168bf",
+      "dimensions": {
+        "width": 1280,
+        "height": 520,
+        "frames": 100,
+        "duration_ms": 7000,
+        "loop": 0
+      }
+    },
+    {
+      "path": "assets/readme/remoteshield-footer.gif",
+      "bytes": 174606,
+      "sha256": "3d0ed8334cbc951fdd7f3686ec7b0980f016c40ff2bd69f3b164b22941c410d1",
+      "dimensions": {
+        "width": 1280,
+        "height": 260,
+        "frames": 80,
+        "duration_ms": 4800,
+        "loop": 0
+      }
+    },
+    {
+      "path": "assets/readme/remoteshield-hero.webp",
+      "bytes": 34520,
+      "sha256": "e5f7f398b63ec9662e83fea9462b1fdbccab23b10caca2a1c0b77b27a5ad3cbf",
+      "dimensions": {
+        "width": 1280,
+        "height": 520,
+        "frames": 1
+      }
+    },
+    {
+      "path": "assets/readme/remoteshield-access-flow.gif",
+      "bytes": 238111,
+      "sha256": "854a72f2d6901219adb8ad68a27eb4a04727d894ec6345a89ac692697c7759d0",
+      "dimensions": {
+        "width": 1280,
+        "height": 560,
+        "frames": 80,
+        "duration_ms": 5600,
+        "loop": 0
+      }
+    },
+    {
+      "path": "assets/readme/remoteshield-access-flow.webp",
+      "bytes": 28228,
+      "sha256": "d1593d9f40d83285fd44fd6b9a954c459e2537be703eb70823d9aefc81b0a818",
+      "dimensions": {
+        "width": 1280,
+        "height": 560,
+        "frames": 1
+      }
+    },
+    {
+      "path": "assets/readme/remoteshield-network-boundary.gif",
+      "bytes": 199854,
+      "sha256": "a15882ff451ce922c7b800658210352b3def02b97943afae50aeb65873d32412",
+      "dimensions": {
+        "width": 1280,
+        "height": 620,
+        "frames": 80,
+        "duration_ms": 5600,
+        "loop": 0
+      }
+    },
+    {
+      "path": "assets/readme/remoteshield-network-boundary.webp",
+      "bytes": 28188,
+      "sha256": "528187629eba6e50a3be0f586b2addd79f7d5e0ceb0b2c71679ac21f63313051",
+      "dimensions": {
+        "width": 1280,
+        "height": 620,
+        "frames": 1
+      }
+    },
+    {
+      "path": "assets/readme/remoteshield-logo.svg",
+      "bytes": 1102,
+      "sha256": "94a3eeb018667ce99a1703e658942af631022c15fb0d16c554f469582b3793ca",
+      "dimensions": null
+    },
+    {
+      "path": "assets/readme/architecture.svg",
+      "bytes": 4800,
+      "sha256": "4813148e1dc656711e7805ad70cd20610908dc4352fd710d6b361e8318b7d389",
+      "dimensions": null
+    },
+    {
+      "path": "assets/readme/security-workflow.svg",
+      "bytes": 3904,
+      "sha256": "06b4986327063a855c196d6cc38fbbe13883c1f58fd734a734aeeb24cdb3ccef",
+      "dimensions": null
+    },
+    {
+      "path": "assets/readme/desktop-browser.png",
+      "bytes": 479093,
+      "sha256": "57d30992977664941efad71318b8b2edd5cfeb05d2b51eeaed853e73dfdadb04",
+      "dimensions": {
+        "width": 1536,
+        "height": 864,
+        "frames": 1
+      }
+    },
+    {
+      "path": "assets/readme/admin-dashboard.png",
+      "bytes": 146922,
+      "sha256": "bef0423245347e2d9edd93a6ebdbf9ae7a4613f9dc4b31b71b44614f1acf17f3",
+      "dimensions": {
+        "width": 1038,
+        "height": 838,
+        "frames": 1
+      }
+    },
+    {
+      "path": "assets/readme/device-management.png",
+      "bytes": 59465,
+      "sha256": "c3350cfdde849d3bad42b53d9fc43f46cc7018174093d47439661c03813b1699",
+      "dimensions": {
+        "width": 1280,
+        "height": 720,
+        "frames": 1
+      }
+    },
+    {
+      "path": "assets/readme/policy-management.png",
+      "bytes": 71012,
+      "sha256": "f99b8aba50c427f5c2f99fd26c8ddc7874000cc967e418ddd8e9630e03042d54",
+      "dimensions": {
+        "width": 1280,
+        "height": 853,
+        "frames": 1
+      }
+    }
+  ],
+  "architecture_mermaid_blocks": 2,
+  "android_screenshot": "not captured; blocker documented in SCREENSHOTS.md",
+  "pdf_bytes": 1240657,
+  "pptx_bytes": 842093,
+  "pptx_slides": 18
+}

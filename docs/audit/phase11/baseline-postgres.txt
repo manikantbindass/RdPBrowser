@@ -1,0 +1,21 @@
+
+> @manikantbindass/remoteshield-x-backend@1.0.0 test:integration
+> jest --runInBand --testPathIgnorePatterns=/__tests__/ --testMatch=**/integration/*.integration.js --coverage=false
+
+PASS integration/enterprise.integration.js (8.825 s)
+PASS integration/detection.integration.js (5.915 s)
+  ● Console
+
+    console.info
+      {"event":"synthetic_load_evaluation","signals":2001,"scanMs":1901,"observationToIncidentMs":1524.8}
+
+      at Object.info (integration/detection.integration.js:190:11)
+
+PASS integration/identity.integration.js
+PASS integration/architecture.integration.js
+
+Test Suites: 4 passed, 4 total
+Tests:       39 passed, 39 total
+Snapshots:   0 total
+Time:        19.664 s, estimated 22 s
+Ran all test suites.

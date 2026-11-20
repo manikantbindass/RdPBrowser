@@ -1,0 +1,11 @@
+Success! The configuration is valid.
+
+tests/topology.tftest.hcl... in progress
+  run "reject_noncanonical_ssh_wildcard"... pass
+  run "single_vps_defaults"... pass
+  run "optional_scim_ingress"... pass
+  run "reject_unrestricted_ssh"... pass
+tests/topology.tftest.hcl... tearing down
+tests/topology.tftest.hcl... pass
+
+Success! 4 passed, 0 failed.

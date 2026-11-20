@@ -1,0 +1,158 @@
+{
+  "capturedAt": "2026-11-10T05:14:47.937Z",
+  "head": "9548c049e6976017099e522b3bd9b1b3e267f879",
+  "inputs": {
+    "backend/.env.example": "2c6d804a0f793ea18a2c7989bd555be504e27f3ce190ae4ebdbf5bd44bfa06f5",
+    "backend/.env.production.example": "d37fe767cce339c28b8eedeeee6e1dea5a01c0fb12cca9c46826b3ca400edab8",
+    "backend/.eslintrc.cjs": "592320a2d593847ba19c5d7a93b0603665f647811cdee9e2fb7db219ff94d41a",
+    "backend/.npmrc": "8524bf709feac104497b6002d2ac024a67d43dbe16cc5e2715e1335dab474cda",
+    "backend/integration/architecture.integration.js": "0c2bfe805bbcf5570f43b855f5765d1ec62556bbfef0714d9bc8b8e19e562174",
+    "backend/package-lock.json": "a2c18c72bc1e4a63cffdb84f7b813326dd1f2ce59fb74837e1adb51ae8dfb5ef",
+    "backend/package.json": "161dc77c02c1a2dd87f768174fcdf179ef37660fdefa32f703a9b669a9e86061",
+    "backend/src/__tests__/admin.test.js": "0157b69a09af7fd7aeb33eccbec820a6b663a55cfdc33897768f5609e517bd4a",
+    "backend/src/__tests__/app.test.js": "981151b1564e8de18ca26daf7ecd8217e5878e91020cf0d4fd2a89dac802c81b",
+    "backend/src/__tests__/architecture.test.js": "a58bb8a10b0916f3129f9120dc53347ac4aef883b3e80a2f82161d9e55726f3f",
+    "backend/src/__tests__/runtime.test.js": "a784cac9aa01947294cc1bd321953ea60d9bbf8cea489ccb12c4f2378fd28bbb",
+    "backend/src/config.js": "c02867389c1d99463c10877bc308b4618ca66d60abffbd7113a0045ea292c177",
+    "backend/src/contracts.js": "1c44214c1710d31be3fa94c7d5f9690ab9b3d1bcba7d02f3062360891b340dad",
+    "backend/src/db/db.js": "9363992980a095715fc1fb9df38335f77a89f036e6fe0d315f59069cc975ac71",
+    "backend/src/db/migrate.js": "7edeccb7f0d438ba0ac9c9e6695c1d919949564f510ac3eb39562b5ca364038d",
+    "backend/src/db/migrations.js": "1fa68c8ee601d56f637bc26c9d159af01dde5ca258df1841b18fe14220412a01",
+    "backend/src/db/migrations/001_initial.sql": "675d5ea4956539f0a62b5824245413ffce9a46c51a7f9a49e02ce7c7df66b9f0",
+    "backend/src/db/schema.sql": "675d5ea4956539f0a62b5824245413ffce9a46c51a7f9a49e02ce7c7df66b9f0",
+    "backend/src/healthcheck.js": "496ad10ab6aebe9f7266c45ca5328be71490643e5e7ad382faf84c6f8c2d6619",
+    "backend/src/http/app.js": "189e8dab21113cc2f695b97ff2eed12cf1b40333284ae7e60131b31e4db05666",
+    "backend/src/http/errors.js": "82c6549af25a5ca8582407ea801bccba9000dcce95c4b9b12dc059d953a70ac5",
+    "backend/src/index.js": "f55975316c42c1f2c55256f7597a20cfff268db39c4a3a1810601471553d408e",
+    "backend/src/logging.js": "63fdca55f2d5f6c5b02e83f35643920e19f002e9312b10933af9dcf795f9d6cf",
+    "backend/src/middleware/auth.js": "d9784566d37a7152d8be31f08b21cd6f41ceffa9d319db5a94516f14cdbe31a3",
+    "backend/src/middleware/vpnCheck.js": "49640660b650dbc43ec1e2c95c887bb5d80a3b15b2bfdf4ad3a1e94ef10f5a84",
+    "backend/src/realtime/index.js": "8add9d434a77ab06e249b9099d7dca64412b141b936091fa9366786fbb405624",
+    "backend/src/realtime/ssh.js": "4ded7261a141e2006031b43899dac5e26c392227ed2167dff1110bc188b0c6af",
+    "backend/src/routes/admin.js": "9018bedf332240336f6bb334292d672929f8ed32682731a4f30d1bce966d98ab",
+    "backend/src/routes/auth.js": "9814cf952f6e69100a797849e9db55699d6dcb6159a0c2e6a4692419de6c6ffb",
+    "backend/src/routes/laila.js": "efb6bc48d6340acd1a9059f46fae1756f3cbe6583878970ca1e4f6264eaf58ba",
+    "backend/src/routes/proxy.js": "e040189e45f3a79692ae98aa6915d6de21a6ba3020881b3ef1da804c05dfe9b6",
+    "backend/src/runtime.js": "42d3698c22181d6b540da10e8dec9b5f799ddaa63bf45d31765be7cc017eb9e9",
+    "backend/src/validate-config.js": "f02de287aff9cdb32603bfdfefc635e5398b8984142dc95bd272f3e25891e610",
+    "contracts/API.md": "b92225a2377f8aedfae72f36f9324c423de707ad30f71834dd6c5f866ee6202f",
+    "contracts/README.md": "4795484e374da54ea4f05be0b637a916c43fc771df2b61471ff192148b6fdcbb",
+    "contracts/domain.schema.json": "a4bcffed014a30770d584c823e4c8413c21aeea1a6e0a9ca9b61bee48f61c328",
+    "contracts/http.schema.json": "e73ba916892820d51623ac49605c5c6200bb18bb7ef096a992d5a0f7af8208a4",
+    "desktop/src/App.tsx": "596aa68e85354daf0915ebac0e9c88bfb5ffaf1e045675320fa7fa0c5441884e",
+    "desktop/src/components/Browser.tsx": "555f2373841bdc85cfc479a5b8013c7827e25276f7539e3ac7b0a449ef40a9a6",
+    "desktop/src/components/CommandPalette.tsx": "3e2fae3e00ca240670b66e94d11aa4b2d1e31b86323fba509c2c7aeda707268a",
+    "desktop/src/components/LailaSearch.tsx": "0c0b74c78a743a08a743132894ebfa0ac27c3e065f933d4b318400db09710067",
+    "desktop/src/components/LoginScreen.tsx": "03d014cc8d41d3a0d705e7aa32840aaf14f7502a580295a2ee8905fc05846113",
+    "desktop/src/components/NativeDashboards.tsx": "c743e169d50b26133d0315c71a01bb8b5b444af94864e5a73762ad9641e3f137",
+    "desktop/src/components/ParticleBackground.tsx": "2e54d401928619d0a78e93084bfe3f41199c51881175937c93b1af4b5d16937b",
+    "desktop/src/components/RemoteDashboard.tsx": "4db87957ebe52391a4a15b67223a3e12dde99c1cb8f70e042e6610f3eedd4ad5",
+    "desktop/src/components/Sidebar.tsx": "2384f2deb6ca25b4ccfcdb206569f1576c989a5535682ea9f08a990d0db8f4af",
+    "desktop/src/components/TabBar.tsx": "cb9fc4fd805a9a0a399744e8466fa80fd5ebb4d2b75e955f9f2c718cf2bff2cb",
+    "desktop/src/components/Terminal.tsx": "0ccc886f4b3698ae96b9f130d64a02e34dd74c8144b4c8368020430993b17e59",
+    "desktop/src/components/VpnGuard.tsx": "d6fcd977e0592fd6b6f72ec0db894a0a2df28170af050845e4542e38b7ea9dc0",
+    "desktop/src/config.ts": "fcbcea7dfdd1bd32356e746783ed09b53a42dec1e9cce99b31ca95fd2f0e0542",
+    "desktop/src/index.css": "b026434626908fb44e51412f924cd6b3ff7a4cac4e76e0fbb31076bb72883612",
+    "desktop/src/main.tsx": "912d401e70f86ba66144e3eef75592d5da9a8e7b0a2891c7e788c72b22e77434",
+    "docker/.env.example": "7066be51504272bc9723d2c089b6e7ae43c7142687102c636aeeba7e22ab02d1",
+    "docker/Dockerfile.backend": "56fd05ad3f969644e1bba14c6f6352e99e8b2bb8fa0007a3de47a5804e2c4ce2",
+    "docker/Dockerfile.nginx": "3580e144f29da9d05bce386561fc121d01d6bddded34889f57113713235feecd",
+    "docker/compose.dev.yml": "994f41b674d1d8552ae1f352dadff9d8ea86d93ac033cb5b832b64b42c49f897",
+    "docker/docker-compose.yml": "1c83138b441ea27fdbe6e928ea15c52e89724b91a2522b604722df3581059de6",
+    "nginx/dev.conf": "b89d1f6a347c82197d9371c00e15db8905ad45fc68eaea4e0fbcf92f23267ad1",
+    "nginx/nginx.conf": "cfccd50803346038a185f71f09eb832dfc15ba8cdcd4667e861138b70b4533cb",
+    "nginx/nginx.conf.template": "20992b286d48a3021d0eec82af39ffb144498e47de90d265ddb0d775632b7354",
+    "scripts/audit-baseline.mjs": "25d0268bedcab8baa39eadb62cdc9644421ec6b31ba3685e753073d2fc9f6398",
+    "scripts/audit-dependencies.mjs": "9582b05dde98051055f71433c855a513b4ef117c783639d36d27d16c50bd4c22",
+    "scripts/audit-source.mjs": "3759e4effad3c9895ba94fc7ce969e5d236c1efaf69f871485602fa7a04ca20a",
+    "scripts/setup-dev.mjs": "79634860ac9f4911ab9de300ef4f69bcc0ff40c1af444d3493ddea7e263866bc",
+    "scripts/verify-phase02.mjs": "c05f5a79a0caec84ebd5f0ead13ff73386f899a4c37e55c9f4cd75266bd72ed1"
+  },
+  "checks": [
+    {
+      "id": "config",
+      "command": "npm run config:check --prefix backend",
+      "exitCode": 0,
+      "output": "\n> @manikantbindass/remoteshield-x-backend@1.0.0 config:check\n> node src/validate-config.js\n\n{\"valid\":true,\"environment\":\"development\"}\n"
+    },
+    {
+      "id": "lint",
+      "command": "npm run lint --prefix backend",
+      "exitCode": 0,
+      "output": "\n> @manikantbindass/remoteshield-x-backend@1.0.0 lint\n> eslint src/ --ext .js --max-warnings 0\n\n"
+    },
+    {
+      "id": "unit-contract",
+      "command": "npm test --prefix backend -- --runInBand --detectOpenHandles",
+      "exitCode": 0,
+      "output": "\n> @manikantbindass/remoteshield-x-backend@1.0.0 test\n> jest --coverage --testEnvironment node --runInBand --detectOpenHandles\n\nPASS src/__tests__/runtime.test.js\nPASS src/__tests__/architecture.test.js\nPASS src/__tests__/app.test.js\nPASS src/__tests__/admin.test.js\n---------------------|---------|----------|---------|---------|----------------------------------------------------------------------------------\nFile                 | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s                                                                \n---------------------|---------|----------|---------|---------|----------------------------------------------------------------------------------\nAll files            |   44.02 |    36.76 |   41.37 |   45.34 |                                                                                  \n src                 |   74.12 |    79.72 |   67.85 |   83.67 |                                                                                  \n  config.js          |   93.61 |     91.3 |     100 |   96.66 | 53                                                                               \n  contracts.js       |   94.44 |       75 |     100 |     100 | 12                                                                               \n  healthcheck.js     |       0 |        0 |       0 |       0 | 2-7                                                                              \n  index.js           |      60 |       50 |       0 |   81.81 | 10-11                                                                            \n  logging.js         |   91.66 |     87.5 |     100 |     100 | 6                                                                                \n  runtime.js         |   69.44 |       60 |    62.5 |      80 | 15-20                                                                            \n  validate-config.js |       0 |      100 |     100 |       0 | 2-4                                                                              \n src/db              |    28.4 |    28.57 |      35 |      30 |                                                                                  \n  db.js              |   16.66 |        0 |       0 |      25 | 9-26                                                                             \n  migrate.js         |       0 |        0 |       0 |       0 | 2-13                                                                             \n  migrations.js      |   43.75 |    58.82 |      70 |   41.17 | 21-43                                                                            \n src/http            |   96.34 |    87.17 |   93.75 |   98.55 |                                                                                  \n  app.js             |   96.92 |      100 |   91.66 |   98.11 | 39                                                                               \n  errors.js          |   94.11 |       80 |     100 |     100 | 12-24                                                                            \n src/middleware      |   53.48 |    33.33 |     100 |   53.48 |                                                                                  \n  auth.js            |      28 |    14.28 |     100 |      28 | 17-50                                                                            \n  vpnCheck.js        |   88.88 |      100 |     100 |   88.88 | 41-42                                                                            \n src/realtime        |   10.66 |        0 |    4.34 |   13.11 |                                                                                  \n  index.js           |   19.04 |        0 |    7.69 |   24.24 | 5-8,15-16,18-46                                                                  \n  ssh.js             |       0 |        0 |       0 |       0 | 2-54                                                                             \n src/routes          |   24.62 |      7.2 |   14.81 |    25.7 |                                                                                  \n  admin.js           |   31.86 |    21.42 |   16.66 |   33.33 | 12,19-31,36-56,90,95-100,104-126,130-138,143-152,156-159,164-169,173-182,187-200 \n  auth.js            |   28.91 |     6.97 |   33.33 |   30.26 | 29-43,52-84,103-161,167-184,190-203                                              \n  laila.js           |   15.62 |        0 |       0 |   15.62 | 7-80                                                                             \n  proxy.js           |   12.06 |        0 |       0 |   12.96 | 12-90,97,106-122                                                                 \n---------------------|---------|----------|---------|---------|----------------------------------------------------------------------------------\n\nTest Suites: 4 passed, 4 total\nTests:       42 passed, 42 total\nSnapshots:   0 total\nTime:        2.152 s, estimated 3 s\nRan all test suites.\n"
+    },
+    {
+      "id": "postgres-integration",
+      "command": "npm run test:integration --prefix backend",
+      "exitCode": 1,
+      "output": "\n> @manikantbindass/remoteshield-x-backend@1.0.0 test:integration\n> jest --runInBand --testPathIgnorePatterns=/__tests__/ --testMatch=**/integration/*.integration.js --coverage=false\n\nFAIL integration/architecture.integration.js\n  ● baseline migration preserves legacy rows, records checksums and is repeatable under concurrency\n\n    connect ECONNREFUSED 127.0.0.1:5432\n\n      25 |\n      26 | beforeAll(async () => {\n    > 27 |   await adminPool.query('CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\" WITH SCHEMA public');\n         |   ^\n      28 |   await adminPool.query('CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA public');\n      29 |   await adminPool.query(`CREATE SCHEMA ${schema}`);\n      30 |   pool = new Pool({ connectionString: url, options: `-c search_path=${schema},public`, connectionTimeoutMillis: 5000, statement_timeout: 15000 });\n\n      at node_modules/pg-pool/index.js:45:11\n      at Object.<anonymous> (integration/architecture.integration.js:27:3)\n\n  ● failed migration rolls back DDL and history and rejects checksum edits\n\n    connect ECONNREFUSED 127.0.0.1:5432\n\n      25 |\n      26 | beforeAll(async () => {\n    > 27 |   await adminPool.query('CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\" WITH SCHEMA public');\n         |   ^\n      28 |   await adminPool.query('CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA public');\n      29 |   await adminPool.query(`CREATE SCHEMA ${schema}`);\n      30 |   pool = new Pool({ connectionString: url, options: `-c search_path=${schema},public`, connectionTimeoutMillis: 5000, statement_timeout: 15000 });\n\n      at node_modules/pg-pool/index.js:45:11\n      at Object.<anonymous> (integration/architecture.integration.js:27:3)\n\n  ● runtime, legacy/versioned auth, SQL filtering and readiness use real PostgreSQL\n\n    connect ECONNREFUSED 127.0.0.1:5432\n\n      25 |\n      26 | beforeAll(async () => {\n    > 27 |   await adminPool.query('CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\" WITH SCHEMA public');\n         |   ^\n      28 |   await adminPool.query('CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA public');\n      29 |   await adminPool.query(`CREATE SCHEMA ${schema}`);\n      30 |   pool = new Pool({ connectionString: url, options: `-c search_path=${schema},public`, connectionTimeoutMillis: 5000, statement_timeout: 15000 });\n\n      at node_modules/pg-pool/index.js:45:11\n      at Object.<anonymous> (integration/architecture.integration.js:27:3)\n\n  ● realtime rejects missing/revoked tokens and accepts a live admin session\n\n    connect ECONNREFUSED 127.0.0.1:5432\n\n      25 |\n      26 | beforeAll(async () => {\n    > 27 |   await adminPool.query('CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\" WITH SCHEMA public');\n         |   ^\n      28 |   await adminPool.query('CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA public');\n      29 |   await adminPool.query(`CREATE SCHEMA ${schema}`);\n      30 |   pool = new Pool({ connectionString: url, options: `-c search_path=${schema},public`, connectionTimeoutMillis: 5000, statement_timeout: 15000 });\n\n      at node_modules/pg-pool/index.js:45:11\n      at Object.<anonymous> (integration/architecture.integration.js:27:3)\n\n\n  ● Test suite failed to run\n\n    connect ECONNREFUSED 127.0.0.1:5432\n\n      33 |   if (runtime) await runtime.stop();\n      34 |   if (pool) await pool.end();\n    > 35 |   try { await adminPool.query(`DROP SCHEMA IF EXISTS ${schema} CASCADE`); }\n         |         ^\n      36 |   finally { await adminPool.end(); }\n      37 | });\n      38 |\n\n      at node_modules/pg-pool/index.js:45:11\n      at Object.<anonymous> (integration/architecture.integration.js:35:9)\n\nTest Suites: 1 failed, 1 total\nTests:       4 failed, 4 total\nSnapshots:   0 total\nTime:        0.961 s, estimated 1 s\nRan all test suites.\n"
+    },
+    {
+      "id": "desktop-frontend",
+      "command": "npm run build --prefix desktop",
+      "exitCode": 0,
+      "output": "\n> remoteshield-x-desktop@2.2.4 build\n> tsc && vite build\n\n\u001b[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.\u001b[39m\nvite v5.4.21 building for production...\ntransforming...\n✓ 1791 modules transformed.\nrendering chunks...\ncomputing gzip size...\ndist/index.html                   0.84 kB │ gzip:   0.47 kB\n\n(!) Some chunks are larger than 500 kB after minification. Consider:\n- Using dynamic import() to code-split the application\n- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks\n- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.\ndist/assets/index-d_WjBhTP.css   22.80 kB │ gzip:   6.09 kB\ndist/assets/index-CxwSfFwG.js   529.03 kB │ gzip: 146.60 kB\n✓ built in 2.14s\n"
+    },
+    {
+      "id": "rust-format",
+      "command": "cargo fmt --manifest-path desktop/src-tauri/Cargo.toml -- --check",
+      "exitCode": 0,
+      "output": ""
+    },
+    {
+      "id": "rust-tests",
+      "command": "cargo test --locked --offline --manifest-path desktop/src-tauri/Cargo.toml",
+      "exitCode": 0,
+      "output": "   Compiling remoteshield-x v1.0.0 (D:\\Runtime Terror\\RDPBrowser\\desktop\\src-tauri)\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.69s\n     Running unittests src\\main.rs (desktop\\src-tauri\\target\\debug\\deps\\remoteshield_x-f26ef1cd8ce4b535.exe)\n\nrunning 1 test\ntest config::tests::validates_control_plane_origin ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\n\n"
+    },
+    {
+      "id": "rust-clippy",
+      "command": "cargo clippy --locked --offline --manifest-path desktop/src-tauri/Cargo.toml --all-targets -- -D warnings",
+      "exitCode": 0,
+      "output": "    Checking remoteshield-x v1.0.0 (D:\\Runtime Terror\\RDPBrowser\\desktop\\src-tauri)\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.63s\n"
+    },
+    {
+      "id": "compose",
+      "command": "docker compose --env-file docker/.env -f docker/docker-compose.yml -f docker/compose.dev.yml config --quiet",
+      "exitCode": 0,
+      "output": ""
+    },
+    {
+      "id": "nginx",
+      "command": "docker compose --env-file docker/.env -f docker/docker-compose.yml -f docker/compose.dev.yml exec -T nginx nginx -t",
+      "exitCode": 1,
+      "output": "failed to connect to the docker API at npipe:////./pipe/dockerDesktopLinuxEngine; check if the path is correct and if the daemon is running: open //./pipe/dockerDesktopLinuxEngine: The system cannot find the file specified.\n"
+    },
+    {
+      "id": "edge:/health",
+      "exitCode": 1,
+      "error": "Local edge unavailable"
+    },
+    {
+      "id": "edge:/ready",
+      "exitCode": 1,
+      "error": "Local edge unavailable"
+    },
+    {
+      "id": "edge:/api/v1/meta",
+      "exitCode": 1,
+      "error": "Local edge unavailable"
+    },
+    {
+      "id": "edge:/admin/",
+      "exitCode": 1,
+      "error": "Local edge unavailable"
+    },
+    {
+      "id": "edge:/socket.io/socket.io.js",
+      "exitCode": 1,
+      "error": "Local edge unavailable"
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+name: Network packet checks
+on:
+  workflow_call:
+permissions:
+  contents: read
+jobs:
+  wireguard-namespaces:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - run: |
+          sudo apt-get update
+          sudo apt-get install -y wireguard-tools nftables unbound dnsutils tcpdump nginx openssl
+      - run: sudo bash vpn-server/tests/lab.sh
+      - run: sudo bash scripts/test-scim-edge.sh

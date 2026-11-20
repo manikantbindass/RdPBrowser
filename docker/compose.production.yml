@@ -1,0 +1,64 @@
+# Production and staging use the same process, secret and filesystem boundaries.
+services:
+  postgres:
+    environment:
+      POSTGRES_PASSWORD: ''
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_owner_password
+    secrets: [db_owner_password]
+    read_only: true
+    tmpfs: ['/tmp:rw,noexec,nosuid,size=64m', '/var/run/postgresql:rw,nosuid,size=16m,uid=70,gid=70']
+    security_opt: ['no-new-privileges:true']
+  migrate:
+    environment:
+      DATABASE_URL: ''
+      DATABASE_URL_FILE: /run/secrets/db_owner_url
+      DB_RUNTIME_PASSWORD: ''
+      DB_RUNTIME_PASSWORD_FILE: /run/secrets/db_runtime_password
+      JWT_SECRET: ''
+      JWT_REFRESH_SECRET: ''
+    secrets: [db_owner_url,db_runtime_password]
+    read_only: true
+    tmpfs: ['/tmp:rw,noexec,nosuid,size=32m']
+  backend:
+    environment:
+      DATABASE_URL: ''
+      DATABASE_URL_FILE: /run/secrets/db_runtime_url
+      JWT_SECRET: ''
+      JWT_SECRET_FILE: /run/secrets/jwt_access
+      JWT_REFRESH_SECRET: ''
+      JWT_REFRESH_SECRET_FILE: /run/secrets/jwt_refresh
+      OIDC_STATE_KEY: ''
+      OIDC_STATE_KEY_FILE: /run/secrets/oidc_state
+      METRICS_ENABLED: 'true'
+      METRICS_TOKEN_FILE: /run/secrets/metrics_token
+      OPERATIONS_STATUS_DIRECTORY: /run/rsx-status
+      SHUTDOWN_GRACE_MS: '20000'
+      TRACE_SAMPLE_RATE: ${TRACE_SAMPLE_RATE:-0.1}
+    secrets: [db_runtime_url,jwt_access,jwt_refresh,oidc_state,metrics_token]
+    read_only: true
+    tmpfs: ['/tmp:rw,noexec,nosuid,size=32m']
+    ports: ['127.0.0.1:${OPERATIONS_PORT:-9091}:9090']
+    volumes:
+      - ${DEPLOYMENT_DIRECTORY:?Set the deployment directory}/status:/run/rsx-status:ro
+  nginx:
+    read_only: true
+    volumes: !override
+      - ${DEPLOYMENT_DIRECTORY:?Set the deployment directory}/certs/tls.crt:/etc/nginx/certs/tls.crt:ro
+      - ${DEPLOYMENT_DIRECTORY}/certs/tls.key:/etc/nginx/certs/tls.key:ro
+secrets:
+  db_owner_password:
+    file: ${DEPLOYMENT_DIRECTORY}/secrets/db-owner-password
+  db_owner_url:
+    file: ${DEPLOYMENT_DIRECTORY}/secrets/db-owner-url
+  db_runtime_password:
+    file: ${DEPLOYMENT_DIRECTORY}/secrets/db-runtime-password
+  db_runtime_url:
+    file: ${DEPLOYMENT_DIRECTORY}/secrets/db-runtime-url
+  jwt_access:
+    file: ${DEPLOYMENT_DIRECTORY}/secrets/jwt-access
+  jwt_refresh:
+    file: ${DEPLOYMENT_DIRECTORY}/secrets/jwt-refresh
+  oidc_state:
+    file: ${DEPLOYMENT_DIRECTORY}/secrets/oidc-state
+  metrics_token:
+    file: ${DEPLOYMENT_DIRECTORY}/secrets/metrics-token

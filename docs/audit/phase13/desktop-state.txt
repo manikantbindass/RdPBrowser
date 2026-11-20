@@ -1,0 +1,15 @@
+(node:43928) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///D:/Runtime%20Terror/RDPBrowser/desktop/src/browserState.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to D:\Runtime Terror\RDPBrowser\desktop\package.json.
+(Use `node.EXE --trace-warnings ...` to show where the warning was created)
+✔ address validation rejects active schemes, credentials and control characters (7.2055ms)
+✔ saved state is bounded, versioned and omits query credentials and fragments (4.2095ms)
+✔ P1363 conversion produces server-verifiable P-256 DER signatures (63.6921ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1490.4131

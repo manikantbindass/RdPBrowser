@@ -1,0 +1,623 @@
+{
+  "schemaVersion": 1,
+  "checks": {
+    "backend-lint": {
+      "id": "backend-lint",
+      "category": "static",
+      "argv": [
+        "C:\\Program Files\\nodejs\\node.EXE",
+        "backend/node_modules/eslint/bin/eslint.js",
+        "backend/src",
+        "--ext",
+        ".js",
+        "--max-warnings",
+        "0"
+      ],
+      "cwd": ".",
+      "prerequisites": [
+        "backend/node_modules"
+      ],
+      "timeout": 600,
+      "revision": "99ed1ce5b46592928a16b01f5244952d15a1d480",
+      "workingTreeSha256": "cfc9a1def0dab2f4152cfc17b7485b2e1ed198c5ff7dece6264911c2c656bcb8",
+      "startedAt": "2026-11-18T06:22:44.526327+00:00",
+      "status": "PASS",
+      "exitCode": 0,
+      "seconds": 21.148,
+      "log": "backend-lint.txt",
+      "logSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "capture": ".quality-backend-final",
+      "sourceLogSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    "backend-unit": {
+      "id": "backend-unit",
+      "category": "unit/auth/authorization/contracts",
+      "argv": [
+        "C:\\Program Files\\nodejs\\node.EXE",
+        "node_modules/jest/bin/jest.js",
+        "--runInBand",
+        "--detectOpenHandles",
+        "--json",
+        "--outputFile={out}/backend-jest.json"
+      ],
+      "cwd": "backend",
+      "prerequisites": [
+        "backend/node_modules"
+      ],
+      "timeout": 600,
+      "revision": "99ed1ce5b46592928a16b01f5244952d15a1d480",
+      "workingTreeSha256": "cfc9a1def0dab2f4152cfc17b7485b2e1ed198c5ff7dece6264911c2c656bcb8",
+      "startedAt": "2026-11-18T06:23:05.718933+00:00",
+      "status": "PASS",
+      "exitCode": 0,
+      "seconds": 44.599,
+      "log": "backend-unit.txt",
+      "logSha256": "bb1689cdbc5bcb6c1efab6f1116399f2a74eb1c62cf42df67968e3afe25ec9c2",
+      "capture": ".quality-backend-final",
+      "sourceLogSha256": "bb1689cdbc5bcb6c1efab6f1116399f2a74eb1c62cf42df67968e3afe25ec9c2"
+    },
+    "database": {
+      "id": "database",
+      "category": "migration/API/tenant/identity/e2e/accessibility",
+      "argv": [
+        "pwsh",
+        "-NoProfile",
+        "-File",
+        "scripts/quality/database.ps1"
+      ],
+      "cwd": ".",
+      "prerequisites": [],
+      "timeout": 600,
+      "revision": "aecd3ecef91359e49829ecd40a30e99b9aeb37e7",
+      "workingTreeSha256": "8ea142465faab24b2e626323ece01b56df4f2bb676b598fcf500178560292c28",
+      "startedAt": "2026-11-18T06:21:58.660867+00:00",
+      "status": "PASS",
+      "exitCode": 0,
+      "seconds": 236.526,
+      "log": "database.txt",
+      "logSha256": "f3f454c153443a8d4b0a5020b79e8786a720ec9fd13b41dcc5e844b22e1cd6e9",
+      "capture": ".quality-db-isolated",
+      "sourceLogSha256": "f3f454c153443a8d4b0a5020b79e8786a720ec9fd13b41dcc5e844b22e1cd6e9"
+    },
+    "admin-components": {
+      "id": "admin-components",
+      "category": "admin",
+      "argv": [
+        "C:\\Program Files\\nodejs\\node.EXE",
+        "--test",
+        "test/components.test.js"
+      ],
+      "cwd": "admin-dashboard",
+      "prerequisites": [],
+      "timeout": 600,
+      "revision": "9d4020ca9ff20a17c20d3d1552558dd96d439bbf",
+      "startedAt": "2026-11-17T15:02:15.239991+00:00",
+      "status": "PASS",
+      "exitCode": 0,
+      "seconds": 2.204,
+      "log": "admin-components.txt",
+      "logSha256": "c64a22ada17acf7aaa7eb52e869a52c0ee88df4d9551d22e8e16767fd7105302",
+      "capture": ".quality-results",
+      "sourceLogSha256": "c64a22ada17acf7aaa7eb52e869a52c0ee88df4d9551d22e8e16767fd7105302"
+    },
+    "desktop-state": {
+      "id": "desktop-state",
+      "category": "desktop",
+      "argv": [
+        "C:\\Program Files\\nodejs\\node.EXE",
+        "--experimental-strip-types",
+        "--test",
+        "tests/state.test.mjs"
+      ],
+      "cwd": "desktop",
+      "prerequisites": [],
+      "timeout": 600,
+      "revision": "9d4020ca9ff20a17c20d3d1552558dd96d439bbf",
+      "startedAt": "2026-11-17T15:02:17.447395+00:00",
+      "status": "PASS",
+      "exitCode": 0,
+      "seconds": 2.16,
+      "log": "desktop-state.txt",
+      "logSha256": "310904f56d53a39372d6552d86965ae3eb1b1bc8623fcd6d5fd28781768cd534",
+      "capture": ".quality-results",
+      "sourceLogSha256": "310904f56d53a39372d6552d86965ae3eb1b1bc8623fcd6d5fd28781768cd534"
+    },
+    "desktop-types": {
+      "id": "desktop-types",
+      "category": "desktop",
+      "argv": [
+        "C:\\Program Files\\nodejs\\node.EXE",
+        "node_modules/typescript/bin/tsc"
+      ],
+      "cwd": "desktop",
+      "prerequisites": [
+        "desktop/node_modules"
+      ],
+      "timeout": 600,
+      "revision": "9d4020ca9ff20a17c20d3d1552558dd96d439bbf",
+      "startedAt": "2026-11-17T15:10:59.054976+00:00",
+      "status": "PASS",
+      "exitCode": 0,
+      "seconds": 5.175,
+      "log": "desktop-types.txt",
+      "logSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "capture": ".quality-ui",
+      "sourceLogSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "desktop-build": {
+      "id": "desktop-build",
+      "category": "desktop",
+      "argv": [
+        "C:\\Program Files\\nodejs\\node.EXE",
+        "node_modules/vite/bin/vite.js",
+        "build"
+      ],
+      "cwd": "desktop",
+      "prerequisites": [
+        "desktop/node_modules"
+      ],
+      "timeout": 600,
+      "revision": "9d4020ca9ff20a17c20d3d1552558dd96d439bbf",
+      "startedAt": "2026-11-17T15:11:04.231905+00:00",
+      "status": "PASS",
+      "exitCode": 0,
+      "seconds": 4.714,
+      "log": "desktop-build.txt",
+      "logSha256": "d6b44a6e0f6c2c16e54657d16678b0c69b432e7651af2688f2674e2f41940664",
+      "capture": ".quality-ui",
+      "sourceLogSha256": "d6b44a6e0f6c2c16e54657d16678b0c69b432e7651af2688f2674e2f41940664"
+    },
+    "rust-format": {
+      "id": "rust-format",
+      "category": "rust",
+      "argv": [
+        "cargo",
+        "fmt",
+        "--",
+        "--check"
+      ],
+      "cwd": "desktop/src-tauri",
+      "prerequisites": [],
+      "timeout": 1200,
+      "revision": "9d4020ca9ff20a17c20d3d1552558dd96d439bbf",
+      "workingTreeSha256": "e7fe837d38533eb6d021c64b1ada38508ba0e75a17d495826b970189658c6acb",
+      "startedAt": "2026-11-18T06:07:12.310136+00:00",
+      "status": "PASS",
+      "exitCode": 0,
+      "seconds": 1.337,
+      "log": "rust-format.txt",
+      "logSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "capture": ".quality-rust-final",
+      "sourceLogSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    "rust-tests": {
+      "id": "rust-tests",
+      "category": "rust",
+      "argv": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline"
+      ],
+      "cwd": "desktop/src-tauri",
+      "prerequisites": [],
+      "timeout": 1200,
+      "revision": "9d4020ca9ff20a17c20d3d1552558dd96d439bbf",
+      "workingTreeSha256": "e7fe837d38533eb6d021c64b1ada38508ba0e75a17d495826b970189658c6acb",
+      "startedAt": "2026-11-18T06:07:13.662048+00:00",
+      "status": "PASS",
+      "exitCode": 0,
+      "seconds": 216.914,
+      "log": "rust-tests.txt",
+      "logSha256": "3b643dddecff0ba09b4fdeba190d45cf4c3f5e14837f58d4bfd945cf3f724dfc",
+      "capture": ".quality-rust-final",
+      "sourceLogSha256": "d30e665bf940f4345d074fb4e83e250759e65d043f00c9f1da25fd0f865ece4f"
+    },
+    "rust-clippy": {
+      "id": "rust-clippy",
+      "category": "rust",
+      "argv": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--offline",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "cwd": "desktop/src-tauri",
+      "prerequisites": [],
+      "timeout": 1200,
+      "revision": "9d4020ca9ff20a17c20d3d1552558dd96d439bbf",
+      "workingTreeSha256": "e7fe837d38533eb6d021c64b1ada38508ba0e75a17d495826b970189658c6acb",
+      "startedAt": "2026-11-18T06:10:50.594125+00:00",
+      "status": "PASS",
+      "exitCode": 0,
+      "seconds": 28.846,
+      "log": "rust-clippy.txt",
+      "logSha256": "9b9a5ff89dfaaf3024cf8ba9791042b3353f99c5c8fa702dc88976d1308cad01",
+      "capture": ".quality-rust-final",
+      "sourceLogSha256": "9b9a5ff89dfaaf3024cf8ba9791042b3353f99c5c8fa702dc88976d1308cad01"
+    },
+    "flutter-analyze": {
+      "id": "flutter-analyze",
+      "category": "android",
+      "argv": [
+        "pwsh",
+        "-NoProfile",
+        "-File",
+        "scripts/quality/android.ps1",
+        "analyze"
+      ],
+      "cwd": ".",
+      "prerequisites": [
+        ".local-tests/android-tools/flutter/bin/flutter.bat"
+      ],
+      "timeout": 1200,
+      "revision": "9d4020ca9ff20a17c20d3d1552558dd96d439bbf",
+      "startedAt": "2026-11-18T06:05:25.908788+00:00",
+      "status": "PASS",
+      "exitCode": 0,
+      "seconds": 86.435,
+      "log": "flutter-analyze.txt",
+      "logSha256": "3cb5b12703868aa7adfbe97fff9f9ec7301ff09383fd368c0ec15e276845f1b3",
+      "capture": ".quality-android-final",
+      "sourceLogSha256": "3cb5b12703868aa7adfbe97fff9f9ec7301ff09383fd368c0ec15e276845f1b3"
+    },
+    "flutter-test": {
+      "id": "flutter-test",
+      "category": "android",
+      "argv": [
+        "pwsh",
+        "-NoProfile",
+        "-File",
+        "scripts/quality/android.ps1",
+        "test"
+      ],
+      "cwd": ".",
+      "prerequisites": [
+        ".local-tests/android-tools/flutter/bin/flutter.bat"
+      ],
+      "timeout": 1200,
+      "revision": "9d4020ca9ff20a17c20d3d1552558dd96d439bbf",
+      "startedAt": "2026-11-18T06:06:52.390098+00:00",
+      "status": "PASS",
+      "exitCode": 0,
+      "seconds": 52.447,
+      "log": "flutter-test.txt",
+      "logSha256": "464f0809728958571363db2facbe0f452910c58ea03fd0fa99c686fcd6df365e",
+      "capture": ".quality-android-final",
+      "sourceLogSha256": "464f0809728958571363db2facbe0f452910c58ea03fd0fa99c686fcd6df365e"
+    },
+    "flutter-integration": {
+      "id": "flutter-integration",
+      "category": "android",
+      "argv": [
+        "pwsh",
+        "-NoProfile",
+        "-File",
+        "scripts/quality/android.ps1",
+        "integration"
+      ],
+      "cwd": ".",
+      "prerequisites": [],
+      "timeout": 1200,
+      "revision": "aecd3ecef91359e49829ecd40a30e99b9aeb37e7",
+      "workingTreeSha256": "ecf6dcbceb3b326b9bb2687596a04730f7f9c4e6f2a02ff355518cf9f8f542f2",
+      "startedAt": "2026-11-18T06:20:59.025846+00:00",
+      "status": "PASS",
+      "exitCode": 0,
+      "seconds": 314.551,
+      "log": "flutter-integration.txt",
+      "logSha256": "608ada08a20a22d4974774c2c071774d55becb5a96b25e19b75c49242dfcb818",
+      "capture": ".quality-android-retry",
+      "sourceLogSha256": "229385fbd291bc0655c8ee684526b2ad44918f576addb0d2c1d22a40aef79ff6"
+    },
+    "backend-audit": {
+      "id": "backend-audit",
+      "category": "dependency",
+      "argv": [
+        "pwsh",
+        "-NoProfile",
+        "-Command",
+        "npm audit --omit=dev --json"
+      ],
+      "cwd": "backend",
+      "prerequisites": [],
+      "timeout": 600,
+      "revision": "99ed1ce5b46592928a16b01f5244952d15a1d480",
+      "workingTreeSha256": "cfc9a1def0dab2f4152cfc17b7485b2e1ed198c5ff7dece6264911c2c656bcb8",
+      "startedAt": "2026-11-18T06:23:50.323511+00:00",
+      "status": "PASS",
+      "exitCode": 0,
+      "seconds": 14.95,
+      "log": "backend-audit.txt",
+      "logSha256": "5236c06a0665661f5ee52aff3ed8609d1ce247ea0b9563816ba9a4d5ff24b0e6",
+      "capture": ".quality-backend-final",
+      "sourceLogSha256": "5236c06a0665661f5ee52aff3ed8609d1ce247ea0b9563816ba9a4d5ff24b0e6"
+    },
+    "desktop-audit": {
+      "id": "desktop-audit",
+      "category": "dependency",
+      "argv": [
+        "pwsh",
+        "-NoProfile",
+        "-Command",
+        "npm audit --omit=dev --json"
+      ],
+      "cwd": "desktop",
+      "prerequisites": [],
+      "timeout": 600,
+      "revision": "99ed1ce5b46592928a16b01f5244952d15a1d480",
+      "workingTreeSha256": "cfc9a1def0dab2f4152cfc17b7485b2e1ed198c5ff7dece6264911c2c656bcb8",
+      "startedAt": "2026-11-18T06:24:05.277724+00:00",
+      "status": "PASS",
+      "exitCode": 0,
+      "seconds": 6.419,
+      "log": "desktop-audit.txt",
+      "logSha256": "528fe9663a46faf09f53a9a9e03af46de8f9256b3f268939bd58dc30de9a49ac",
+      "capture": ".quality-backend-final",
+      "sourceLogSha256": "528fe9663a46faf09f53a9a9e03af46de8f9256b3f268939bd58dc30de9a49ac"
+    },
+    "admin-dashboard-audit": {
+      "id": "admin-dashboard-audit",
+      "category": "dependency",
+      "argv": [
+        "pwsh",
+        "-NoProfile",
+        "-Command",
+        "npm audit --omit=dev --json"
+      ],
+      "cwd": "admin-dashboard",
+      "prerequisites": [],
+      "timeout": 600,
+      "revision": "99ed1ce5b46592928a16b01f5244952d15a1d480",
+      "workingTreeSha256": "cfc9a1def0dab2f4152cfc17b7485b2e1ed198c5ff7dece6264911c2c656bcb8",
+      "startedAt": "2026-11-18T06:24:11.699929+00:00",
+      "status": "PASS",
+      "exitCode": 0,
+      "seconds": 6.475,
+      "log": "admin-dashboard-audit.txt",
+      "logSha256": "6ec28bedd357064d4f0831335de9c9bace25c276e59a68ebe9422e0986c31c47",
+      "capture": ".quality-backend-final",
+      "sourceLogSha256": "6ec28bedd357064d4f0831335de9c9bace25c276e59a68ebe9422e0986c31c47"
+    },
+    "secret-signatures": {
+      "id": "secret-signatures",
+      "category": "secret",
+      "argv": [
+        "C:\\Program Files\\nodejs\\node.EXE",
+        "scripts/scan-backend-secrets.mjs",
+        "{out}/secret-signatures.json"
+      ],
+      "cwd": ".",
+      "prerequisites": [],
+      "timeout": 600,
+      "revision": "99ed1ce5b46592928a16b01f5244952d15a1d480",
+      "workingTreeSha256": "cfc9a1def0dab2f4152cfc17b7485b2e1ed198c5ff7dece6264911c2c656bcb8",
+      "startedAt": "2026-11-18T06:24:18.178945+00:00",
+      "status": "PASS",
+      "exitCode": 0,
+      "seconds": 1.486,
+      "log": "secret-signatures.txt",
+      "logSha256": "14b3bdbaed724bf6dfa4cb507171148cac378c314dff766c20951ebb0d5a82e4",
+      "capture": ".quality-backend-final",
+      "sourceLogSha256": "14b3bdbaed724bf6dfa4cb507171148cac378c314dff766c20951ebb0d5a82e4"
+    },
+    "readme-links": {
+      "id": "readme-links",
+      "category": "documentation",
+      "argv": [
+        "python",
+        "scripts/validate_readme.py"
+      ],
+      "cwd": ".",
+      "prerequisites": [],
+      "timeout": 600,
+      "revision": "99ed1ce5b46592928a16b01f5244952d15a1d480",
+      "workingTreeSha256": "cfc9a1def0dab2f4152cfc17b7485b2e1ed198c5ff7dece6264911c2c656bcb8",
+      "startedAt": "2026-11-18T06:24:19.667042+00:00",
+      "status": "PASS",
+      "exitCode": 0,
+      "seconds": 0.757,
+      "log": "readme-links.txt",
+      "logSha256": "2f166fb9290021a1fd117004ce76307f737657a530d8092b0f7d8fdfa29a5649",
+      "capture": ".quality-backend-final",
+      "sourceLogSha256": "2f166fb9290021a1fd117004ce76307f737657a530d8092b0f7d8fdfa29a5649"
+    },
+    "security-lint": {
+      "id": "security-lint",
+      "category": "static",
+      "argv": [
+        "C:\\Program Files\\nodejs\\node.EXE",
+        "node_modules/eslint/bin/eslint.js",
+        "src",
+        "--ext",
+        ".js",
+        "--config",
+        "security.eslintrc.cjs",
+        "--format",
+        "json",
+        "--output-file",
+        "{out}/security-eslint.json",
+        "--max-warnings",
+        "0"
+      ],
+      "cwd": "backend",
+      "prerequisites": [
+        "backend/node_modules"
+      ],
+      "timeout": 600,
+      "revision": "aecd3ecef91359e49829ecd40a30e99b9aeb37e7",
+      "workingTreeSha256": "2acc523a45d77c678645ffaf153a75f42db5e2bad2bab2ce5d06aa155179226e",
+      "startedAt": "2026-11-18T06:16:56.592517+00:00",
+      "status": "FAIL",
+      "exitCode": 1,
+      "seconds": 4.283,
+      "log": "security-lint.txt",
+      "logSha256": "99a3dfa8107e1f53d2ffb780a3dfb2d79c4ec1f2ba90a4173dc91308d07b536b",
+      "capture": ".quality-recheck",
+      "sourceLogSha256": "99a3dfa8107e1f53d2ffb780a3dfb2d79c4ec1f2ba90a4173dc91308d07b536b"
+    },
+    "linux-native": {
+      "id": "linux-native",
+      "category": "network/container/security/performance",
+      "argv": [
+        "wsl",
+        "-d",
+        "RemoteShieldPhase08",
+        "--",
+        "bash",
+        "/mnt/d/Runtime Terror/RDPBrowser/scripts/quality/linux.sh",
+        "native"
+      ],
+      "cwd": ".",
+      "prerequisites": [],
+      "timeout": 1800,
+      "revision": "9d4020ca9ff20a17c20d3d1552558dd96d439bbf",
+      "startedAt": "2026-11-17T15:01:34.207912+00:00",
+      "status": "PASS",
+      "exitCode": 0,
+      "seconds": 78.696,
+      "log": "linux-native.txt",
+      "logSha256": "1cabde375f0987cf2c95ebf175daf22fcc92d08d7fef04bb758de4c243f266f5",
+      "capture": ".quality-linux",
+      "sourceLogSha256": "1cabde375f0987cf2c95ebf175daf22fcc92d08d7fef04bb758de4c243f266f5"
+    },
+    "linux-compose": {
+      "id": "linux-compose",
+      "category": "network/container/security/performance",
+      "argv": [
+        "wsl",
+        "-d",
+        "RemoteShieldPhase08",
+        "--",
+        "bash",
+        "scripts/quality/linux.sh",
+        "compose"
+      ],
+      "cwd": ".",
+      "prerequisites": [],
+      "timeout": 1800,
+      "revision": "aecd3ecef91359e49829ecd40a30e99b9aeb37e7",
+      "workingTreeSha256": "c159b5387412495151b7b81346ebbd1d14ddceaeae7932940c8127820b7f8678",
+      "startedAt": "2026-11-18T06:16:28.142411+00:00",
+      "status": "PASS",
+      "exitCode": 0,
+      "seconds": 191.287,
+      "log": "linux-compose.txt",
+      "logSha256": "7bcdc4f2ecc5f078820cb9ae5b03d22a662a81b75a4120dd60c9de0364655df0",
+      "capture": ".quality-node24",
+      "sourceLogSha256": "7bcdc4f2ecc5f078820cb9ae5b03d22a662a81b75a4120dd60c9de0364655df0"
+    },
+    "linux-production": {
+      "id": "linux-production",
+      "category": "network/container/security/performance",
+      "argv": [
+        "wsl",
+        "-d",
+        "RemoteShieldPhase08",
+        "--",
+        "bash",
+        "scripts/quality/linux.sh",
+        "production"
+      ],
+      "cwd": ".",
+      "prerequisites": [],
+      "timeout": 1800,
+      "revision": "aecd3ecef91359e49829ecd40a30e99b9aeb37e7",
+      "workingTreeSha256": "c159b5387412495151b7b81346ebbd1d14ddceaeae7932940c8127820b7f8678",
+      "startedAt": "2026-11-18T06:19:39.453433+00:00",
+      "status": "PASS",
+      "exitCode": 0,
+      "seconds": 594.223,
+      "log": "linux-production.txt",
+      "logSha256": "2e1625d7e0bf38a7fc9ea93ea6a94af280ca3fdaec866e7ca54fda928f5d16e8",
+      "capture": ".quality-node24",
+      "sourceLogSha256": "2e1625d7e0bf38a7fc9ea93ea6a94af280ca3fdaec866e7ca54fda928f5d16e8"
+    },
+    "linux-development": {
+      "id": "linux-development",
+      "category": "network/container/security/performance",
+      "argv": [
+        "wsl",
+        "-d",
+        "RemoteShieldPhase08",
+        "--",
+        "bash",
+        "scripts/quality/linux.sh",
+        "development"
+      ],
+      "cwd": ".",
+      "prerequisites": [],
+      "timeout": 1800,
+      "revision": "aecd3ecef91359e49829ecd40a30e99b9aeb37e7",
+      "workingTreeSha256": "c159b5387412495151b7b81346ebbd1d14ddceaeae7932940c8127820b7f8678",
+      "startedAt": "2026-11-18T06:29:33.741738+00:00",
+      "status": "PASS",
+      "exitCode": 0,
+      "seconds": 114.805,
+      "log": "linux-development.txt",
+      "logSha256": "43fa66f9ea7b9f65f37f92f6d5a0ed8c57573d258ee8b0a4e91f4b5ebe4cdf70",
+      "capture": ".quality-node24",
+      "sourceLogSha256": "43fa66f9ea7b9f65f37f92f6d5a0ed8c57573d258ee8b0a4e91f4b5ebe4cdf70"
+    },
+    "linux-scan": {
+      "id": "linux-scan",
+      "category": "network/container/security/performance",
+      "argv": [
+        "wsl",
+        "-d",
+        "RemoteShieldPhase08",
+        "--",
+        "bash",
+        "scripts/quality/linux.sh",
+        "scan"
+      ],
+      "cwd": ".",
+      "prerequisites": [],
+      "timeout": 1800,
+      "revision": "aecd3ecef91359e49829ecd40a30e99b9aeb37e7",
+      "workingTreeSha256": "c159b5387412495151b7b81346ebbd1d14ddceaeae7932940c8127820b7f8678",
+      "startedAt": "2026-11-18T06:31:28.570194+00:00",
+      "status": "FAIL",
+      "exitCode": 1,
+      "seconds": 22.218,
+      "log": "linux-scan.txt",
+      "logSha256": "fc7888d5f7a7c9df3a284f7bf3e3f762b455975f390b7f1bc356ecac65c45ff5",
+      "capture": ".quality-node24",
+      "sourceLogSha256": "fc7888d5f7a7c9df3a284f7bf3e3f762b455975f390b7f1bc356ecac65c45ff5"
+    },
+    "desktop-ui": {
+      "id": "desktop-ui",
+      "category": "desktop/accessibility",
+      "argv": [
+        "C:\\Program Files\\nodejs\\node.EXE",
+        "node_modules/@playwright/test/cli.js",
+        "test",
+        "test/desktop.spec.js",
+        "--reporter=json"
+      ],
+      "cwd": "admin-dashboard",
+      "prerequisites": [
+        "desktop/dist/index.html"
+      ],
+      "timeout": 600,
+      "revision": "9d4020ca9ff20a17c20d3d1552558dd96d439bbf",
+      "startedAt": "2026-11-17T15:13:03.493002+00:00",
+      "status": "PASS",
+      "exitCode": 0,
+      "seconds": 10.215,
+      "log": "desktop-ui.txt",
+      "logSha256": "9b3a29110144e4c67b645307ab3e481f38f856a03b7b2450f54ab063af66ff8e",
+      "capture": ".quality-recovery",
+      "sourceLogSha256": "9b3a29110144e4c67b645307ab3e481f38f856a03b7b2450f54ab063af66ff8e"
+    }
+  },
+  "summary": {
+    "PASS": 23,
+    "FAIL": 2
+  },
+  "accepted": false
+}

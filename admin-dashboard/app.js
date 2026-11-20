@@ -1,342 +1,273 @@
-'use strict';
+import { ApiError, createApi } from './api.js';
+import { button, node, stateCard } from './components.js';
+import { createViews } from './views.js';
 
-// ─── Config ────────────────────────────────────────────────────────────────
-const SERVER_URL = window.REMOTESHIELD_SERVER || 'https://YOUR_SERVER_STATIC_IP';
-let authToken = null;
-let socket = null;
-let activeTab = 'overview';
+const $ = id => document.getElementById(id);
+const api = createApi();
+const pages = {
+  overview: ['Organization overview', 'Monitor access, security activity and the health of your control plane.'],
+  users: ['Users & roles', 'Manage organization accounts, permissions and sign-in access.'],
+  devices: ['Device inventory', 'Review device enrollment, key registration and trust.'],
+  sessions: ['Active sessions', 'Monitor current access and terminate sessions when needed.'],
+  network: ['VPN health', 'Inspect the connection source used to reach this control plane.'],
+  policies: ['URL policies', 'Assign browser rules, inspect revisions and manage URL blocks.'],
+  events: ['Security events', 'Explore client reports and server-recorded URL activity.'],
+  audit: ['Audit log', 'Review administrative actions and authorization decisions.'],
+  alerts: ['Risk & alerts', 'Triage unresolved anomalies reported for this organization.'],
+  integrations: ['Integrations', 'Review SSO configuration and manage directory provisioning.'],
+  governance: ['Governance', 'Review access, device posture and administrative evidence.'],
+  account: ['Account settings', 'Review your administrator profile and session.'],
+};
+let active = 'overview';
+let identity;
+let socket;
+let socketToken;
+let renderVersion = 0;
+let pending = false;
+let dialogJob;
+const views = createViews({
+  api, getAccount: () => identity, showDialog, confirm: confirmAction,
+  refresh: () => load(), navigate, signedOut,
+});
 
-// ─── DOM Helpers ───────────────────────────────────────────────────────────
-const $ = (id) => document.getElementById(id);
-const hide = (id) => $(`${id}`)?.classList.add('hidden');
-const show = (id) => $(`${id}`)?.classList.remove('hidden');
-
-// ─── Clock ─────────────────────────────────────────────────────────────────
-function updateClock() {
-  $('clock').textContent = new Date().toLocaleTimeString();
+function message(id, value, type = '') {
+  const element = $(id);
+  element.hidden = !value;
+  element.textContent = value || '';
+  element.className = 'message ' + type;
 }
-setInterval(updateClock, 1000);
-updateClock();
+function describe(error) {
+  if (!(error instanceof ApiError)) return error instanceof TypeError ? 'The control plane is unreachable. Check your connection and try again.' :
+    error?.message || 'An unexpected error occurred.';
+  return error.message + (error.requestId ? ' Request ID ' + error.requestId + '.' : '');
+}
+function loading() {
+  $('view').replaceChildren(stateCard('Loading ' + pages[active][0].toLowerCase(), 'Fetching organization data.', null, 'loading'));
+}
 
-// ─── API Helper ────────────────────────────────────────────────────────────
-async function api(method, path, body) {
-  const res = await fetch(`${SERVER_URL}${path}`, {
-    method,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
-    },
-    body: body ? JSON.stringify(body) : undefined,
+function stopSocket() {
+  socket?.disconnect();
+  socket = undefined;
+  socketToken = undefined;
+  setRealtime(false);
+}
+function setRealtime(ready) {
+  $('realtime').textContent = ready ? 'Live updates connected' : 'Updates offline';
+  $('realtime').className = 'chip ' + (ready ? 'good' : 'neutral');
+}
+function startSocket() {
+  const token = api.token();
+  if (!identity || !token || !window.io || socketToken === token) return;
+  stopSocket();
+  socketToken = token;
+  const connection = window.io({ auth: { token } });
+  socket = connection;
+  connection.on('connect', () => connection.emit('join_admin', token));
+  connection.on('sessions_snapshot', () => { if (connection === socket) setRealtime(true); });
+  connection.on('disconnect', () => { if (connection === socket) setRealtime(false); });
+  connection.on('connect_error', () => { if (connection === socket) setRealtime(false); });
+  const visiblePage = (allowed) => {
+    if (connection === socket && allowed.includes(active)) refreshInBackground();
+  };
+  connection.on('user_logged_in', () => visiblePage(['overview', 'sessions']));
+  connection.on('session_terminated', () => visiblePage(['overview', 'sessions']));
+  connection.on('url_blocked', () => visiblePage(['policies']));
+  connection.on('security_alert', alert => {
+    if (connection !== socket) return;
+    message('notification', 'New ' + alert.severity + ' security incident: ' + alert.ruleId + '. Open Risk & alerts to review.');
+    visiblePage(['alerts', 'overview']);
   });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Request failed');
-  return data;
 }
 
-// ─── Login ──────────────────────────────────────────────────────────────────
-$('btn-login').addEventListener('click', async () => {
-  const username = $('admin-user').value.trim();
-  const password = $('admin-pass').value.trim();
-  $('login-err').classList.add('hidden');
-
+function signedOut(text) {
+  renderVersion++;
+  pending = false;
+  identity = undefined;
+  api.clear();
+  stopSocket();
+  views.reset();
+  if ($('dialog').open) $('dialog').close();
+  $('view').replaceChildren();
+  $('console').hidden = true;
+  $('sign-in').hidden = false;
+  message('login-message', text);
+  $('login').elements.username.focus();
+}
+async function signIn(event) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  if (form.dataset.pending) return;
+  const { username, password, organizationId } = Object.fromEntries(new FormData(form));
+  form.elements.password.value = '';
+  form.dataset.pending = 'true';
+  form.querySelector('[type=submit]').disabled = true;
+  message('login-message', '');
   try {
-    $('btn-login').textContent = 'Authenticating...';
-    const data = await api('POST', '/api/auth/login', { username, password });
-    authToken = data.accessToken;
-    hide('login-gate');
-    show('dashboard');
-    initSocket();
-    loadOverview();
-    loadSessions();
-  } catch (err) {
-    $('login-err').textContent = '⚠️ ' + err.message;
-    show('login-err');
+    await api.login({ username: username.trim(), password, ...(organizationId.trim() && { organizationId: organizationId.trim() }) });
+    await openConsole();
+  } catch (error) {
+    if (api.token()) await api.logout().catch(() => {});
+    message('login-message', error.status === 403 ? 'Administrator access is required. ' + describe(error) : describe(error), 'danger');
   } finally {
-    $('btn-login').textContent = '🔐 Sign In';
+    form.querySelector('[type=submit]').disabled = false;
+    delete form.dataset.pending;
   }
-});
-
-$('admin-pass').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('btn-login').click(); });
-
-// ─── Logout ─────────────────────────────────────────────────────────────────
-$('btn-logout').addEventListener('click', async () => {
-  try { await api('POST', '/api/auth/logout'); } catch(_) {}
-  authToken = null;
-  if (socket) socket.disconnect();
-  hide('dashboard');
-  show('login-gate');
-});
-
-// ─── Tab Navigation ──────────────────────────────────────────────────────────
-document.querySelectorAll('.nav-item').forEach(item => {
-  item.addEventListener('click', () => {
-    const tab = item.dataset.tab;
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-    item.classList.add('active');
-    document.getElementById(`tab-${tab}`)?.classList.add('active');
-    activeTab = tab;
-
-    const titles = { overview:'Overview', sessions:'Live Sessions', iplogs:'IP Logs',
-                     urls:'URL Control', anomalies:'Anomaly Alerts', users:'User Management' };
-    $('page-title').textContent = titles[tab] || tab;
-
-    // Load data for tab
-    const loaders = { sessions: loadSessions, iplogs: loadIpLogs,
-                      urls: loadBlockedUrls, anomalies: loadAnomalies, users: loadUsers };
-    loaders[tab]?.();
-  });
-});
-
-// ─── Socket.io ───────────────────────────────────────────────────────────────
-function initSocket() {
-  socket = io(SERVER_URL, { auth: { token: authToken } });
-
-  socket.on('connect', () => {
-    socket.emit('join_admin', authToken);
-    updateConnStatus(true);
-  });
-
-  socket.on('disconnect', () => updateConnStatus(false));
-
-  socket.on('user_logged_in', (data) => {
-    addActivity(`👤 ${data.username} logged in from ${data.deviceOs} (${data.vpnIp})`, data.timestamp);
-    if (activeTab === 'sessions') loadSessions();
-    loadOverview();
-  });
-
-  socket.on('session_terminated', (data) => {
-    addActivity(`🚪 Session terminated: ${data.userId}`, new Date().toISOString());
-    if (activeTab === 'sessions') loadSessions();
-  });
-
-  socket.on('url_blocked', (data) => {
-    addActivity(`🚫 URL blocked: ${data.pattern}`, new Date().toISOString());
-    if (activeTab === 'urls') loadBlockedUrls();
-  });
+}
+async function openConsole() {
+  const [{ account }, { organization }] = await Promise.all([api.request('/admin/account'), api.request('/organization')]);
+  identity = account;
+  $('account-name').textContent = account.username;
+  $('account-role').textContent = account.role === 'superadmin' ? 'Superadmin' : 'Administrator';
+  $('avatar').textContent = account.username.slice(0, 2).toUpperCase();
+  $('org-name').textContent = organization.name;
+  $('sign-in').hidden = true;
+  $('console').hidden = false;
+  $('login').reset();
+  setPage(readLocation(), true);
+}
+async function finishSso() {
+  const provider = /^#sso=([a-z][a-z0-9-]{0,63})$/.exec(location.hash)?.[1];
+  if (!provider) return;
+  history.replaceState(null, '', location.pathname);
+  const form = $('login');
+  form.dataset.pending = 'true';
+  form.querySelector('[type=submit]').disabled = true;
+  $('sso-start').disabled = true;
+  try { await api.finishSso(provider); await openConsole(); }
+  catch (error) {
+    if (api.token()) await api.logout().catch(() => {});
+    message('login-message', 'Enterprise sign-in failed. ' + describe(error), 'danger');
+  } finally {
+    form.querySelector('[type=submit]').disabled = false;
+    $('sso-start').disabled = false;
+    delete form.dataset.pending;
+  }
 }
 
-function updateConnStatus(connected) {
-  const dot = $('conn-dot');
-  $('conn-label').textContent = connected ? 'Server Connected' : 'Disconnected';
-  dot.className = `status-dot ${connected ? 'dot-on' : 'dot-off'}`;
+function readLocation() {
+  const name = window.location.hash.slice(1);
+  return Object.hasOwn(pages, name) ? name : 'overview';
 }
-
-// ─── Overview ─────────────────────────────────────────────────────────────────
-async function loadOverview() {
+function navigate(page) {
+  if (window.location.hash !== '#' + page) window.location.hash = page;
+  else setPage(page, true);
+}
+function setPage(page, focus = false) {
+  if (!identity) return;
+  active = page;
+  const [title, description] = pages[page];
+  $('page-title').textContent = title;
+  $('page-description').textContent = description;
+  for (const link of document.querySelectorAll('[data-page]')) {
+    if (link.dataset.page === page) link.setAttribute('aria-current', 'page');
+    else link.removeAttribute('aria-current');
+  }
+  $('menu').setAttribute('aria-expanded', 'false');
+  $('nav').classList.remove('open');
+  message('notification', '');
+  if (focus) $('page-title').focus();
+  load();
+}
+async function load({ quiet = false } = {}) {
+  if (!identity) return;
+  const version = ++renderVersion;
+  pending = true;
+  $('view').setAttribute('aria-busy', 'true');
+  if (!quiet) loading();
   try {
-    const stats = await api('GET', '/api/admin/stats');
-    $('val-sessions').textContent  = stats.activeSessions;
-    $('val-users').textContent     = stats.totalUsers;
-    $('val-flagged').textContent   = stats.flaggedLogs24h;
-    $('val-anomalies').textContent = stats.unresolvedAlerts;
-  } catch(e) { console.error(e); }
-}
-
-function addActivity(msg, ts) {
-  const list = $('recent-activity');
-  const existing = list.querySelector('.empty-state');
-  if (existing) existing.remove();
-
-  const item = document.createElement('div');
-  item.className = 'activity-item';
-  item.innerHTML = `<span>${msg}</span><span class="activity-time">${new Date(ts).toLocaleTimeString()}</span>`;
-  list.prepend(item);
-
-  // Keep max 20 items
-  while (list.children.length > 20) list.lastChild.remove();
-}
-
-// ─── Sessions ─────────────────────────────────────────────────────────────────
-$('btn-refresh-sessions').addEventListener('click', loadSessions);
-
-async function loadSessions() {
-  const tbody = $('sessions-tbody');
-  tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Loading...</td></tr>';
-  try {
-    const { sessions } = await api('GET', '/api/admin/sessions');
-    if (!sessions.length) {
-      tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No active sessions</td></tr>';
+    const view = await views[active]();
+    if (version === renderVersion) $('view').replaceChildren(view);
+  } catch (error) {
+    if (version !== renderVersion) return;
+    if (error.status === 401 || !api.token()) {
+      signedOut('Your session ended. Sign in again.');
       return;
     }
-    tbody.innerHTML = sessions.map(s => `
-      <tr>
-        <td><strong>${s.username}</strong></td>
-        <td><span class="badge badge-accent">${s.device_os || 'unknown'}</span></td>
-        <td><code style="font-family:var(--mono);font-size:12px">${s.vpn_ip || '—'}</code></td>
-        <td style="font-size:12px;color:var(--muted)">${new Date(s.started_at).toLocaleString()}</td>
-        <td style="font-size:12px;color:var(--muted)">${new Date(s.last_activity).toLocaleTimeString()}</td>
-        <td>
-          <button class="btn-sm" onclick="forceLogout('${s.user_id}','${s.id}')">Force Logout</button>
-        </td>
-      </tr>
-    `).join('');
-  } catch(e) {
-    tbody.innerHTML = `<tr><td colspan="6" class="empty-state" style="color:var(--danger)">${e.message}</td></tr>`;
+    const denied = error.status === 403;
+    $('view').replaceChildren(stateCard(denied ? 'Access denied' : 'Unable to load this view', describe(error),
+      button('Retry', () => load(), 'subtle', 'refresh'), denied ? 'denied' : 'error'));
+  } finally {
+    if (version === renderVersion) {
+      pending = false;
+      $('view').setAttribute('aria-busy', 'false');
+      startSocket();
+    }
   }
 }
-
-async function forceLogout(userId, sessionId) {
-  if (!confirm('Force logout this session?')) return;
-  try {
-    await api('POST', '/api/admin/force-logout', { userId, sessionId });
-    loadSessions();
-    addActivity(`🚪 Force-logout: user ${userId}`, new Date().toISOString());
-  } catch(e) { alert(e.message); }
+function refreshInBackground() {
+  if (!identity || pending || document.hidden || $('dialog').open || $('view').contains(document.activeElement)) return;
+  load({ quiet: true });
 }
-window.forceLogout = forceLogout;
 
-// ─── IP Logs ───────────────────────────────────────────────────────────────────
-$('filter-flagged').addEventListener('change', loadIpLogs);
-
-async function loadIpLogs() {
-  const tbody = $('iplogs-tbody');
-  tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Loading...</td></tr>';
-  const flagged = $('filter-flagged').checked;
+function showDialog(options) {
+  dialogJob = options;
+  $('dialog-title').textContent = options.title;
+  $('dialog-body').replaceChildren(...options.content);
+  $('dialog-actions').hidden = !options.run;
+  $('dialog-submit').textContent = options.submit || 'Save';
+  $('dialog-submit').disabled = false;
+  $('dialog-cancel').disabled = false;
+  $('dialog-close').disabled = false;
+  message('dialog-message', '');
+  $('dialog').showModal();
+}
+function confirmAction({ title, detail, submit, run }) {
+  showDialog({ title, content: [node('p', {}, detail)], submit, run });
+}
+$('dialog-form').addEventListener('submit', async event => {
+  event.preventDefault();
+  const job = dialogJob;
+  if (!job?.run || $('dialog-submit').disabled) return;
+  const values = new FormData(event.currentTarget);
+  $('dialog-submit').disabled = true;
+  $('dialog-cancel').disabled = true;
+  $('dialog-close').disabled = true;
+  message('dialog-message', '');
   try {
-    const { logs } = await api('GET', `/api/admin/ip-logs?flagged=${flagged}`);
-    if (!logs.length) {
-      tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No logs found</td></tr>';
+    await job.run(values);
+    if (!$('dialog').open) return;
+    $('dialog').close();
+    message('notification', 'Changes saved.', 'good');
+  } catch (error) {
+    if (error.status === 401 || !api.token()) {
+      signedOut('Your session ended. Sign in again.');
       return;
     }
-    tbody.innerHTML = logs.map(l => `
-      <tr>
-        <td>${l.username || '—'}</td>
-        <td><code style="font-family:var(--mono);font-size:12px">${l.request_ip}</code></td>
-        <td>${l.vpn_confirmed ? '<span class="badge badge-success">✓</span>' : '<span class="badge badge-danger">✗</span>'}</td>
-        <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px">${l.url_requested || '—'}</td>
-        <td>${l.country_code || '—'}</td>
-        <td>${l.flagged ? `<span class="badge badge-danger">Flagged</span>` : '<span class="badge badge-success">OK</span>'}</td>
-        <td style="font-size:11px;color:var(--muted);font-family:var(--mono)">${new Date(l.created_at).toLocaleString()}</td>
-      </tr>
-    `).join('');
-  } catch(e) {
-    tbody.innerHTML = `<tr><td colspan="7" class="empty-state" style="color:var(--danger)">${e.message}</td></tr>`;
-  }
-}
-
-// ─── URL Control ───────────────────────────────────────────────────────────────
-$('btn-block-url').addEventListener('click', async () => {
-  const pattern = $('url-pattern').value.trim();
-  const reason  = $('url-reason').value.trim();
-  if (!pattern) return;
-  const msgEl = $('block-msg');
-  try {
-    await api('POST', '/api/admin/blocked-urls', { pattern, reason });
-    msgEl.textContent = `✅ Blocked: ${pattern}`;
-    msgEl.className = 'msg success';
-    show('block-msg');
-    $('url-pattern').value = '';
-    $('url-reason').value  = '';
-    loadBlockedUrls();
-    setTimeout(() => hide('block-msg'), 3000);
-  } catch(e) {
-    msgEl.textContent = `⚠️ ${e.message}`;
-    msgEl.className = 'msg error';
-    show('block-msg');
+    message('dialog-message', describe(error), 'danger');
+  } finally {
+    $('dialog-submit').disabled = false;
+    $('dialog-cancel').disabled = false;
+    $('dialog-close').disabled = false;
   }
 });
-
-async function loadBlockedUrls() {
-  const tbody = $('urls-tbody');
-  tbody.innerHTML = '<tr><td colspan="4" class="empty-state">Loading...</td></tr>';
-  try {
-    const { blockedUrls } = await api('GET', '/api/admin/blocked-urls');
-    if (!blockedUrls.length) {
-      tbody.innerHTML = '<tr><td colspan="4" class="empty-state">No blocked URLs</td></tr>';
-      return;
-    }
-    tbody.innerHTML = blockedUrls.map(u => `
-      <tr>
-        <td><code style="font-family:var(--mono);font-size:12px">${u.pattern}</code></td>
-        <td style="color:var(--muted);font-size:12px">${u.reason || '—'}</td>
-        <td style="font-size:11px;color:var(--muted);font-family:var(--mono)">${new Date(u.created_at).toLocaleDateString()}</td>
-        <td><button class="btn-sm" onclick="unblockUrl('${u.id}')">Unblock</button></td>
-      </tr>
-    `).join('');
-  } catch(e) {
-    tbody.innerHTML = `<tr><td colspan="4" class="empty-state" style="color:var(--danger)">${e.message}</td></tr>`;
-  }
-}
-
-async function unblockUrl(id) {
-  if (!confirm('Unblock this URL?')) return;
-  try {
-    await api('DELETE', `/api/admin/blocked-urls/${id}`);
-    loadBlockedUrls();
-  } catch(e) { alert(e.message); }
-}
-window.unblockUrl = unblockUrl;
-
-// ─── Anomalies ─────────────────────────────────────────────────────────────────
-async function loadAnomalies() {
-  const list = $('anomalies-list');
-  list.innerHTML = '<div class="empty-state">Loading...</div>';
-  try {
-    const { anomalies } = await api('GET', '/api/admin/anomalies');
-    if (!anomalies.length) {
-      list.innerHTML = '<div class="empty-state">✅ No unresolved alerts</div>';
-      return;
-    }
-    list.innerHTML = anomalies.map(a => `
-      <div class="anomaly-item ${a.severity === 'critical' ? 'critical' : ''}">
-        <div class="anomaly-top">
-          <span class="anomaly-type">${a.alert_type.replace(/_/g,' ').toUpperCase()}</span>
-          <span class="badge ${a.severity === 'critical' ? 'badge-danger' : a.severity === 'high' ? 'badge-warning' : 'badge-info'}">${a.severity}</span>
-        </div>
-        <div class="anomaly-meta">User: ${a.username || a.user_id || '—'} · ${new Date(a.created_at).toLocaleString()}</div>
-        ${a.details ? `<pre style="font-size:11px;margin-top:8px;color:var(--muted);overflow:auto">${JSON.stringify(JSON.parse(a.details), null, 2)}</pre>` : ''}
-        <div style="margin-top:10px">
-          <button class="btn-sm" onclick="resolveAlert('${a.id}')">Mark Resolved</button>
-        </div>
-      </div>
-    `).join('');
-  } catch(e) {
-    list.innerHTML = `<div class="empty-state" style="color:var(--danger)">${e.message}</div>`;
-  }
-}
-
-async function resolveAlert(id) {
-  try {
-    await api('PATCH', `/api/admin/anomalies/${id}/resolve`);
-    loadAnomalies();
-    loadOverview();
-  } catch(e) { alert(e.message); }
-}
-window.resolveAlert = resolveAlert;
-
-// ─── Users ────────────────────────────────────────────────────────────────────
-async function loadUsers() {
-  const tbody = $('users-tbody');
-  tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Loading...</td></tr>';
-  try {
-    const { users } = await api('GET', '/api/admin/users');
-    tbody.innerHTML = users.map(u => `
-      <tr>
-        <td><strong>${u.username}</strong></td>
-        <td style="font-size:12px;color:var(--muted)">${u.email}</td>
-        <td><span class="badge ${u.role === 'admin' ? 'badge-accent' : 'badge-info'}">${u.role}</span></td>
-        <td style="font-size:11px;color:var(--muted)">${u.last_login ? new Date(u.last_login).toLocaleString() : 'Never'}</td>
-        <td>${u.is_locked ? '<span class="badge badge-danger">Locked</span>' : u.is_active ? '<span class="badge badge-success">Active</span>' : '<span class="badge badge-warning">Inactive</span>'}</td>
-        <td>
-          <button class="btn-sm" onclick="toggleLock('${u.id}', ${!u.is_locked})">${u.is_locked ? '🔓 Unlock' : '🔒 Lock'}</button>
-        </td>
-      </tr>
-    `).join('');
-  } catch(e) {
-    tbody.innerHTML = `<tr><td colspan="6" class="empty-state" style="color:var(--danger)">${e.message}</td></tr>`;
-  }
-}
-
-async function toggleLock(id, lock) {
-  const action = lock ? 'lock' : 'unlock';
-  if (!confirm(`${action.charAt(0).toUpperCase() + action.slice(1)} this user?`)) return;
-  try {
-    await api('PATCH', `/api/admin/users/${id}/lock`, { locked: lock });
-    loadUsers();
-  } catch(e) { alert(e.message); }
-}
-window.toggleLock = toggleLock;
-
-// Auto-refresh overview every 30s
-setInterval(() => { if (activeTab === 'overview') loadOverview(); }, 30000);
+$('dialog').addEventListener('cancel', event => { if ($('dialog-submit').disabled) event.preventDefault(); });
+$('dialog').addEventListener('close', () => {
+  dialogJob = undefined;
+  $('dialog-body').replaceChildren();
+  message('dialog-message', '');
+});
+$('dialog-close').addEventListener('click', () => $('dialog').close());
+$('dialog-cancel').addEventListener('click', () => $('dialog').close());
+$('login').addEventListener('submit', signIn);
+$('sso-start').addEventListener('click', () => {
+  const provider = $('login').elements.provider.value.trim();
+  if (!/^[a-z][a-z0-9-]{0,63}$/.test(provider)) return message('login-message', 'Enter your configured provider ID.', 'danger');
+  location.assign('/api/v1/auth/oidc/' + provider + '/start?return=console');
+});
+$('refresh').addEventListener('click', () => { message('notification', ''); load(); });
+$('logout').addEventListener('click', async () => {
+  const control = $('logout');
+  control.disabled = true;
+  try { await api.logout(); signedOut('Signed out.'); }
+  catch { signedOut('Signed out locally. The server could not confirm session revocation.'); }
+  finally { control.disabled = false; }
+});
+$('menu').addEventListener('click', () => {
+  const open = $('nav').classList.toggle('open');
+  $('menu').setAttribute('aria-expanded', String(open));
+});
+window.addEventListener('hashchange', () => {
+  if (window.location.hash !== '#main') setPage(readLocation(), true);
+});
+setInterval(() => { if (['overview', 'sessions', 'alerts'].includes(active)) refreshInBackground(); }, 90000);
+finishSso();

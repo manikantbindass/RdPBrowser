@@ -24,12 +24,19 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self' tauri: asset: https:; frame-src *; child-src *; connect-src *; script-src 'self' 'unsafe-inline' https:; style-src 'self' 'unsafe-inline' https:; img-src * data: asset: http://asset.localhost"
+      "csp": "default-src 'self' tauri: asset:; base-uri 'none'; object-src 'none'; frame-src 'none'; form-action 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: asset: http://asset.localhost; connect-src 'self' ipc: http://ipc.localhost https: wss: http://127.0.0.1:3001 http://localhost:3001",
+      "devCsp": "default-src 'self' tauri: asset:; base-uri 'none'; object-src 'none'; frame-src 'none'; form-action 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: asset: http://asset.localhost; connect-src 'self' ipc: http://ipc.localhost https: wss: http://127.0.0.1:3001 http://localhost:3001 ws://localhost:5173 ws://127.0.0.1:5173"
     }
   },
   "bundle": {
     "active": true,
-    "targets": ["msi", "nsis", "appimage", "deb", "dmg"],
+    "targets": [
+      "msi",
+      "nsis",
+      "appimage",
+      "deb",
+      "dmg"
+    ],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -42,7 +49,7 @@
     "copyright": "© 2025 RemoteShield X",
     "category": "Business",
     "shortDescription": "Secure Remote Work Browser",
-    "longDescription": "Enterprise-grade secure browser with VPN enforcement and static IP routing.",
+    "longDescription": "Organization-policy browser. OS VPN enforcement and signed updates require separately verified deployment integrations.",
     "windows": {
       "certificateThumbprint": null,
       "digestAlgorithm": "sha256",
@@ -50,7 +57,9 @@
     },
     "linux": {
       "deb": {
-        "depends": ["libwebkit2gtk-4.1-0", "libssl-dev"]
+        "depends": [
+          "libwebkit2gtk-4.1-0"
+        ]
       },
       "appimage": {
         "bundleMediaFramework": true
@@ -64,8 +73,6 @@
     }
   },
   "plugins": {
-    "shell": {
-      "open": false
-    }
+    "updater": { "pubkey": "", "requireSignedVersion": true }
   }
 }

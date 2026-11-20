@@ -1,22 +1,20 @@
 const express = require('express');
 const axios = require('axios');
+const { Joi,validate }=require('../services/validation');
 
 const router = express.Router();
 
-router.get('/search', async (req, res) => {
-  const query = req.query.q;
-  if (!query) {
-    return res.status(400).json({ error: 'Query parameter q is required' });
-  }
-
+router.get('/search', async (req, res,next) => {
   try {
+    const query=validate(Joi.string().min(1).max(500).required(),req.query.q);
     const results = [];
     
     // Fire concurrent fetches to native JSON nodes to bypass HTML Captchas
     const [ddgRes, wikiRes] = await Promise.allSettled([
-      axios.get(`https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1`),
-      axios.get(`https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&utf8=&format=json`)
+      axios.get(`https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1`,{ timeout:5000,maxContentLength:1024*1024,maxRedirects:0 }),
+      axios.get(`https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&utf8=&format=json`,{ timeout:5000,maxContentLength:1024*1024,maxRedirects:0 })
     ]);
+    if (ddgRes.status==='rejected' && wikiRes.status==='rejected') throw Object.assign(new Error('Upstream unavailable'),{ status:503,code:'UPSTREAM_UNAVAILABLE' });
 
     // Parse DuckDuckGo Instant Answers & Deep Links
     if (ddgRes.status === 'fulfilled' && ddgRes.value.data) {
@@ -69,15 +67,14 @@ router.get('/search', async (req, res) => {
     // Send the structured data safely to the Laila Frontend UI
     res.json({
       meta: {
-        provider: 'Laila Neural Net',
+        provider: 'Laila Search',
         query,
         count: uniqueResults.length
       },
       results: uniqueResults
     });
   } catch (error) {
-    console.error('Laila Search Engine Error:', error.message);
-    res.status(500).json({ error: 'Failed to access the Laila upstream meta-index.' });
+    next(error);
   }
 });
 

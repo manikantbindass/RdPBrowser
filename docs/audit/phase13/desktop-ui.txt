@@ -1,0 +1,211 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Program Files\\nodejs\\node.EXE",
+      "D:\\Runtime Terror\\RDPBrowser\\admin-dashboard\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "test/desktop.spec.js",
+      "--reporter=json"
+    ],
+    "configFile": "D:\\Runtime Terror\\RDPBrowser\\admin-dashboard\\playwright.config.js",
+    "rootDir": "D:/Runtime Terror/RDPBrowser/admin-dashboard/test",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "D:/Runtime Terror/RDPBrowser/admin-dashboard/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "D:/Runtime Terror/RDPBrowser/admin-dashboard/test",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.spec.js"
+        ],
+        "timeout": 45000
+      }
+    ],
+    "filteredProjects": [
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "D:\\Runtime Terror\\RDPBrowser\\admin-dashboard\\test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "name": "",
+        "testDir": "D:\\Runtime Terror\\RDPBrowser\\admin-dashboard\\test",
+        "snapshotDir": "D:\\Runtime Terror\\RDPBrowser\\admin-dashboard\\test",
+        "testIgnore": [],
+        "testMatch": "**/*.spec.js",
+        "timeout": 45000,
+        "use": {
+          "headless": true,
+          "actionTimeout": 10000,
+          "launchOptions": {
+            "executablePath": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
+          },
+          "screenshot": "only-on-failure"
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": ""
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "default",
+    "updateSourceMethod": "patch",
+    "version": "1.65.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "desktop.spec.js",
+      "file": "desktop.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "desktop login supports keyboard labels and rejects browser authentication without native IPC",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1944,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-17T15:13:07.045Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "92d768488867b588a7cc-e3fa3765d8380cd5ebff",
+          "file": "desktop.spec.js",
+          "line": 18,
+          "column": 1
+        },
+        {
+          "title": "desktop login has no automated accessibility violations",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2206,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-17T15:13:09.714Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "92d768488867b588a7cc-c9daafd44db9e5776346",
+          "file": "desktop.spec.js",
+          "line": 25,
+          "column": 1
+        },
+        {
+          "title": "desktop login fits a narrow viewport",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1240,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-17T15:13:11.968Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "92d768488867b588a7cc-2d082a6fc86224362177",
+          "file": "desktop.spec.js",
+          "line": 28,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-17T15:13:05.065Z",
+    "duration": 8605.79,
+    "expected": 3,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

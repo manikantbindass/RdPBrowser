@@ -1,48 +1,25 @@
 'use strict';
 
-const ipRangeCheck = require('ip-range-check');
+const { createNetworkSource } = require('../services/network-source');
+const { wrap } = require('../services/validation');
 
-/**
- * VPN Enforcement Middleware
- *
- * Blocks any request that does NOT originate from the WireGuard VPN subnet.
- * On a properly configured VPS, all client traffic arrives via wg0 with
- * source IPs in the VPN_SUBNET (e.g. 10.8.0.0/24).
- *
- * In development mode (NODE_ENV=development) this check is bypassed.
- */
-function vpnCheck(req, res, next) {
-  if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test' || process.env.VPN_REQUIRED === 'false') {
-    req.vpnClientIp = req.ip;
-    return next();
-  }
-
-  const vpnSubnet = process.env.VPN_SUBNET || '10.8.0.0/24';
-
-  // Support X-Forwarded-For when behind Nginx (but only trust internal forwarding)
-  const forwardedFor = req.headers['x-forwarded-for'];
-  const clientIp = forwardedFor
-    ? forwardedFor.split(',')[0].trim()
-    : req.socket.remoteAddress;
-
-  // Strip IPv6 prefix if needed (::ffff:10.8.0.x)
-  const normalizedIp = clientIp.replace(/^::ffff:/, '');
-
-  try {
-    const inVpn = ipRangeCheck(normalizedIp, vpnSubnet);
-    if (!inVpn) {
-      console.warn(`[VPN BLOCK] Non-VPN request from ${normalizedIp} to ${req.path}`);
+function createVpnCheck(config) {
+  const observe = createNetworkSource(config);
+  return wrap(async (req, res, next) => {
+    const source = observe(req);
+    if (source.state === 'denied') {
+      req.app.get('logger').warn({ event: 'api.source_denied', requestId: req.requestId });
+      try { await require('../services/detection-source').recordRejectedSource(req,config,source.address); }
+      catch { req.app.get('logger').warn({ event:'detection.source_observation_failed',requestId:req.requestId }); }
       return res.status(403).json({
-        error: 'Access denied: All traffic must route through the RemoteShield VPN tunnel.',
+        error: 'Access denied: API source address is outside the approved network.',
         code: 'VPN_REQUIRED',
       });
     }
-    req.vpnClientIp = normalizedIp;
+    req.networkSource = source;
+    req.vpnClientIp = source.address;
     next();
-  } catch (err) {
-    console.error('[VPN CHECK ERROR]', err);
-    return res.status(500).json({ error: 'VPN verification failed' });
-  }
+  });
 }
 
-module.exports = { vpnCheck };
+module.exports = { createVpnCheck };

@@ -1,0 +1,184 @@
+{
+  "docs/audit/phase02/verification.json": [
+    {
+      "blob": "ba287d43c3b22d720eb03c4d8f7ce5a07cd6aaf5",
+      "file": "backend/src/middleware/auth.js",
+      "lineEndings": "as-stored",
+      "sha256": "d9784566d37a7152d8be31f08b21cd6f41ceffa9d319db5a94516f14cdbe31a3"
+    },
+    {
+      "blob": "a39df7ad77b7b068ed6a4622bfd81ebdf4e4fc19",
+      "file": "backend/src/routes/auth.js",
+      "lineEndings": "as-stored",
+      "sha256": "9814cf952f6e69100a797849e9db55699d6dcb6159a0c2e6a4692419de6c6ffb"
+    },
+    {
+      "blob": "60262527e20a2889b3f0b1e972785c5a03dcf616",
+      "file": "contracts/API.md",
+      "lineEndings": "as-stored",
+      "sha256": "b92225a2377f8aedfae72f36f9324c423de707ad30f71834dd6c5f866ee6202f"
+    }
+  ],
+  "docs/audit/phase04/docker-outage.json": [
+    {
+      "blob": "322f0c5c133af402bff08ebfc4026e3b273cad3d",
+      "file": "backend/src/routes/auth.js",
+      "lineEndings": "as-stored",
+      "sha256": "81f08924b24548d947734c2e221f4fff35fadf59527af9a32015c7c962a35db9"
+    },
+    {
+      "blob": "c2a3b1b52e53053d5cc18d1f67d6d934d41947c6",
+      "file": "contracts/openapi.json",
+      "lineEndings": "as-stored",
+      "sha256": "cfad4c82bb294ff32ddfefad1b4a3fead2bc6745cc2e1ae4c81b7008551c2a75"
+    }
+  ],
+  "docs/audit/phase04/verification.json": [
+    {
+      "blob": "322f0c5c133af402bff08ebfc4026e3b273cad3d",
+      "file": "backend/src/routes/auth.js",
+      "lineEndings": "as-stored",
+      "sha256": "81f08924b24548d947734c2e221f4fff35fadf59527af9a32015c7c962a35db9"
+    },
+    {
+      "blob": "c2a3b1b52e53053d5cc18d1f67d6d934d41947c6",
+      "file": "contracts/openapi.json",
+      "lineEndings": "as-stored",
+      "sha256": "cfad4c82bb294ff32ddfefad1b4a3fead2bc6745cc2e1ae4c81b7008551c2a75"
+    }
+  ],
+  "docs/audit/phase05/verification.json": [
+    {
+      "blob": "af44369ff395a67d1bc9d3097532d819abdca6e3",
+      "file": "backend/src/__tests__/access.test.js",
+      "lineEndings": "as-stored",
+      "sha256": "4ae5a8c2049f7c3df8e22ba7d4e8c421194d3c6215978c356190b2778cd4c15b"
+    },
+    {
+      "blob": "d1773f6a76137863b19ec46274629888848611da",
+      "file": "backend/src/__tests__/openapi.test.js",
+      "lineEndings": "as-stored",
+      "sha256": "83bc2e317259a6fc2ad475829d58df4213ee491e2a5b85da3c79a36e4c204a26"
+    },
+    {
+      "blob": "d89447eb76f92fb54452d6c661270d98ac2de343",
+      "file": "backend/src/middleware/auth.js",
+      "lineEndings": "as-stored",
+      "sha256": "677a55c6ae9b4762eb3bdcf2e8b810ca1b33fe41253dc7f060f0806e438ee21a"
+    },
+    {
+      "blob": "715da128ce4fb6bc86bbbbfbeee2912376cc4d5c",
+      "file": "backend/src/routes/auth.js",
+      "lineEndings": "as-stored",
+      "sha256": "f04458ba3c7bb21750d4aa9f9844e0297b0fa45a6974e268be7cbb6d90c017fa"
+    },
+    {
+      "blob": "4eeb74658b90610b1377bac7f74ebc69b07e30aa",
+      "file": "backend/src/services/access.js",
+      "lineEndings": "as-stored",
+      "sha256": "fd2564e8ac8fdd5315e2aecd42c93ebe297e04c5ddb828b0b1df2cb0a59d8546"
+    },
+    {
+      "blob": "28311fda2bcf8cda492a3a95dc160e49a61d6eec",
+      "file": "backend/src/validate-openapi.js",
+      "lineEndings": "as-stored",
+      "sha256": "5e49e47a987c6784c1a1a45e27bb45924fc8d7f7e80cebc4d801fe29b93e172d"
+    },
+    {
+      "blob": "0cb59c6fb6ffd4992c9e5318a232fd7e2969962b",
+      "file": "contracts/openapi.json",
+      "lineEndings": "as-stored",
+      "sha256": "5dfbbe3d8e47b8d8193ba47345f3ca951bfc69a36ab13b9f8a880c07d58645e2"
+    },
+    {
+      "blob": "1880b065542504d7be47ce99a1b7559fceeb11f8",
+      "file": "scripts/build-openapi.cjs",
+      "lineEndings": "as-stored",
+      "sha256": "f3626d892b1c442a5c1cae13c9ccde6d90d8ee16f8c67b9308c759f52ffc2903"
+    },
+    {
+      "blob": "a4c83e7492389127f482a4b50b861da7a8edbfe1",
+      "file": "scripts/scan-backend-secrets.mjs",
+      "lineEndings": "as-stored",
+      "sha256": "ca58e250dafe20a846d8f2cfdc7de55e75791f35ccf02b9b7bc4ebc85364ef69"
+    }
+  ],
+  "docs/audit/phase10/verification.json": [
+    {
+      "blob": "b80db26f7d769bef553a49014f65ccdcfae12b51",
+      "file": "backend/src/routes/auth.js",
+      "lineEndings": "as-stored",
+      "sha256": "44441d0620c5a097a4081f9cd3bd50710279b786217e3ef46d114acb70772d8d"
+    },
+    {
+      "blob": "5ee1d8c29065dc30732b90cd0cd3a0f7017da117",
+      "file": "backend/src/services/access.js",
+      "lineEndings": "as-stored",
+      "sha256": "7c1c8df4139338c848a39ee58eda9c3e0792071e83b52d078cfd3fc5219055fd"
+    },
+    {
+      "blob": "1a87506b2e62824a42755b2a423cf613bbf5e8dd",
+      "file": "contracts/openapi.json",
+      "lineEndings": "as-stored",
+      "sha256": "bf0d305cd3bd36fb10eb69fc3a92d2b87d4d444e985f410f2e4b5c186330a694"
+    },
+    {
+      "blob": "73d77be710845bff4b21cd0693f232a836f332b8",
+      "file": "scripts/build-openapi.cjs",
+      "lineEndings": "as-stored",
+      "sha256": "da10235a9010358bdaf841c5c40eb4348d9d5288ee1d5a4f5c751d433cbdd6bc"
+    }
+  ],
+  "docs/audit/phase11/verification.json": [
+    {
+      "blob": "1b69dfc4e84402fde68f63e835b60694f6d942ef",
+      "file": "admin-dashboard/api.js",
+      "lineEndings": "as-stored",
+      "sha256": "5d3cafb8c231746808568470d04b6b01decd494679ba43f887cf179aba60f094"
+    },
+    {
+      "blob": "46974c8f23a3f9a43a3f436d1a750d304eaaefc1",
+      "file": "backend/src/middleware/auth.js",
+      "lineEndings": "as-stored",
+      "sha256": "03261d53e95f6ee229881b7fd9abb612b437df95a95021654b8c9751122e1eb7"
+    },
+    {
+      "blob": "0afd0bde290d0e84e55fd8816864494867531320",
+      "file": "backend/src/routes/auth.js",
+      "lineEndings": "as-stored",
+      "sha256": "06fa648a3da5e9ca3c30a1aa4050b9a0de23c0d029ad84dcc213b94a89941135"
+    },
+    {
+      "blob": "cfffbc661ad68f20e26ec51bbed4c377cef5f57a",
+      "file": "backend/src/services/access-reviews.js",
+      "lineEndings": "as-stored",
+      "sha256": "a0e9eaa32af2696607b686a9297966a9bc52226d03b404a546bf7075737b701e"
+    },
+    {
+      "blob": "bd1b032f30be5b3c800fc8f8b45535eda0543b28",
+      "file": "backend/src/services/access.js",
+      "lineEndings": "as-stored",
+      "sha256": "6724732dfcd1a6b04ba4c539c9f5314c8af934056ffd0f07142a466ebd623759"
+    },
+    {
+      "blob": "56b6104d06b3ec1dcbe0e653ed056477a217c2d4",
+      "file": "contracts/openapi.json",
+      "lineEndings": "as-stored",
+      "sha256": "4ff60bb639db2cc5e51335f2345b85b859c6391862afbc9677d43d34d921c9b9"
+    },
+    {
+      "blob": "f5c5f4abdec5880c05ff463043afb23677bc2585",
+      "file": "scripts/build-openapi.cjs",
+      "lineEndings": "as-stored",
+      "sha256": "063c4ea366575696a204ae29e3549ddd321a7630bda0a1998cb72233c5f047de"
+    }
+  ],
+  "docs/audit/phase12/input-hashes.json": [
+    {
+      "blob": "e54d3c639254ccc150a8954a25c9ac1d962bb5ef",
+      "file": "backend/src/services/secret-files.js",
+      "lineEndings": "as-stored",
+      "sha256": "1b2b7d9b5e231e82f98cc14b1d172f5d7bcf884c194426f49b40bc57e2dd505c"
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+9ee14d4d57ac4579af2853f371a333808a788d820d8fb5dcf0808597c10fb9cd  RemoteShield-v2.5.0-preview.3-android-arm64-v8a.apk
+098203734416dc9b4aa6924e79809d58f2ced4c7f7c5fa1ff5785a625770b5fa  RemoteShield-v2.5.0-preview.3-android-armeabi-v7a.apk
+b102ea13c2a68ce917ecad03d0820c5807543d17951aa5c3199ccc6e6663770c  RemoteShield-v2.5.0-preview.3-android-universal.apk
+84050e5b02c77b7ff62853a7fd090e2857fdab429f683c8ba14d9eaf6b0dce01  RemoteShield-v2.5.0-preview.3-android-x86_64.apk
+e8d04de1b0e9a3d80f17bfdb9af55bc7231de23013934796db0b3180ac4b7406  RemoteShield-v2.5.0-preview.3-linux-x64.AppImage
+c0955a31dc8526aa7dbd446fb2030bdbfbea9a4d124c30a6417f715793c2f88c  RemoteShield-v2.5.0-preview.3-linux-x64.deb
+de4482df0324fe343362026b45cebce0f058972ab80f53b0be67684cd8d94ba0  RemoteShield-v2.5.0-preview.3-linux-x64.tar.gz
+8b718702e8b21a2ee69d12190a2c116ee090544503229ed1f749ad48b0d6b85d  RemoteShield-v2.5.0-preview.3-macos-universal.dmg
+826dcb69ffb7d374838e93614bc2fda77359636aa5bc7490944eddbdc30eb344  RemoteShield-v2.5.0-preview.3-windows-x64-setup.exe
+cae1c765075f0a1ee2964274cff425a7d13b117acdbc329346c601bf0c6fd26e  RemoteShield-v2.5.0-preview.3-windows-x64.msi
+71ee3b5184f1fddbbcfa4c484f470c1ad76d739c1c30ccc6ceccb961b8e830d1  backend-image.cdx.json
+c528dd881ea2e7a76323dfb38c37c82e14d00f9f1dd521aa9493cd6ed979d88c  edge-image.cdx.json
+b75c5fcef50d17a1944b4f4e05b91b41493d40748d6e57009b6706443d24286e  image-identities.json
+c1320524039946437936474227e4314639d556d3e5809ea8ada0069e06c39799  remoteshield-backend-v2.5.0-preview.3-linux-amd64.tar.gz
+93656895ed3913657231da2b157756296eb2a997db5091f2d979b102b9b6d2d0  remoteshield-edge-v2.5.0-preview.3-linux-amd64.tar.gz
+6fe667700040e3b3a3ab700c48d0df972fef7e2a6ec21c4f668da823be376932  source-lockfiles.cdx.json
+e1a7d7541800e925d55f771c6d152773780ff43b41ea0f23c41a3eb5759ae65c  release-manifest.json

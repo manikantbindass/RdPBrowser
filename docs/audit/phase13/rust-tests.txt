@@ -1,0 +1,22 @@
+   Compiling rustls-webpki v0.103.13
+   Compiling rustls v0.23.38
+   Compiling tokio-rustls v0.26.4
+   Compiling rustls-platform-verifier v0.6.2
+   Compiling hyper-rustls v0.27.9
+   Compiling reqwest v0.13.2
+   Compiling reqwest v0.12.28
+   Compiling tauri-plugin-updater v2.12.0
+   Compiling tauri-plugin-http v2.5.8
+   Compiling remoteshield-x v1.0.0 (D:\Runtime Terror\RDPBrowser\desktop\src-tauri)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3m 34s
+     Running unittests src\main.rs (target\debug\deps\remoteshield_x-a5a42a490907c5b0.exe)
+
+running 6 tests
+test browser::tests::policy_batch_requires_exact_ordered_authorizations ... ok
+test download::tests::rejects_binary_and_terminal_control_sequences ... ok
+test vpn::tests::requires_exact_peer_and_recent_handshake ... ok
+test updates::tests::release_versions_are_strict ... ok
+test navigation::tests::rejects_unsafe_navigation ... ok
+test config::tests::validates_control_plane_origin ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s

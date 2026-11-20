@@ -1,0 +1,23 @@
+PASS src/__tests__/architecture.test.js (17.475 s)
+PASS src/__tests__/app.test.js
+PASS src/__tests__/openapi.test.js
+PASS src/__tests__/operations.test.js
+PASS src/__tests__/network-source.test.js
+PASS src/__tests__/enterprise.test.js
+PASS src/__tests__/runtime.test.js
+PASS src/__tests__/admin.test.js
+PASS src/__tests__/oidc-config.test.js
+PASS src/__tests__/governance.test.js
+PASS src/__tests__/detections.test.js
+PASS src/__tests__/laila.test.js
+PASS src/__tests__/access.test.js
+PASS src/__tests__/gateway-snapshot.test.js
+PASS src/__tests__/worker.test.js
+PASS src/__tests__/database-lifecycle.test.js
+
+Test Suites: 16 passed, 16 total
+Tests:       156 passed, 156 total
+Snapshots:   0 total
+Time:        37.01 s
+Ran all test suites.
+Test results written to: ..\.quality-backend-final\backend-jest.json

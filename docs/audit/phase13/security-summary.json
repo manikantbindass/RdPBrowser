@@ -1,0 +1,590 @@
+{
+  "schemaVersion": 1,
+  "sources": {
+    "filesystem-scan.json": {
+      "status": "FAIL",
+      "artifact": "/tmp/tmp.libENF/source",
+      "imageId": null,
+      "advisories": [
+        {
+          "target": "Cargo.lock",
+          "id": "GHSA-82j2-j2ch-gfr8",
+          "package": "rustls-webpki",
+          "installed": "0.101.7",
+          "fixed": "0.103.13, 0.104.0-alpha.7",
+          "severity": "HIGH"
+        },
+        {
+          "target": "Cargo.lock",
+          "id": "CVE-2026-115905",
+          "package": "zip",
+          "installed": "4.6.1",
+          "fixed": "9.0.5",
+          "severity": "CRITICAL"
+        },
+        {
+          "target": "Cargo.lock",
+          "id": "CVE-2026-115909",
+          "package": "zip",
+          "installed": "4.6.1",
+          "fixed": "9.0.0",
+          "severity": "HIGH"
+        }
+      ],
+      "misconfigurations": [
+        {
+          "target": "infrastructure/digitalocean/main.tf",
+          "id": "DIG-0001",
+          "severity": "CRITICAL",
+          "title": "A firewall rule should not allow unrestricted ingress from any IP address."
+        },
+        {
+          "target": "infrastructure/digitalocean/main.tf",
+          "id": "DIG-0001",
+          "severity": "CRITICAL",
+          "title": "A firewall rule should not allow unrestricted ingress from any IP address."
+        },
+        {
+          "target": "infrastructure/digitalocean/main.tf",
+          "id": "DIG-0003",
+          "severity": "CRITICAL",
+          "title": "A firewall rule should not allow unrestricted egress to any IP address."
+        },
+        {
+          "target": "infrastructure/digitalocean/main.tf",
+          "id": "DIG-0003",
+          "severity": "CRITICAL",
+          "title": "A firewall rule should not allow unrestricted egress to any IP address."
+        },
+        {
+          "target": "infrastructure/digitalocean/main.tf",
+          "id": "DIG-0003",
+          "severity": "CRITICAL",
+          "title": "A firewall rule should not allow unrestricted egress to any IP address."
+        }
+      ],
+      "severityCounts": {
+        "HIGH": 2,
+        "CRITICAL": 6
+      }
+    },
+    "remoteshield-backend-scan.json": {
+      "status": "FAIL",
+      "artifact": "remoteshield-backend:phase12-a",
+      "imageId": "sha256:646aa6d5a36536d5704dea3f944f7d460ad93d007a3b2550abea24220a072608",
+      "advisories": [
+        {
+          "target": "Node.js",
+          "id": "CVE-2026-102276",
+          "package": "brace-expansion",
+          "installed": "5.0.9",
+          "fixed": "5.0.10, 3.0.7, 2.1.5, 1.1.19",
+          "severity": "HIGH"
+        },
+        {
+          "target": "Node.js",
+          "id": "CVE-2026-102278",
+          "package": "brace-expansion",
+          "installed": "5.0.9",
+          "fixed": "5.0.11, 3.0.8, 2.1.6, 1.1.20",
+          "severity": "HIGH"
+        },
+        {
+          "target": "Node.js",
+          "id": "CVE-2026-109383",
+          "package": "undici",
+          "installed": "6.28.0",
+          "fixed": "6.29.1, 7.30.1, 8.12.2",
+          "severity": "HIGH"
+        },
+        {
+          "target": "Node.js",
+          "id": "CVE-2026-109869",
+          "package": "undici",
+          "installed": "6.28.0",
+          "fixed": "6.29.1, 7.30.1, 8.12.2",
+          "severity": "HIGH"
+        },
+        {
+          "target": "Node.js",
+          "id": "CVE-2026-19534",
+          "package": "undici",
+          "installed": "6.28.0",
+          "fixed": "6.28.1, 7.29.1, 8.10.2",
+          "severity": "HIGH"
+        },
+        {
+          "target": "Node.js",
+          "id": "CVE-2026-87018",
+          "package": "undici",
+          "installed": "6.28.0",
+          "fixed": "6.29.1, 7.30.1, 8.12.2",
+          "severity": "HIGH"
+        }
+      ],
+      "misconfigurations": [],
+      "severityCounts": {
+        "HIGH": 6
+      }
+    },
+    "remoteshield-nginx-scan.json": {
+      "status": "FAIL",
+      "artifact": "remoteshield-nginx:phase12",
+      "imageId": "sha256:efe32d3f3c5a2f3166dec651e466369df928ffe5ad0b0c5b17eee70b4e96079b",
+      "advisories": [
+        {
+          "target": "remoteshield-nginx:phase12 (alpine 3.24.4)",
+          "id": "CVE-2026-125350",
+          "package": "libxslt",
+          "installed": "1.1.43-r3",
+          "fixed": "1.1.43-r4",
+          "severity": "HIGH"
+        },
+        {
+          "target": "remoteshield-nginx:phase12 (alpine 3.24.4)",
+          "id": "CVE-2026-87636",
+          "package": "libxslt",
+          "installed": "1.1.43-r3",
+          "fixed": "1.1.43-r4",
+          "severity": "HIGH"
+        },
+        {
+          "target": "remoteshield-nginx:phase12 (alpine 3.24.4)",
+          "id": "CVE-2026-9947",
+          "package": "libxslt",
+          "installed": "1.1.43-r3",
+          "fixed": "1.1.43-r4",
+          "severity": "HIGH"
+        }
+      ],
+      "misconfigurations": [],
+      "severityCounts": {
+        "HIGH": 3
+      }
+    },
+    "gitleaks.json": {
+      "status": "FAIL",
+      "candidates": [
+        {
+          "rule": "generic-api-key",
+          "file": "backend/src/__tests__/app.test.js",
+          "line": 26
+        },
+        {
+          "rule": "generic-api-key",
+          "file": "docs/audit/phase04/docker-outage.json",
+          "line": 41
+        },
+        {
+          "rule": "generic-api-key",
+          "file": "docs/audit/phase04/docker-outage.json",
+          "line": 45
+        },
+        {
+          "rule": "generic-api-key",
+          "file": "docs/audit/phase04/verification.json",
+          "line": 46
+        },
+        {
+          "rule": "generic-api-key",
+          "file": "docs/audit/phase04/verification.json",
+          "line": 50
+        },
+        {
+          "rule": "curl-auth-header",
+          "file": "scripts/test-scim-edge.sh",
+          "line": 65
+        },
+        {
+          "rule": "generic-api-key",
+          "file": "docs/audit/phase12/input-hashes.json",
+          "line": 25
+        },
+        {
+          "rule": "generic-api-key",
+          "file": "docs/audit/phase10/verification.json",
+          "line": 30
+        },
+        {
+          "rule": "generic-api-key",
+          "file": "docs/audit/phase10/verification.json",
+          "line": 33
+        },
+        {
+          "rule": "generic-api-key",
+          "file": "docs/audit/phase10/verification.json",
+          "line": 34
+        },
+        {
+          "rule": "generic-api-key",
+          "file": "docs/audit/phase10/verification.json",
+          "line": 37
+        },
+        {
+          "rule": "generic-api-key",
+          "file": "docs/audit/phase11/verification.json",
+          "line": 35
+        },
+        {
+          "rule": "generic-api-key",
+          "file": "docs/audit/phase11/verification.json",
+          "line": 52
+        },
+        {
+          "rule": "generic-api-key",
+          "file": "docs/audit/phase11/verification.json",
+          "line": 55
+        },
+        {
+          "rule": "generic-api-key",
+          "file": "docs/audit/phase11/verification.json",
+          "line": 63
+        },
+        {
+          "rule": "generic-api-key",
+          "file": "docs/audit/phase11/verification.json",
+          "line": 64
+        },
+        {
+          "rule": "generic-api-key",
+          "file": "docs/audit/phase11/verification.json",
+          "line": 78
+        },
+        {
+          "rule": "generic-api-key",
+          "file": "docs/audit/phase11/verification.json",
+          "line": 86
+        },
+        {
+          "rule": "generic-api-key",
+          "file": "docs/audit/phase02/verification.json",
+          "line": 28
+        },
+        {
+          "rule": "generic-api-key",
+          "file": "docs/audit/phase02/verification.json",
+          "line": 33
+        },
+        {
+          "rule": "generic-api-key",
+          "file": "docs/audit/phase02/verification.json",
+          "line": 38
+        },
+        {
+          "rule": "generic-api-key",
+          "file": "docs/audit/phase05/verification.json",
+          "line": 60
+        },
+        {
+          "rule": "generic-api-key",
+          "file": "docs/audit/phase05/verification.json",
+          "line": 67
+        },
+        {
+          "rule": "generic-api-key",
+          "file": "docs/audit/phase05/verification.json",
+          "line": 86
+        },
+        {
+          "rule": "generic-api-key",
+          "file": "docs/audit/phase05/verification.json",
+          "line": 92
+        },
+        {
+          "rule": "generic-api-key",
+          "file": "docs/audit/phase05/verification.json",
+          "line": 99
+        },
+        {
+          "rule": "generic-api-key",
+          "file": "docs/audit/phase05/verification.json",
+          "line": 107
+        },
+        {
+          "rule": "generic-api-key",
+          "file": "docs/audit/phase05/verification.json",
+          "line": 110
+        },
+        {
+          "rule": "generic-api-key",
+          "file": "docs/audit/phase05/verification.json",
+          "line": 117
+        },
+        {
+          "rule": "generic-api-key",
+          "file": "docs/audit/phase05/verification.json",
+          "line": 118
+        }
+      ]
+    },
+    "security-eslint.json": {
+      "status": "FAIL",
+      "findings": [
+        {
+          "file": "backend/src/__tests__/gateway-snapshot.test.js",
+          "line": 21,
+          "rule": "security/detect-non-literal-fs-filename"
+        },
+        {
+          "file": "backend/src/__tests__/gateway-snapshot.test.js",
+          "line": 32,
+          "rule": "security/detect-non-literal-fs-filename"
+        },
+        {
+          "file": "backend/src/__tests__/gateway-snapshot.test.js",
+          "line": 34,
+          "rule": "security/detect-non-literal-fs-filename"
+        },
+        {
+          "file": "backend/src/__tests__/gateway-snapshot.test.js",
+          "line": 36,
+          "rule": "security/detect-non-literal-fs-filename"
+        },
+        {
+          "file": "backend/src/__tests__/oidc-config.test.js",
+          "line": 12,
+          "rule": "security/detect-non-literal-fs-filename"
+        },
+        {
+          "file": "backend/src/__tests__/oidc-config.test.js",
+          "line": 12,
+          "rule": "security/detect-non-literal-fs-filename"
+        },
+        {
+          "file": "backend/src/__tests__/oidc-config.test.js",
+          "line": 12,
+          "rule": "security/detect-non-literal-fs-filename"
+        },
+        {
+          "file": "backend/src/__tests__/oidc-config.test.js",
+          "line": 14,
+          "rule": "security/detect-non-literal-fs-filename"
+        },
+        {
+          "file": "backend/src/__tests__/operations.test.js",
+          "line": 18,
+          "rule": "security/detect-non-literal-fs-filename"
+        },
+        {
+          "file": "backend/src/__tests__/operations.test.js",
+          "line": 22,
+          "rule": "security/detect-non-literal-fs-filename"
+        },
+        {
+          "file": "backend/src/__tests__/operations.test.js",
+          "line": 69,
+          "rule": "security/detect-non-literal-fs-filename"
+        },
+        {
+          "file": "backend/src/__tests__/operations.test.js",
+          "line": 71,
+          "rule": "security/detect-non-literal-fs-filename"
+        },
+        {
+          "file": "backend/src/__tests__/operations.test.js",
+          "line": 72,
+          "rule": "security/detect-non-literal-fs-filename"
+        },
+        {
+          "file": "backend/src/__tests__/operations.test.js",
+          "line": 76,
+          "rule": "security/detect-object-injection"
+        },
+        {
+          "file": "backend/src/config.js",
+          "line": 65,
+          "rule": "security/detect-object-injection"
+        },
+        {
+          "file": "backend/src/config.js",
+          "line": 106,
+          "rule": "security/detect-non-literal-fs-filename"
+        },
+        {
+          "file": "backend/src/db/config.js",
+          "line": 22,
+          "rule": "security/detect-non-literal-fs-filename"
+        },
+        {
+          "file": "backend/src/db/db.js",
+          "line": 21,
+          "rule": "security/detect-non-literal-fs-filename"
+        },
+        {
+          "file": "backend/src/db/migrations.js",
+          "line": 6,
+          "rule": "security/detect-non-literal-fs-filename"
+        },
+        {
+          "file": "backend/src/db/migrations.js",
+          "line": 11,
+          "rule": "security/detect-non-literal-fs-filename"
+        },
+        {
+          "file": "backend/src/db/migrations.js",
+          "line": 18,
+          "rule": "security/detect-object-injection"
+        },
+        {
+          "file": "backend/src/http/errors.js",
+          "line": 25,
+          "rule": "security/detect-object-injection"
+        },
+        {
+          "file": "backend/src/http/errors.js",
+          "line": 27,
+          "rule": "security/detect-object-injection"
+        },
+        {
+          "file": "backend/src/operations/server.js",
+          "line": 9,
+          "rule": "security/detect-non-literal-fs-filename"
+        },
+        {
+          "file": "backend/src/operations/server.js",
+          "line": 11,
+          "rule": "security/detect-non-literal-fs-filename"
+        },
+        {
+          "file": "backend/src/operations/server.js",
+          "line": 24,
+          "rule": "security/detect-non-literal-fs-filename"
+        },
+        {
+          "file": "backend/src/operations/telemetry.js",
+          "line": 27,
+          "rule": "security/detect-object-injection"
+        },
+        {
+          "file": "backend/src/operations/telemetry.js",
+          "line": 55,
+          "rule": "security/detect-object-injection"
+        },
+        {
+          "file": "backend/src/operations/telemetry.js",
+          "line": 58,
+          "rule": "security/detect-object-injection"
+        },
+        {
+          "file": "backend/src/routes/scim.js",
+          "line": 119,
+          "rule": "security/detect-object-injection"
+        },
+        {
+          "file": "backend/src/routes/scim.js",
+          "line": 196,
+          "rule": "security/detect-object-injection"
+        },
+        {
+          "file": "backend/src/routes/scim.js",
+          "line": 197,
+          "rule": "security/detect-object-injection"
+        },
+        {
+          "file": "backend/src/routes/scim.js",
+          "line": 198,
+          "rule": "security/detect-object-injection"
+        },
+        {
+          "file": "backend/src/routes/scim.js",
+          "line": 201,
+          "rule": "security/detect-object-injection"
+        },
+        {
+          "file": "backend/src/routes/scim.js",
+          "line": 201,
+          "rule": "security/detect-object-injection"
+        },
+        {
+          "file": "backend/src/services/access.js",
+          "line": 40,
+          "rule": "security/detect-object-injection"
+        },
+        {
+          "file": "backend/src/services/evidence.js",
+          "line": 10,
+          "rule": "security/detect-object-injection"
+        },
+        {
+          "file": "backend/src/services/gateway-snapshot.js",
+          "line": 13,
+          "rule": "security/detect-non-literal-fs-filename"
+        },
+        {
+          "file": "backend/src/services/oidc-config.js",
+          "line": 19,
+          "rule": "security/detect-non-literal-fs-filename"
+        },
+        {
+          "file": "backend/src/services/scim-schema.js",
+          "line": 31,
+          "rule": "security/detect-object-injection"
+        },
+        {
+          "file": "backend/src/services/scim-schema.js",
+          "line": 31,
+          "rule": "security/detect-object-injection"
+        },
+        {
+          "file": "backend/src/services/scim-schema.js",
+          "line": 31,
+          "rule": "security/detect-object-injection"
+        },
+        {
+          "file": "backend/src/services/scim-schema.js",
+          "line": 43,
+          "rule": "security/detect-object-injection"
+        },
+        {
+          "file": "backend/src/services/scim-schema.js",
+          "line": 46,
+          "rule": "security/detect-object-injection"
+        },
+        {
+          "file": "backend/src/services/secret-files.js",
+          "line": 6,
+          "rule": "security/detect-object-injection"
+        },
+        {
+          "file": "backend/src/services/secret-files.js",
+          "line": 7,
+          "rule": "security/detect-object-injection"
+        },
+        {
+          "file": "backend/src/services/secret-files.js",
+          "line": 9,
+          "rule": "security/detect-non-literal-fs-filename"
+        },
+        {
+          "file": "backend/src/services/secret-files.js",
+          "line": 11,
+          "rule": "security/detect-non-literal-fs-filename"
+        },
+        {
+          "file": "backend/src/services/secret-files.js",
+          "line": 18,
+          "rule": "security/detect-object-injection"
+        },
+        {
+          "file": "backend/src/services/validation.js",
+          "line": 12,
+          "rule": "security/detect-object-injection"
+        },
+        {
+          "file": "backend/src/services/validation.js",
+          "line": 12,
+          "rule": "security/detect-object-injection"
+        },
+        {
+          "file": "backend/src/services/validation.js",
+          "line": 12,
+          "rule": "security/detect-object-injection"
+        }
+      ],
+      "ruleCounts": {
+        "security/detect-non-literal-fs-filename": 25,
+        "security/detect-object-injection": 27
+      }
+    }
+  }
+}

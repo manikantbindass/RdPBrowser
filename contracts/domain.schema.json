@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:remoteshield:domain:v1",
+  "description": "Target domain DTOs; not proof of persisted tenancy or device attestation. Secrets are never DTO fields.",
+  "$defs": {
+    "id": { "type": "string", "format": "uuid" },
+    "time": { "type": "string", "format": "date-time" },
+    "organization": {
+      "type": "object", "required": ["id", "name", "status", "revision"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" }, "name": { "type": "string", "minLength": 1, "maxLength": 255 },
+        "status": { "enum": ["active", "suspended"] }, "revision": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "user": {
+      "type": "object", "required": ["id", "organizationId", "username", "role", "status"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" }, "organizationId": { "anyOf": [{ "$ref": "#/$defs/id" }, { "type": "null" }] },
+        "username": { "type": "string", "minLength": 3, "maxLength": 80 },
+        "role": { "enum": ["user", "admin", "superadmin"] }, "status": { "enum": ["active", "locked", "inactive"] }
+      }
+    },
+    "device": {
+      "type": "object", "required": ["id", "organizationId", "userId", "platform", "trustState"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" }, "organizationId": { "$ref": "#/$defs/id" }, "userId": { "$ref": "#/$defs/id" },
+        "platform": { "enum": ["windows", "linux", "macos", "android"] },
+        "trustState": { "enum": ["pending", "enrolled", "revoked"] }
+      }
+    },
+    "session": {
+      "type": "object", "required": ["id", "userId", "deviceId", "status", "expiresAt"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" }, "userId": { "$ref": "#/$defs/id" },
+        "deviceId": { "anyOf": [{ "$ref": "#/$defs/id" }, { "type": "null" }] },
+        "status": { "enum": ["active", "expired", "revoked"] }, "expiresAt": { "$ref": "#/$defs/time" }
+      }
+    },
+    "policy": {
+      "type": "object", "required": ["id", "organizationId", "revision", "mode", "rules"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" }, "organizationId": { "$ref": "#/$defs/id" }, "revision": { "type": "integer", "minimum": 1 },
+        "mode": { "enum": ["audit", "enforce"] }, "rules": { "type": "array", "items": { "type": "object", "required": ["effect", "pattern"], "properties": { "effect": { "enum": ["allow", "deny"] }, "pattern": { "type": "string", "minLength": 1, "maxLength": 500 } } } }
+      }
+    },
+    "event": {
+      "type": "object", "required": ["id", "type", "schemaVersion", "occurredAt", "organizationId", "actorId", "data"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" }, "type": { "type": "string", "pattern": "^[a-z]+(\\.[a-z_]+)+$" },
+        "schemaVersion": { "const": 1 }, "occurredAt": { "$ref": "#/$defs/time" },
+        "organizationId": { "anyOf": [{ "$ref": "#/$defs/id" }, { "type": "null" }] },
+        "actorId": { "anyOf": [{ "$ref": "#/$defs/id" }, { "type": "null" }] }, "data": { "type": "object" }
+      }
+    }
+  }
+}

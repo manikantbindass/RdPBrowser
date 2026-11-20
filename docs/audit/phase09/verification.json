@@ -1,0 +1,15 @@
+{
+  "scope": "Disposable PostgreSQL 15.19 on loopback; Chrome desktop and 390px mobile viewport",
+  "backendUnitTests": 83,
+  "databaseTests": 27,
+  "consoleUnitTests": 3,
+  "browserTests": 6,
+  "axe": "Zero violations in the tested sign-in, overview and policy views",
+  "openApiPaths": 52,
+  "consoleDependencyAudit": "Zero npm advisory findings",
+  "limitations": [
+    "Password console login; OIDC return UI not tested",
+    "Gateway counts require operator-published snapshot",
+    "No live tenant deployment or screen reader certification"
+  ]
+}

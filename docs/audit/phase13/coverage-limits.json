@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "checks": [
+    {"id": "physical-android", "status": "BLOCKED", "reason": "No authorized physical device was available. The Android 16 API 36 x86-64 emulator completed the native integration scenario."},
+    {"id": "native-desktop-ui-macos-linux", "status": "SKIPPED", "reason": "Hosted Rust and build checks passed on macOS and Linux. GUI checks used the built React login shell in Chrome on Windows."},
+    {"id": "signed-installer-and-update", "status": "SKIPPED", "reason": "No production signing and update feed acceptance was run in Phase 13."},
+    {"id": "assistive-device-accessibility", "status": "SKIPPED", "reason": "Automated axe, keyboard focus and narrow viewport checks ran. Screen-reader and assistive-device testing remains manual."},
+    {"id": "live-provider-and-cloud", "status": "SKIPPED", "reason": "Protocol fixtures and isolated deployment tests ran without live provider tenants or paid cloud resources."}
+  ]
+}

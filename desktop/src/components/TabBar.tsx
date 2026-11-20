@@ -17,6 +17,10 @@ const TabBar: React.FC<Props> = ({ tabs, activeTabId, onSelect, onClose, onNew }
         key={tab.id}
         id={`rs-tab-${tab.id}`}
         className={`tab ${tab.id === activeTabId ? 'active' : ''}`}
+        role="tab"
+        aria-selected={tab.id === activeTabId}
+        tabIndex={0}
+        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(tab.id); } }}
         onClick={() => onSelect(tab.id)}
         title={tab.url}
       >
@@ -24,6 +28,7 @@ const TabBar: React.FC<Props> = ({ tabs, activeTabId, onSelect, onClose, onNew }
         <span className="tab-title">{tab.title}</span>
         <button
           className="tab-close"
+          aria-label={`Close ${tab.title}`}
           onClick={e => { e.stopPropagation(); onClose(tab.id); }}
           title="Close tab"
         >

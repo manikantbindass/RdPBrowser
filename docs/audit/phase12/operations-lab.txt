@@ -1,0 +1,54 @@
+WARNING: No blkio throttle.read_bps_device support
+WARNING: No blkio throttle.write_bps_device support
+WARNING: No blkio throttle.read_iops_device support
+WARNING: No blkio throttle.write_iops_device support
+WARNING: Support for cgroup v1 is deprecated and planned to be removed by no later than May 2029 (https://github.com/moby/moby/issues/51111)
+{"event": "operations.initialized", "at": "2026-11-16T15:50:35.551042+00:00", "environment": "staging"}
+{"event": "operations.backup_complete", "at": "2026-11-16T15:51:03.807402+00:00", "file": "20261116T155102Z-d2f57b7e.dump.age", "bytes": 1057, "seconds": 2.5350374019999435}
+{"event": "operations.deployment_complete", "at": "2026-11-16T15:51:25.388886+00:00", "release": "phase12-a"}
+{"check": "production override deploys healthy containers with file secrets", "result": "PASS"}
+{"check": "backend runs non-root with read-only root and dropped capabilities", "result": "PASS"}
+{"check": "nginx runs non-root with read-only root and dropped capabilities", "result": "PASS"}
+{"check": "container environment contains secret paths without secret values", "result": "PASS"}
+{"check": "internal metrics rejects unauthenticated requests", "result": "PASS"}
+{"check": "authenticated operational dashboard reads real telemetry", "result": "PASS"}
+{"check": "real password authentication works through hardened TLS edge", "result": "PASS"}
+{"check": "tenant API works before recovery", "result": "PASS"}
+{"event": "operations.backup_complete", "at": "2026-11-16T15:51:41.008883+00:00", "file": "20261116T155139Z-9b824434.dump.age", "bytes": 153392, "seconds": 3.414751808000119}
+{"event": "operations.configuration_backup_complete", "at": "2026-11-16T15:51:41.023948+00:00", "file": "configuration-32ac288280b861e6.tar.age"}
+{"check": "configuration backup encrypts secrets and excludes archives and recovery identity", "result": "PASS"}
+{"check": "backup leaves only private encrypted files and receipts", "result": "PASS"}
+{"check": "backup fixture contains an active session", "result": "PASS"}
+{"event": "operations.restore_verified", "at": "2026-11-16T15:51:48.279520+00:00", "database": "rsx_restore_lab"}
+{"check": "custom-format backup restores actual policy data", "result": "PASS"}
+{"check": "restore refuses existing target database", "result": "PASS"}
+{"check": "incorrect recovery key fails closed", "result": "PASS"}
+{"check": "failed restore removes only its newly created database", "result": "PASS"}
+{"check": "corrupted archive fails integrity check before database creation", "result": "PASS"}
+{"check": "database outage fails readiness while process liveness remains available", "result": "PASS"}
+{"event": "operations.alert_transition", "at": "2026-11-16T15:52:03.296335+00:00", "key": "postgres_unhealthy", "state": "firing", "severity": "critical"}
+{"check": "observer records database failure alert", "result": "PASS"}
+{"event": "operations.alert_transition", "at": "2026-11-16T15:52:12.940473+00:00", "key": "postgres_unhealthy", "state": "resolved", "severity": "critical"}
+{"check": "observer records recovered database alert transition", "result": "PASS"}
+{"check": "backend crash restarts and restores API availability", "result": "PASS"}
+{"check": "edge resolves changed backend address without edge restart", "result": "PASS"}
+{"event": "operations.backup_complete", "at": "2026-11-16T15:52:43.575376+00:00", "file": "20261116T155242Z-1bc6ad5b.dump.age", "bytes": 153392, "seconds": 3.5467226910000136}
+{"event": "operations.deployment_complete", "at": "2026-11-16T15:53:04.533261+00:00", "release": "phase12-b"}
+{"event": "operations.rollback_complete", "at": "2026-11-16T15:53:28.512675+00:00", "release": "phase12-a"}
+{"check": "artifact rollback returns to previous executable revision", "result": "PASS"}
+{"check": "deployment and rollback preserve database records", "result": "PASS"}
+{"check": "incompatible schema prevents rollback before stopping services", "result": "PASS"}
+{"check": "failed rollback preflight preserves running container", "result": "PASS"}
+{"event": "operations.restore_activated", "at": "2026-11-16T15:54:03.626864+00:00", "database": "rsx_restore_lab"}
+{"check": "restored access token cannot reactivate old session", "result": "PASS"}
+{"check": "restored users remain locked pending identity reconciliation", "result": "PASS"}
+{"check": "recovery invalidates access and refresh sessions", "result": "PASS"}
+{"check": "recovery locks identities across both fixture tenants", "result": "PASS"}
+{"check": "recovery disables restored SSO, directory credentials and device trust", "result": "PASS"}
+{"check": "operator recovery resets and unlocks a local superadmin", "result": "PASS"}
+{"check": "recovered database serves authorized tenant requests", "result": "PASS"}
+{"check": "300 authenticated TLS API requests at concurrency ten succeed", "result": "PASS"}
+{"check": "application logs contain no fixture credentials or access token", "result": "PASS"}
+{"check": "sampled request and database spans are emitted", "result": "PASS"}
+{"performance": {"requests": 300, "concurrency": 10, "seconds": 2.7716832520000025, "requestsPerSecond": 108.23747619195836, "latencyMs": {"p50": 92.79499200010832, "p95": 138.46202800004903, "p99": 161.05983200009177}, "errors": 0, "restoreSeconds": 6.223910617000001, "activationSeconds": 26.30587780299993, "databaseRecoverySeconds": 0.5364318069998717, "backendCrashRecoverySeconds": 3.2524244429998816, "dnsRecoverySeconds": 0.00812632199995278, "backendMemoryLimitBytes": 805306368, "host": "5.15.153.1-microsoft-standard-WSL2"}}
+{"result": "PASS", "checks": 35, "hostNetworkModified": false, "cloudResourcesCreated": false}

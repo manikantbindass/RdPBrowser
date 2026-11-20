@@ -1,0 +1,14 @@
+{
+  "name": "remoteshield-admin-console",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "test:browser": "playwright test test/console.spec.js",
+    "test:desktop-ui": "playwright test test/desktop.spec.js"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.14.0",
+    "@playwright/test": "1.65.1"
+  }
+}

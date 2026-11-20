@@ -1,3 +1,4 @@
+import { SERVER_URL } from '../config';
 import React, { useState, useEffect } from 'react';
 import { Search as SearchIcon } from 'lucide-react';
 
@@ -34,7 +35,7 @@ const LailaSearch: React.FC<Props> = ({ query, onNavigate }) => {
     setLoading(true);
     setError('');
     try {
-      const response = await fetch(`http://localhost:3001/api/laila/search?q=${encodeURIComponent(q)}`);
+      const response = await fetch(`${SERVER_URL}/api/laila/search?q=${encodeURIComponent(q)}`);
       if (!response.ok) throw new Error('Failed to connect to Laila Core AI.');
       const data = await response.json();
       setResults(data.results || []);

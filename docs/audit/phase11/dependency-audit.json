@@ -1,0 +1,37 @@
+{
+  "backend": {
+    "counts": {
+      "info": 0,
+      "low": 0,
+      "moderate": 1,
+      "high": 1,
+      "critical": 0,
+      "total": 2
+    },
+    "advisories": [
+      {
+        "name": "geoip-lite",
+        "severity": "moderate",
+        "direct": true
+      },
+      {
+        "name": "ip-address",
+        "severity": "high",
+        "direct": false
+      }
+    ],
+    "status": "completed"
+  },
+  "console": {
+    "counts": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0,
+      "total": 0
+    },
+    "advisories": [],
+    "status": "completed"
+  }
+}

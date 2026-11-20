@@ -1,0 +1,131 @@
+{
+  "generator": "scripts/build_readme_assets.py",
+  "fontInputs": {
+    "regular": {
+      "name": "segoeui.ttf",
+      "sha256": "704eada12961a27fd271f7d3b09e2066520e758390c1776744eff430fee30f6e"
+    },
+    "bold": {
+      "name": "segoeuib.ttf",
+      "sha256": "b169e636719880976a97e94e3b1cb3dbe5f4a38eabc037bf9f2a9165154c3ad2"
+    }
+  },
+  "assets": {
+    "admin-dashboard.png": {
+      "bytes": 119637,
+      "sha256": "db633e824fc0c04de631298da95d735b66bfc766c1131108ffbb103d424dd9db",
+      "width": 1280,
+      "height": 907,
+      "frames": 1
+    },
+    "architecture.svg": {
+      "bytes": 4806,
+      "sha256": "b58e0508f8488987a9b291733d5eb35d530a549dc36d38a54fb2804a7c33ba5c"
+    },
+    "badge-contracts.svg": {
+      "bytes": 920,
+      "sha256": "efd2ebf7a5d354c8697969d84bca671f3c922bd91e637c4f5b130c198788ff91"
+    },
+    "badge-stack.svg": {
+      "bytes": 939,
+      "sha256": "fb4fa3c41c65e308bc85abd7148c9e9d0666efed8d5a0caac3769dd536f0d00e"
+    },
+    "badge-status.svg": {
+      "bytes": 905,
+      "sha256": "2e725241465c42e19ac5297380b5a4c5f68f353832262a494f537fc5833f91e3"
+    },
+    "desktop-browser.png": {
+      "bytes": 479093,
+      "sha256": "57d30992977664941efad71318b8b2edd5cfeb05d2b51eeaed853e73dfdadb04",
+      "width": 1536,
+      "height": 864,
+      "frames": 1
+    },
+    "device-management.png": {
+      "bytes": 59465,
+      "sha256": "c3350cfdde849d3bad42b53d9fc43f46cc7018174093d47439661c03813b1699",
+      "width": 1280,
+      "height": 720,
+      "frames": 1
+    },
+    "policy-management.png": {
+      "bytes": 71012,
+      "sha256": "f99b8aba50c427f5c2f99fd26c8ddc7874000cc967e418ddd8e9630e03042d54",
+      "width": 1280,
+      "height": 853,
+      "frames": 1
+    },
+    "remoteshield-access-flow.gif": {
+      "bytes": 238111,
+      "sha256": "854a72f2d6901219adb8ad68a27eb4a04727d894ec6345a89ac692697c7759d0",
+      "width": 1280,
+      "height": 560,
+      "frames": 80,
+      "durationMs": 5600,
+      "loop": 0
+    },
+    "remoteshield-access-flow.webp": {
+      "bytes": 28228,
+      "sha256": "d1593d9f40d83285fd44fd6b9a954c459e2537be703eb70823d9aefc81b0a818",
+      "width": 1280,
+      "height": 560,
+      "frames": 1
+    },
+    "remoteshield-footer.gif": {
+      "bytes": 174606,
+      "sha256": "3d0ed8334cbc951fdd7f3686ec7b0980f016c40ff2bd69f3b164b22941c410d1",
+      "width": 1280,
+      "height": 260,
+      "frames": 80,
+      "durationMs": 4800,
+      "loop": 0
+    },
+    "remoteshield-footer.webp": {
+      "bytes": 14652,
+      "sha256": "f627834e2992195fc39762ab89907f97af2031633b147e20741f0f1f6f51d9f3",
+      "width": 1280,
+      "height": 260,
+      "frames": 1
+    },
+    "remoteshield-hero.gif": {
+      "bytes": 431889,
+      "sha256": "18271d3d0d7ccadc1dc191a7df28fe835ce7a53baebf83110216626154fe4118",
+      "width": 1280,
+      "height": 520,
+      "frames": 100,
+      "durationMs": 7000,
+      "loop": 0
+    },
+    "remoteshield-hero.webp": {
+      "bytes": 43382,
+      "sha256": "1ba2d117cd66d6a4088bc9247fb933c726209c80f215c5ceaab50654a941f0dd",
+      "width": 1280,
+      "height": 520,
+      "frames": 1
+    },
+    "remoteshield-logo.svg": {
+      "bytes": 1102,
+      "sha256": "94a3eeb018667ce99a1703e658942af631022c15fb0d16c554f469582b3793ca"
+    },
+    "remoteshield-network-boundary.gif": {
+      "bytes": 199854,
+      "sha256": "a15882ff451ce922c7b800658210352b3def02b97943afae50aeb65873d32412",
+      "width": 1280,
+      "height": 620,
+      "frames": 80,
+      "durationMs": 5600,
+      "loop": 0
+    },
+    "remoteshield-network-boundary.webp": {
+      "bytes": 28188,
+      "sha256": "528187629eba6e50a3be0f586b2addd79f7d5e0ceb0b2c71679ac21f63313051",
+      "width": 1280,
+      "height": 620,
+      "frames": 1
+    },
+    "security-workflow.svg": {
+      "bytes": 3888,
+      "sha256": "1cecb44941095d6d52c450f756140cf2a8511117fec7c90fa87cf2fbcfb4001b"
+    }
+  }
+}

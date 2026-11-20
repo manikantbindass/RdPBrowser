@@ -1,0 +1,15 @@
+[Unit]
+Description=RemoteShield X WireGuard client
+Requires=remoteshield-client-firewall.service
+After=remoteshield-client-firewall.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+EnvironmentFile=/etc/remoteshield/client.env
+ExecStart=/bin/bash /opt/remoteshield/vpn-server/linux-client.sh up /etc/wireguard/wg0.conf ${ENDPOINT_IPV4}
+ExecStop=/bin/bash /opt/remoteshield/vpn-server/linux-client.sh down /etc/wireguard/wg0.conf ${ENDPOINT_IPV4}
+
+[Install]
+WantedBy=multi-user.target

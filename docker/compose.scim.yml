@@ -1,0 +1,37 @@
+# Optional separate TLS ingress for IdP provisioning. Combine with production Compose only.
+services:
+  backend:
+    environment:
+      TRUST_PROXY_CIDRS: 172.20.0.10/32,172.20.0.11/32
+      SCIM_ENABLED: 'true'
+      SCIM_PUBLIC_BASE_URL: https://${SCIM_DOMAIN:?SCIM_DOMAIN required}/scim/v2
+  scim-edge:
+    image: ${EDGE_IMAGE:-remoteshield-nginx:local}
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.nginx
+    restart: unless-stopped
+    read_only: true
+    tmpfs: ['/tmp:rw,noexec,nosuid,size=32m,mode=1777']
+    cap_drop: [ALL]
+    mem_limit: 128m
+    cpus: '0.25'
+    pids_limit: 64
+    logging:
+      driver: local
+      options: {max-size: '10m',max-file: '5'}
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports: ['${SCIM_BIND_IPV4:?Set the dedicated SCIM bind address}:443:8443']
+    environment:
+      SCIM_DOMAIN: ${SCIM_DOMAIN:?SCIM_DOMAIN required}
+      NGINX_ENVSUBST_FILTER: SCIM_DOMAIN
+    volumes:
+      - ../nginx/scim.conf.template:/etc/nginx/templates/default.conf.template:ro
+      - ${SCIM_CERTS_DIRECTORY:?Set the dedicated SCIM certificate directory}/tls.crt:/etc/nginx/certs/tls.crt:ro
+      - ${SCIM_CERTS_DIRECTORY}/tls.key:/etc/nginx/certs/tls.key:ro
+    networks:
+      control:
+        ipv4_address: 172.20.0.11
+    security_opt: ['no-new-privileges:true']
